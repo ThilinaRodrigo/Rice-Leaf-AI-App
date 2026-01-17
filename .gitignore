@@ -1,0 +1,89 @@
+####################################
+# GENERAL
+####################################
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+
+####################################
+# NODE / EXPO
+####################################
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# TypeScript
+*.tsbuildinfo
+
+# Generated native folders (Expo)
+ios/
+android/
+
+####################################
+# PYTHON / FASTAPI / ML SERVICE
+####################################
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+.venv/
+venv/
+env/
+
+####################################
+# ML MODELS & DATA (IMPORTANT)
+####################################
+ml-service/models/
+ml-service/*.keras
+ml-service/*.h5
+ml-service/*.onnx
+ml-service/*.pb
+
+# Training data
+ml-service/data/
+ml-service/datasets/
+ml-service/rice-leafs-disease-dataset/
+
+####################################
+# ENV FILES
+####################################
+.env
+.env.*
+!.env.example
+
+####################################
+# DOCKER
+####################################
+Dockerfile
+docker-compose.yml
+*.tar
+
+####################################
+# SECURITY
+####################################
+*.pem
+*.key
+*.p12
+*.p8
+*.jks
+*.mobileprovision
+
+####################################
+# EXAMPLES / TEMP
+####################################
+app-example/
