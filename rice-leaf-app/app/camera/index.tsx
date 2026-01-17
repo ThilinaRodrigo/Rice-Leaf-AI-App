@@ -1,13 +1,35 @@
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useState } from 'react';
-import { Button, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Button, Text, TouchableOpacity, View, StyleSheet, Image } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from 'expo-blur';
+import { useState, useRef } from 'react';
+import { useImagePicker } from '@/hooks/useImagePicker';
+import { router } from 'expo-router';
+import { useCapturePhoto } from "@/hooks/useCaptureImage";
 
 export default function Index() {
 
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
+  const { pickImageFromGallery } = useImagePicker();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const { cameraRef, capturePhoto } = useCapturePhoto({
+    navigateTo: "/diagnosis/result",
+  });
+
+
+  const handleOpenGallery = async () => {
+    const uri = await pickImageFromGallery();
+    if (uri) {
+      setSelectedImage(uri);
+      router.push({
+        pathname: '/diagnosis/result',
+        params: { imageUri: uri }
+      })
+    }
+  }
+
 
   if (!permission) {
     return <View style={{ flex: 1 }} />;
@@ -30,6 +52,7 @@ export default function Index() {
       <CameraView
         style={{ flex: 1 }}
         facing={facing}
+        ref={cameraRef}
       />
 
       <View className="absolute top-12 w-full flex-row justify-between px-6">
@@ -47,12 +70,15 @@ export default function Index() {
       <View style={styles.controls}>
 
         {/*Gallery Button*/}
-        <TouchableOpacity >
+        <TouchableOpacity onPress={handleOpenGallery} >
           <Ionicons name="images-outline" size={36} color="white" />
         </TouchableOpacity>
 
         {/* Shutter */}
-        <TouchableOpacity className="w-20 h-20 rounded-full border-4 border-white items-center justify-center">
+        <TouchableOpacity 
+          className="w-20 h-20 rounded-full border-4 border-white items-center justify-center"
+          onPress={capturePhoto}
+          >
           <View className="w-14 h-14 bg-white rounded-full" />
         </TouchableOpacity>
 
@@ -62,7 +88,6 @@ export default function Index() {
         }>
           <Ionicons name="camera-reverse" size={36} color="white" />
         </TouchableOpacity>
-
 
       </View>
     </View>
