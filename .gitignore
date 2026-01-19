@@ -69,7 +69,6 @@ ml-service/rice-leafs-disease-dataset/
 ####################################
 # DOCKER
 ####################################
-Dockerfile
 docker-compose.yml
 *.tar
 
