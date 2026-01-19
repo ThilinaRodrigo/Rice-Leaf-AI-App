@@ -1,24 +1,4 @@
-# Python cache
-__pycache__/
+__pycache__
 *.pyc
-*.pyo
-*.pyd
-
-# Virtual environment
-venv/
-env/
-*.env
-
-# Git files
-.git/
-.gitignore
-
-# Docker files (not needed inside image)
-Dockerfile
-docker-compose.yml
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Logs
-*.log
+node_modules
+.env
