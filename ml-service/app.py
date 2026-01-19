@@ -6,7 +6,7 @@ from PIL import Image
 import io
 import os
 
-# 🔑 VGG19 preprocess
+#VGG19 preprocess
 from tensorflow.keras.applications.vgg19 import preprocess_input
 
 app = FastAPI(title="Rice Leaf Disease Detection API")
