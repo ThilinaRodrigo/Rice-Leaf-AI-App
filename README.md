@@ -100,7 +100,7 @@ Make sure the following dependencies are installed on your machine:
 
 4. Run the Go backend server:
    ```bash
-   go run ./cmd/server
+   go run ./cmd/api
    ```
    The backend starts at `http://localhost:8080`.
 
