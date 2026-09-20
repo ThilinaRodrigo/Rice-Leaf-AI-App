@@ -1,50 +1,71 @@
-# Welcome to your Expo app 👋
+# Rice Leaf AI - Mobile & Web App 🌾📱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is the cross-platform React Native mobile and web application for **Rice Leaf AI**, built with **Expo SDK 54**, **Expo Router**, **TypeScript**, and **Lucide Icons**.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Key Features
 
-   ```bash
-   npm install
-   ```
+- **📷 Disease Scanner**: Capture or pick rice-leaf images to analyze for 5 common rice diseases.
+- **💬 AI Agronomist Chat**: Get instant advice, treatment recommendations, application schedules, and prevention guidance.
+- **🛒 Agri Marketplace**: Browse agricultural products including seeds, fertilizers, sprayers, and farming tools.
+- **📚 Remedies Knowledge Base**: Learn about diseases, contributing environmental factors, and curative actions.
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 🛠️ Getting Started
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 1. Install Dependencies
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Configure API Endpoint
 
-## Learn more
+Edit `constant/api.ts` to point to your Go backend service:
 
-To learn more about developing your project with Expo, look at the following resources:
+```ts
+// For web / local emulator:
+export const API_BASE_URL = "http://localhost:8080/api/v1";
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+// For physical phone testing on same Wi-Fi:
+export const API_BASE_URL = "http://192.168.x.x:8080/api/v1";
+```
 
-## Join the community
+### 3. Run the Development Server
 
-Join our community of developers creating universal apps.
+```bash
+npx expo start --clear
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Press **`w`** for Web Browser
+- Press **`a`** for Android Emulator
+- Scan the **QR code** in Expo Go app (Android/iOS)
+
+---
+
+## 📂 Project Structure
+
+```text
+rice-leaf-app/
+├── app/                  # Expo Router file-based pages
+│   ├── (tabs)/          # Main tab screens (Scan/Home, Chat, Market, Result, Profile)
+│   └── _layout.tsx      # Root app layout
+├── components/           # Reusable UI components (Action, Factor, HelpModal, etc.)
+├── constant/             # App constants, API URLs, disease metadata
+├── hooks/                # Custom hooks (camera picker, image picker)
+├── service/              # API Client (Backend communication & ML service calls)
+├── tsconfig.json         # TypeScript configuration with @/* alias
+└── package.json          # Project dependencies
+```
+
+---
+
+## 🧪 Code Quality & Verification
+
+Run TypeScript compilation check:
+
+```bash
+npx tsc --noEmit
+```

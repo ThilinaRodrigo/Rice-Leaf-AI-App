@@ -1,0 +1,99 @@
+-- Insert Disease Remedies Data
+INSERT INTO diseases (class_id, key, name, category, description, factors, actions) VALUES
+(
+    0,
+    'bacterial_leaf_blight',
+    'Bacterial Leaf Blight (BLB)',
+    'Bacterial (Xanthomonas oryzae)',
+    'One of the most destructive diseases in Sri Lanka. It causes yellowing and drying of leaves (Kresek). Common in both Yala and Maha seasons, especially after heavy rains and strong winds.',
+    '[
+        {"label": "Humidity", "value": "High", "color": "#3B82F6", "icon": "Droplet"},
+        {"label": "Weather", "value": "Strong Winds", "color": "#64748B", "icon": "Zap"},
+        {"label": "Temp", "value": "25-34°C", "color": "#F97316", "icon": "Thermometer"}
+    ]'::jsonb,
+    '[
+        {"title": "Stop Water Supply", "subtitle": "Drain the field immediately to stop spread"},
+        {"title": "Apply Potassium Fertilizer", "subtitle": "Helps manage further spread (DOA recommendation)"},
+        {"title": "Avoid Excess Nitrogen", "subtitle": "Reduce Urea application temporarily"}
+    ]'::jsonb
+),
+(
+    1,
+    'brown_spot',
+    'Brown Spot',
+    'Fungal (Bipolaris oryzae)',
+    'Often called a poor mans disease in Sri Lanka because it indicates nutritional deficiency (low Potassium) or iron toxicity in the soil.',
+    '[
+        {"label": "Soil", "value": "Nutrient Low", "color": "#EF4444", "icon": "AlertTriangle"},
+        {"label": "Humidity", "value": "86-100%", "color": "#3B82F6", "icon": "Droplet"},
+        {"label": "Temp", "value": "16-36°C", "color": "#F97316", "icon": "Thermometer"}
+    ]'::jsonb,
+    '[
+        {"title": "Add Burnt Paddy Husk", "subtitle": "250kg per acre during land preparation"},
+        {"title": "Apply Organic Fertilizer", "subtitle": "To improve long-term soil quality"},
+        {"title": "Seed Treatment", "subtitle": "Dip in hot water (53-54°C) for 10-12 mins"}
+    ]'::jsonb
+),
+(
+    2,
+    'healthy',
+    'Healthy Leaf',
+    'Optimal Condition',
+    'The crop shows no signs of infection. Maintain standard Sri Lankan Department of Agriculture (DOA) fertilization guidelines using the Leaf Color Chart (LCC).',
+    '[
+        {"label": "Status", "value": "Disease Free", "color": "#22C55E", "icon": "ShieldCheck"},
+        {"label": "Season", "value": "Maha/Yala", "color": "#A855F7", "icon": "Calendar"},
+        {"label": "Water", "value": "Adequate", "color": "#3B82F6", "icon": "Droplet"}
+    ]'::jsonb,
+    '[
+        {"title": "Use Leaf Color Chart", "subtitle": "To apply Urea only when necessary"},
+        {"title": "Regular Weeding", "subtitle": "Prevents secondary hosts for pests"}
+    ]'::jsonb
+),
+(
+    3,
+    'leaf_scald',
+    'Leaf Scald',
+    'Fungal (Microdochium oryzae)',
+    'Commonly occurs late in the season on mature leaves. It creates a scalded appearance starting from the leaf tips.',
+    '[
+        {"label": "Stage", "value": "Late Growth", "color": "#A855F7", "icon": "Calendar"},
+        {"label": "Rainfall", "value": "Heavy", "color": "#3B82F6", "icon": "Droplet"},
+        {"label": "Spacing", "value": "High Density", "color": "#64748B", "icon": "Zap"}
+    ]'::jsonb,
+    '[
+        {"title": "Apply Mancozeb", "subtitle": "Foliar spray to reduce severity"},
+        {"title": "Split Nitrogen Dosage", "subtitle": "Do not apply all Urea at once"},
+        {"title": "Remove Rice Stubbles", "subtitle": "Plow under after harvest to kill fungi"}
+    ]'::jsonb
+),
+(
+    4,
+    'narrow_brown_spot',
+    'Narrow Brown Spot',
+    'Fungal (Cercospora janseana)',
+    'Symptoms are short, linear brown lesions. In Sri Lanka, this is often seen as rice plants approach maturity.',
+    '[
+        {"label": "Season", "value": "Approaching Maturity", "color": "#A855F7", "icon": "Calendar"},
+        {"label": "Humidity", "value": "High", "color": "#3B82F6", "icon": "Droplet"},
+        {"label": "Temp", "value": "Warm", "color": "#F97316", "icon": "Thermometer"}
+    ]'::jsonb,
+    '[
+        {"title": "Apply Propiconazole", "subtitle": "Apply between booting and heading stages"},
+        {"title": "Check Variety Resistance", "subtitle": "Consult local Agrarian Service Center"},
+        {"title": "Burnt Paddy Husk", "subtitle": "Apply to soil for next season"}
+    ]'::jsonb
+)
+ON CONFLICT (class_id) DO UPDATE SET
+    name = EXCLUDED.name,
+    category = EXCLUDED.category,
+    description = EXCLUDED.description,
+    factors = EXCLUDED.factors,
+    actions = EXCLUDED.actions;
+
+-- Insert Marketplace Products Data
+INSERT INTO products (name, category, price_cents, price_unit, image_url, stock, description) VALUES
+('High-Quality Rice Seeds', 'Seeds', 45000, 'Rs.450 / kg', 'https://images.unsplash.com/photo-1607703700242-7a37b2fbb5bc?auto=format&fit=crop&w=500&q=60', 100, 'Certified high yield Bg 352 and At 362 rice seeds for Yala and Maha seasons.'),
+('Organic Fertilizer', 'Fertilizers', 12000, 'Rs.120 / kg', 'https://images.unsplash.com/photo-1587316745629-1a81c7b54e9b?auto=format&fit=crop&w=500&q=60', 250, '100% natural compost and bio-fertilizer rich in nitrogen and organic carbon.'),
+('Sprayer Tool', 'Sprayers', 220000, 'Rs.2,200', 'https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60', 50, '16L knapsack manual pressure sprayer ideal for pesticide and foliar application.'),
+('Watering Can', 'Tools', 75000, 'Rs.750', 'https://images.unsplash.com/photo-1606312611231-1d6e0f51e3f1?auto=format&fit=crop&w=500&q=60', 75, 'Heavy-duty 10L ergonomic garden watering can for paddy nursery care.');

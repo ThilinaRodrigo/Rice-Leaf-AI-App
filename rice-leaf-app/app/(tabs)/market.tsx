@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { ArrowLeft, Search, X } from "lucide-react-native";
 import { router } from "expo-router";
+import { fetchMarketProducts } from "@/service/apiClient";
 
 const categories = ["All", "Seeds", "Fertilizers", "Tools", "Sprayers"];
 const allProducts = [
@@ -49,13 +50,33 @@ const allProducts = [
 const Market = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
+  const [products, setProducts] = useState<any[]>(allProducts);
 
-  const filteredProducts = allProducts.filter((p) => {
-    const matchesCategory =
-      selectedCategory === "All" || p.category === selectedCategory;
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  React.useEffect(() => {
+    fetchMarketProducts(selectedCategory, search)
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProducts(data);
+        } else {
+          setProducts(allProducts.filter((p) => {
+            const matchesCat = selectedCategory === "All" || p.category === selectedCategory;
+            const matchesSrch = p.name.toLowerCase().includes(search.toLowerCase());
+            return matchesCat && matchesSrch;
+          }));
+        }
+      })
+      .catch((err) => {
+        console.log("Using fallback product data:", err);
+        setProducts(allProducts.filter((p) => {
+          const matchesCat = selectedCategory === "All" || p.category === selectedCategory;
+          const matchesSrch = p.name.toLowerCase().includes(search.toLowerCase());
+          return matchesCat && matchesSrch;
+        }));
+      });
+  }, [selectedCategory, search]);
+
+  const filteredProducts = products;
+
 
   return (
     <ScrollView className="flex-1 bg-gray-100 p-4">

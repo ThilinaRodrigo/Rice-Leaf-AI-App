@@ -1,0 +1,79 @@
+package handler
+
+import (
+	"backend-go/config"
+	"backend-go/internal/middleware"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+)
+
+type RouterConfig struct {
+	Cfg            *config.Config
+	AuthHandler    *AuthHandler
+	ScanHandler    *ScanHandler
+	DiseaseHandler *DiseaseHandler
+	ProductHandler *ProductHandler
+	ChatHandler    *ChatHandler
+}
+
+func SetupRouter(rc RouterConfig) *gin.Engine {
+	if rc.Cfg.GinMode == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	r := gin.Default()
+
+	// CORS Setup
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	r.Use(cors.New(corsConfig))
+
+	// Static File Server for uploaded scan images
+	r.Static("/uploads", rc.Cfg.UploadsDir)
+
+	// API Root
+	v1 := r.Group("/api/v1")
+	{
+		// Auth Routes
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", rc.AuthHandler.Register)
+			auth.POST("/login", rc.AuthHandler.Login)
+			auth.GET("/me", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.AuthHandler.GetProfile)
+		}
+
+		// Scans & Diagnosis Routes
+		scans := v1.Group("/scans")
+		{
+			scans.POST("/analyze", middleware.OptionalAuthMiddleware(rc.Cfg.JWTSecret), rc.ScanHandler.AnalyzeImage)
+			scans.GET("/history", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.ScanHandler.GetHistory)
+			scans.GET("/:id", rc.ScanHandler.GetScanByID)
+		}
+
+		// Disease Remedies Knowledge Base
+		diseases := v1.Group("/diseases")
+		{
+			diseases.GET("", rc.DiseaseHandler.GetAllDiseases)
+			diseases.GET("/:class_id", rc.DiseaseHandler.GetDiseaseByClassID)
+		}
+
+		// Marketplace Products
+		products := v1.Group("/products")
+		{
+			products.GET("", rc.ProductHandler.GetProducts)
+			products.GET("/:id", rc.ProductHandler.GetProductByID)
+		}
+
+		// AI Chat Assistant
+		chat := v1.Group("/chat")
+		{
+			chat.POST("/message", middleware.OptionalAuthMiddleware(rc.Cfg.JWTSecret), rc.ChatHandler.SendMessage)
+			chat.GET("/history", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.ChatHandler.GetHistory)
+		}
+	}
+
+	return r
+}

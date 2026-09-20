@@ -41,7 +41,8 @@ const Result = () => {
     predictImage(imageSource)
       .then((res) => {
         setResult(res);
-        setDisease(DISEASE_DATA[res.class_id] ?? null);
+        const fetchedDisease = res.disease || DISEASE_DATA[res.class_id];
+        setDisease(fetchedDisease ?? DISEASE_DATA[res.class_id] ?? null);
       })
       .catch((err) => {
         console.error("Prediction error:", err);
@@ -49,6 +50,7 @@ const Result = () => {
       })
       .finally(() => setIsLoading(false));
   }, [imageSource]);
+
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">

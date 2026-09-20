@@ -13,6 +13,7 @@ import {
 import { ArrowLeft, Send } from "lucide-react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { sendChatMessage } from "@/service/apiClient";
 
 type Message = {
   id: string;
@@ -107,12 +108,13 @@ const Chat = () => {
   };
 
   // Send message handler
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback(async () => {
     if (!input.trim() || isTyping) return;
 
+    const userText = input.trim();
     const userMessage: Message = {
       id: `user-${Date.now()}`,
-      text: input.trim(),
+      text: userText,
       sender: "user",
       timestamp: new Date(),
     };
@@ -121,21 +123,29 @@ const Chat = () => {
     setInput("");
     setIsTyping(true);
 
-    // Simulate bot processing time
-    const responseDelay = 800 + Math.random() * 400;
-    
-    setTimeout(() => {
+    try {
+      const res = await sendChatMessage(userText);
       const botMessage: Message = {
-        id: `bot-${Date.now()}`,
-        text: generateBotResponse(input),
+        id: res.id || `bot-${Date.now()}`,
+        text: res.text || generateBotResponse(userText),
         sender: "bot",
         timestamp: new Date(),
       };
-      
       setMessages((prev) => [...prev, botMessage]);
+    } catch (err) {
+      console.log("Using offline bot response:", err);
+      const botMessage: Message = {
+        id: `bot-${Date.now()}`,
+        text: generateBotResponse(userText),
+        sender: "bot",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, botMessage]);
+    } finally {
       setIsTyping(false);
-    }, responseDelay);
+    }
   }, [input, isTyping]);
+
 
   // Handle quick reply
   const handleQuickReply = useCallback((reply: QuickReply) => {
