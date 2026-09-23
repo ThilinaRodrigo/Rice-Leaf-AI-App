@@ -1,12 +1,62 @@
 import { API_BASE_URL } from "@/constant/api";
 import { Platform } from "react-native";
+import * as FileSystem from "expo-file-system/legacy";
+
+// Helper to convert scoped Expo Go ExperienceData URIs or base64 strings into readable root cache files
+async function getReadableNativeFileUri(rawUri: string): Promise<{ uri: string; isTemp: boolean }> {
+  if (!FileSystem.cacheDirectory) {
+    return { uri: rawUri, isTemp: false };
+  }
+
+  const tempPath = `${FileSystem.cacheDirectory}upload_leaf_${Date.now()}.jpg`;
+
+  // 1. If rawUri is already a base64 data URI or plain base64 string
+  if (rawUri.startsWith("data:image/") || !rawUri.startsWith("file://")) {
+    try {
+      const base64Data = rawUri.includes(",") ? rawUri.split(",")[1] : rawUri;
+      await FileSystem.writeAsStringAsync(tempPath, base64Data, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      console.log("=== DEBUG: Written base64 data directly to root cache file =", tempPath);
+      return { uri: tempPath, isTemp: true };
+    } catch (err) {
+      console.warn("=== DEBUG: Base64 direct write failed:", err);
+    }
+  }
+
+  // 2. Otherwise read rawUri directly (rawUri matches Expo Go's internal experience whitelist with %40anonymous%2F)
+  try {
+    const base64Data = await FileSystem.readAsStringAsync(rawUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    // Write to root cacheDirectory which has unrestricted native read permissions
+    await FileSystem.writeAsStringAsync(tempPath, base64Data, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    console.log("=== DEBUG: Successfully created root cache file from rawUri =", tempPath);
+    return { uri: tempPath, isTemp: true };
+  } catch (err) {
+    console.warn("=== DEBUG: Base64 cache copy failed for rawUri:", err);
+  }
+
+  return { uri: rawUri, isTemp: false };
+}
 
 // 1. Scan / Analyze Leaf Image
 export const analyzeLeafImage = async (imageUri: string, userToken?: string): Promise<any> => {
-  const formData = new FormData();
+  const targetUrl = `${API_BASE_URL}/scans/analyze`;
+  console.log("=== DEBUG: API_BASE_URL =", API_BASE_URL);
+  console.log("=== DEBUG: Full upload URL =", targetUrl);
+  console.log("=== DEBUG: Raw imageUri =", imageUri);
+
+  const headers: Record<string, string> = {};
+  if (userToken) {
+    headers["Authorization"] = `Bearer ${userToken}`;
+  }
 
   if (Platform.OS === "web") {
-    // Web: fetch the image as a blob first
+    // Web: fetch image blob first
+    const formData = new FormData();
     const imageResponse = await fetch(imageUri);
     if (!imageResponse.ok) {
       throw new Error("Unable to read the selected image file");
@@ -14,63 +64,91 @@ export const analyzeLeafImage = async (imageUri: string, userToken?: string): Pr
     const blob = await imageResponse.blob();
     formData.append("file", blob, "rice_leaf.jpg");
 
-    const headers: Record<string, string> = {};
-    if (userToken) {
-      headers["Authorization"] = `Bearer ${userToken}`;
-    }
-
-    const res = await fetch(`${API_BASE_URL}/scans/analyze`, {
+    const res = await fetch(targetUrl, {
       method: "POST",
       headers,
       body: formData,
     });
 
     const responseText = await res.text();
+    console.log("=== DEBUG: Web Upload status =", res.status);
+    console.log("=== DEBUG: Web Upload response =", responseText);
+
     if (!res.ok) {
       throw new Error(`Analysis failed (${res.status}): ${responseText}`);
     }
+
     return JSON.parse(responseText);
-
   } else {
-    // Native (Android / iOS): Use XMLHttpRequest — fully supports {uri, name, type} FormData entries
-    return new Promise((resolve, reject) => {
-      const targetUrl = `${API_BASE_URL}/scans/analyze`;
-      console.log("=== DEBUG: API_BASE_URL =", API_BASE_URL);
-      console.log("=== DEBUG: Full upload URL =", targetUrl);
-      console.log("=== DEBUG: imageUri =", imageUri);
+    // Native (Android / iOS)
+    const { uri: uploadUri, isTemp } = await getReadableNativeFileUri(imageUri);
+    console.log("=== DEBUG: Uploading native URI =", uploadUri);
 
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", targetUrl);
+    try {
+      const uploadResult = await FileSystem.uploadAsync(targetUrl, uploadUri, {
+        httpMethod: "POST",
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: "file",
+        mimeType: "image/jpeg",
+        headers,
+      });
 
-      if (userToken) {
-        xhr.setRequestHeader("Authorization", `Bearer ${userToken}`);
+      console.log("=== DEBUG: Upload status =", uploadResult.status);
+      console.log("=== DEBUG: Upload response =", uploadResult.body);
+
+      if (uploadResult.status >= 200 && uploadResult.status < 300) {
+        return JSON.parse(uploadResult.body);
       }
+      throw new Error(`Analysis failed (${uploadResult.status}): ${uploadResult.body}`);
+    } catch (uploadErr) {
+      console.warn("FileSystem.uploadAsync failed, attempting XMLHttpRequest fallback:", uploadErr);
 
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            resolve(JSON.parse(xhr.responseText));
-          } catch {
-            reject(new Error("Invalid JSON response from server"));
-          }
-        } else {
-          reject(new Error(`Analysis failed (${xhr.status}): ${xhr.responseText}`));
+      // Fallback: XMLHttpRequest with FormData
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", targetUrl);
+
+        if (userToken) {
+          xhr.setRequestHeader("Authorization", `Bearer ${userToken}`);
         }
-      };
 
-      xhr.onerror = () => reject(new Error("Network error during image upload"));
-      xhr.ontimeout = () => reject(new Error("Request timed out"));
-      xhr.timeout = 30000;
+        xhr.onload = () => {
+          console.log("=== DEBUG: XHR Upload status =", xhr.status);
+          console.log("=== DEBUG: XHR Upload response =", xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (e) {
+              resolve(xhr.responseText);
+            }
+          } else {
+            reject(new Error(`Analysis failed (${xhr.status}): ${xhr.responseText}`));
+          }
+        };
 
-      const nativeForm = new FormData();
-      nativeForm.append("file", {
-        uri: imageUri,
-        name: "rice_leaf.jpg",
-        type: "image/jpeg",
-      } as any);
+        xhr.onerror = (err) => {
+          console.error("=== DEBUG: XHR Upload error =", err);
+          reject(new Error("Network error occurred during image upload"));
+        };
 
-      xhr.send(nativeForm);
-    });
+        const formData = new FormData();
+        formData.append("file", {
+          uri: uploadUri,
+          name: "rice_leaf.jpg",
+          type: "image/jpeg",
+        } as any);
+
+        xhr.send(formData);
+      });
+    } finally {
+      if (isTemp) {
+        try {
+          await FileSystem.deleteAsync(uploadUri, { idempotent: true });
+        } catch (e) {
+          // Ignore cleanup error
+        }
+      }
+    }
   }
 };
 
