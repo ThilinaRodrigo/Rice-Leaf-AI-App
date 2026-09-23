@@ -7,7 +7,9 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -45,7 +47,16 @@ func (c *mlClient) PredictImage(fileHeader *multipart.FileHeader) (*MLPrediction
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	part, err := writer.CreateFormFile("file", filepath.Base(fileHeader.Filename))
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename="%s"`, filepath.Base(fileHeader.Filename)))
+
+	contentType := fileHeader.Header.Get("Content-Type")
+	if contentType == "" || !strings.HasPrefix(contentType, "image/") {
+		contentType = "image/jpeg"
+	}
+	h.Set("Content-Type", contentType)
+
+	part, err := writer.CreatePart(h)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create form file: %w", err)
 	}

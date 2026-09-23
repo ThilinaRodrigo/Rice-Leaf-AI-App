@@ -7,7 +7,16 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import {
+  ArrowLeft,
+  Droplet,
+  Thermometer,
+  Calendar,
+  ShieldCheck,
+  Zap,
+  AlertTriangle,
+  HelpCircle,
+} from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Factor from "@/components/Factor";
 import Action from "@/components/Action";
@@ -20,6 +29,27 @@ type ResultType = {
   class_id: number;
   label: string;
   confidence?: number;
+};
+
+const ICON_MAP: Record<string, React.ComponentType<any>> = {
+  Droplet,
+  Thermometer,
+  Calendar,
+  ShieldCheck,
+  Zap,
+  AlertTriangle,
+};
+
+const renderFactorIcon = (iconProp: any, color: string) => {
+  let IconComponent: React.ComponentType<any> = HelpCircle;
+
+  if (typeof iconProp === "function" || (typeof iconProp === "object" && iconProp !== null)) {
+    IconComponent = iconProp;
+  } else if (typeof iconProp === "string" && ICON_MAP[iconProp]) {
+    IconComponent = ICON_MAP[iconProp];
+  }
+
+  return <IconComponent size={22} color={color} />;
 };
 
 const Result = () => {
@@ -41,8 +71,38 @@ const Result = () => {
     predictImage(imageSource)
       .then((res) => {
         setResult(res);
-        const fetchedDisease = res.disease || DISEASE_DATA[res.class_id];
-        setDisease(fetchedDisease ?? DISEASE_DATA[res.class_id] ?? null);
+        let fetchedDisease = res.disease || DISEASE_DATA[res.class_id];
+        if (!fetchedDisease) {
+          fetchedDisease = DISEASE_DATA[res.class_id] ?? null;
+        }
+
+        if (fetchedDisease) {
+          let factors = fetchedDisease.factors;
+          if (typeof factors === "string") {
+            try {
+              factors = JSON.parse(factors);
+            } catch (e) {
+              console.error("Failed parsing factors JSON:", e);
+            }
+          }
+
+          let actions = fetchedDisease.actions;
+          if (typeof actions === "string") {
+            try {
+              actions = JSON.parse(actions);
+            } catch (e) {
+              console.error("Failed parsing actions JSON:", e);
+            }
+          }
+
+          fetchedDisease = {
+            ...fetchedDisease,
+            factors,
+            actions,
+          };
+        }
+
+        setDisease(fetchedDisease);
       })
       .catch((err) => {
         console.error("Prediction error:", err);
@@ -51,11 +111,9 @@ const Result = () => {
       .finally(() => setIsLoading(false));
   }, [imageSource]);
 
-
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <View className="flex-1">
-
         {/* Help Modal */}
         <HelpModal
           visible={showModal}
@@ -136,17 +194,14 @@ const Result = () => {
               </Text>
 
               <View className="flex-row flex-wrap justify-between">
-                {disease.factors?.map((factor: any, index: number) => {
-                  const Icon = factor.icon;
-                  return (
-                    <Factor
-                      key={index}
-                      icon={<Icon size={22} color={factor.color} />}
-                      label={factor.label}
-                      value={factor.value}
-                    />
-                  );
-                })}
+                {disease.factors?.map((factor: any, index: number) => (
+                  <Factor
+                    key={index}
+                    icon={renderFactorIcon(factor.icon, factor.color || "#3B82F6")}
+                    label={factor.label}
+                    value={factor.value}
+                  />
+                ))}
               </View>
             </View>
 

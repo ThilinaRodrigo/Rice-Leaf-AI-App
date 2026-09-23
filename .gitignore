@@ -83,6 +83,19 @@ docker-compose.yml
 *.mobileprovision
 
 ####################################
+# UPLOADED IMAGES & USER MEDIA
+####################################
+uploads/
+**/uploads/
+*.jpg
+*.jpeg
+*.png
+!**/assets/**/*.png
+!**/assets/**/*.jpg
+!**/assets/**/*.jpeg
+!.gitkeep
+
+####################################
 # EXAMPLES / TEMP
 ####################################
 app-example/
