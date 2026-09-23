@@ -23,6 +23,9 @@ func NewDiseaseRepository(db *sql.DB) DiseaseRepository {
 }
 
 func (r *diseaseRepository) GetAll(ctx context.Context) ([]domain.Disease, error) {
+	if r.db == nil {
+		return []domain.Disease{}, nil
+	}
 	query := `
 		SELECT class_id, key, name, category, description, factors, actions, created_at
 		FROM diseases

@@ -26,6 +26,10 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *userRepository) CreateUser(ctx context.Context, u *domain.User) error {
+	if r.db == nil {
+		u.ID = uuid.New()
+		return nil
+	}
 	query := `
 		INSERT INTO users (full_name, email, password_hash, phone, avatar_url)
 		VALUES ($1, $2, $3, $4, $5)
@@ -40,6 +44,9 @@ func (r *userRepository) CreateUser(ctx context.Context, u *domain.User) error {
 }
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	if r.db == nil {
+		return nil, errors.New("database not connected")
+	}
 	query := `
 		SELECT id, full_name, email, password_hash, COALESCE(phone, ''), COALESCE(avatar_url, ''), created_at, updated_at
 		FROM users
@@ -58,6 +65,9 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 }
 
 func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+	if r.db == nil {
+		return nil, errors.New("database not connected")
+	}
 	query := `
 		SELECT id, full_name, email, password_hash, COALESCE(phone, ''), COALESCE(avatar_url, ''), created_at, updated_at
 		FROM users

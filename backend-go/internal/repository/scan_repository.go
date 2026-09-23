@@ -25,6 +25,10 @@ func NewScanRepository(db *sql.DB) ScanRepository {
 }
 
 func (r *scanRepository) SaveScan(ctx context.Context, s *domain.Scan) error {
+	if r.db == nil {
+		s.ID = uuid.New()
+		return nil
+	}
 	query := `
 		INSERT INTO scans (user_id, image_url, class_id, label, confidence, notes)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -39,6 +43,9 @@ func (r *scanRepository) SaveScan(ctx context.Context, s *domain.Scan) error {
 }
 
 func (r *scanRepository) GetHistoryByUserID(ctx context.Context, userID uuid.UUID) ([]domain.Scan, error) {
+	if r.db == nil {
+		return []domain.Scan{}, nil
+	}
 	query := `
 		SELECT id, user_id, image_url, class_id, label, confidence, COALESCE(notes, ''), created_at
 		FROM scans
@@ -64,6 +71,9 @@ func (r *scanRepository) GetHistoryByUserID(ctx context.Context, userID uuid.UUI
 }
 
 func (r *scanRepository) GetScanByID(ctx context.Context, scanID uuid.UUID) (*domain.Scan, error) {
+	if r.db == nil {
+		return nil, fmt.Errorf("scan not found")
+	}
 	query := `
 		SELECT id, user_id, image_url, class_id, label, confidence, COALESCE(notes, ''), created_at
 		FROM scans

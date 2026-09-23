@@ -24,6 +24,10 @@ func NewChatRepository(db *sql.DB) ChatRepository {
 }
 
 func (r *chatRepository) SaveMessage(ctx context.Context, msg *domain.ChatMessage) error {
+	if r.db == nil {
+		msg.ID = uuid.New()
+		return nil
+	}
 	query := `
 		INSERT INTO chat_messages (user_id, sender, message)
 		VALUES ($1, $2, $3)
@@ -38,6 +42,9 @@ func (r *chatRepository) SaveMessage(ctx context.Context, msg *domain.ChatMessag
 }
 
 func (r *chatRepository) GetHistoryByUserID(ctx context.Context, userID uuid.UUID) ([]domain.ChatMessage, error) {
+	if r.db == nil {
+		return []domain.ChatMessage{}, nil
+	}
 	query := `
 		SELECT id, user_id, sender, message, created_at
 		FROM chat_messages

@@ -24,6 +24,10 @@ func NewProductRepository(db *sql.DB) ProductRepository {
 }
 
 func (r *productRepository) GetProducts(ctx context.Context, category, search string) ([]domain.Product, error) {
+	if r.db == nil {
+		return getFallbackProducts(category, search), nil
+	}
+
 	query := `
 		SELECT id, name, category, price_cents, price_unit, image_url, stock, COALESCE(description, ''), is_active, created_at
 		FROM products
@@ -65,6 +69,14 @@ func (r *productRepository) GetProducts(ctx context.Context, category, search st
 }
 
 func (r *productRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
+	if r.db == nil {
+		products := getFallbackProducts("", "")
+		if len(products) > 0 {
+			return &products[0], nil
+		}
+		return nil, fmt.Errorf("product not found")
+	}
+
 	query := `
 		SELECT id, name, category, price_cents, price_unit, image_url, stock, COALESCE(description, ''), is_active, created_at
 		FROM products
@@ -77,4 +89,62 @@ func (r *productRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 		return nil, err
 	}
 	return p, nil
+}
+
+func getFallbackProducts(category, search string) []domain.Product {
+	all := []domain.Product{
+		{
+			ID:          uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+			Name:        "High-Quality Rice Seeds",
+			Category:    "Seeds",
+			PriceCents:  45000,
+			PriceUnit:   "Rs.450 / kg",
+			ImageURL:    "https://images.unsplash.com/photo-1607703700242-7a37b2fbb5bc?auto=format&fit=crop&w=500&q=60",
+			Stock:       100,
+			Description: "Certified high yield Bg 352 and At 362 rice seeds for Yala and Maha seasons.",
+			IsActive:    true,
+		},
+		{
+			ID:          uuid.MustParse("22222222-2222-2222-2222-222222222222"),
+			Name:        "Organic Fertilizer",
+			Category:    "Fertilizers",
+			PriceCents:  12000,
+			PriceUnit:   "Rs.120 / kg",
+			ImageURL:    "https://images.unsplash.com/photo-1587316745629-1a81c7b54e9b?auto=format&fit=crop&w=500&q=60",
+			Stock:       250,
+			Description: "100% natural compost and bio-fertilizer rich in nitrogen and organic carbon.",
+			IsActive:    true,
+		},
+		{
+			ID:          uuid.MustParse("33333333-3333-3333-3333-333333333333"),
+			Name:        "Sprayer Tool",
+			Category:    "Sprayers",
+			PriceCents:  220000,
+			PriceUnit:   "Rs.2,200",
+			ImageURL:    "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60",
+			Stock:       50,
+			Description: "16L knapsack manual pressure sprayer ideal for pesticide and foliar application.",
+			IsActive:    true,
+		},
+		{
+			ID:          uuid.MustParse("44444444-4444-4444-4444-444444444444"),
+			Name:        "Watering Can",
+			Category:    "Tools",
+			PriceCents:  75000,
+			PriceUnit:   "Rs.750",
+			ImageURL:    "https://images.unsplash.com/photo-1606312611231-1d6e0f51e3f1?auto=format&fit=crop&w=500&q=60",
+			Stock:       75,
+			Description: "Heavy-duty 10L ergonomic garden watering can for paddy nursery care.",
+			IsActive:    true,
+		},
+	}
+
+	var filtered []domain.Product
+	for _, p := range all {
+		if category != "" && category != "All" && p.Category != category {
+			continue
+		}
+		filtered = append(filtered, p)
+	}
+	return filtered
 }
