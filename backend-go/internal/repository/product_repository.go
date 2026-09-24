@@ -13,6 +13,9 @@ import (
 type ProductRepository interface {
 	GetProducts(ctx context.Context, category, search string) ([]domain.Product, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Product, error)
+	CreateProduct(ctx context.Context, p *domain.Product) error
+	UpdateProduct(ctx context.Context, p *domain.Product) error
+	DeleteProduct(ctx context.Context, id uuid.UUID) error
 }
 
 type productRepository struct {
@@ -21,6 +24,41 @@ type productRepository struct {
 
 func NewProductRepository(db *sql.DB) ProductRepository {
 	return &productRepository{db: db}
+}
+
+func (r *productRepository) CreateProduct(ctx context.Context, p *domain.Product) error {
+	if r.db == nil {
+		p.ID = uuid.New()
+		return nil
+	}
+	query := `
+		INSERT INTO products (name, category, price_cents, price_unit, image_url, stock, description, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id, created_at
+	`
+	return r.db.QueryRowContext(ctx, query, p.Name, p.Category, p.PriceCents, p.PriceUnit, p.ImageURL, p.Stock, p.Description, p.IsActive).
+		Scan(&p.ID, &p.CreatedAt)
+}
+
+func (r *productRepository) UpdateProduct(ctx context.Context, p *domain.Product) error {
+	if r.db == nil {
+		return nil
+	}
+	query := `
+		UPDATE products
+		SET name = $1, category = $2, price_cents = $3, price_unit = $4, image_url = $5, stock = $6, description = $7, is_active = $8
+		WHERE id = $9
+	`
+	_, err := r.db.ExecContext(ctx, query, p.Name, p.Category, p.PriceCents, p.PriceUnit, p.ImageURL, p.Stock, p.Description, p.IsActive, p.ID)
+	return err
+}
+
+func (r *productRepository) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+	if r.db == nil {
+		return nil
+	}
+	_, err := r.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1", id)
+	return err
 }
 
 func (r *productRepository) GetProducts(ctx context.Context, category, search string) ([]domain.Product, error) {

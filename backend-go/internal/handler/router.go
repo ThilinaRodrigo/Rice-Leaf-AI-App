@@ -15,6 +15,7 @@ type RouterConfig struct {
 	DiseaseHandler *DiseaseHandler
 	ProductHandler *ProductHandler
 	ChatHandler    *ChatHandler
+	AdminHandler   *AdminHandler
 }
 
 func SetupRouter(rc RouterConfig) *gin.Engine {
@@ -72,6 +73,23 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 		{
 			chat.POST("/message", middleware.OptionalAuthMiddleware(rc.Cfg.JWTSecret), rc.ChatHandler.SendMessage)
 			chat.GET("/history", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.ChatHandler.GetHistory)
+		}
+
+		// Sys Admin Routes
+		if rc.AdminHandler != nil {
+			admin := v1.Group("/admin")
+			admin.Use(middleware.AuthMiddleware(rc.Cfg.JWTSecret))
+			admin.Use(middleware.RequireSysAdmin())
+			{
+				admin.GET("/stats", rc.AdminHandler.GetStats)
+				admin.GET("/users", rc.AdminHandler.GetAllUsers)
+				admin.POST("/users/admin", rc.AdminHandler.CreateSysAdmin)
+				admin.DELETE("/users/:id", rc.AdminHandler.DeleteUser)
+				admin.GET("/scans", rc.AdminHandler.GetAllScans)
+				admin.POST("/products", rc.AdminHandler.CreateProduct)
+				admin.PUT("/products/:id", rc.AdminHandler.UpdateProduct)
+				admin.DELETE("/products/:id", rc.AdminHandler.DeleteProduct)
+			}
 		}
 	}
 

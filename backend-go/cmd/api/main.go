@@ -35,6 +35,7 @@ func main() {
 	scanRepo := repository.NewScanRepository(db)
 	productRepo := repository.NewProductRepository(db)
 	chatRepo := repository.NewChatRepository(db)
+	adminRepo := repository.NewAdminRepository(db)
 
 	// 4. Initialize Local Storage & External Clients
 	localStorage := storage.NewLocalStorage(cfg.UploadsDir, cfg.BaseURL)
@@ -46,6 +47,7 @@ func main() {
 	scanUC := usecase.NewScanUseCase(scanRepo, diseaseRepo, mlClient, localStorage)
 	productUC := usecase.NewProductUseCase(productRepo)
 	chatUC := usecase.NewChatUseCase(chatRepo)
+	adminUC := usecase.NewAdminUseCase(adminRepo)
 
 	// 6. Initialize Handlers
 	authHandler := handler.NewAuthHandler(authUC)
@@ -53,6 +55,7 @@ func main() {
 	scanHandler := handler.NewScanHandler(scanUC)
 	productHandler := handler.NewProductHandler(productUC)
 	chatHandler := handler.NewChatHandler(chatUC)
+	adminHandler := handler.NewAdminHandler(adminUC, authUC, productRepo)
 
 	// 7. Setup Router & Start Gin Server
 	r := handler.SetupRouter(handler.RouterConfig{
@@ -62,6 +65,7 @@ func main() {
 		DiseaseHandler: diseaseHandler,
 		ProductHandler: productHandler,
 		ChatHandler:    chatHandler,
+		AdminHandler:   adminHandler,
 	})
 
 	serverAddr := fmt.Sprintf(":%s", cfg.Port)

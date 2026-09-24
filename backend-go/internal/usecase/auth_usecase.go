@@ -97,7 +97,7 @@ func (u *authUseCase) Register(ctx context.Context, req domain.RegisterRequest) 
 		tokenSub = user.NIC
 	}
 
-	t, err := token.GenerateToken(user.ID, tokenSub, u.jwtSecret, 7*24*time.Hour)
+	t, err := token.GenerateToken(user.ID, tokenSub, string(user.Role), u.jwtSecret, 7*24*time.Hour)
 	if err != nil {
 		return nil, fmt.Errorf("failed generating token: %w", err)
 	}
@@ -132,7 +132,7 @@ func (u *authUseCase) Login(ctx context.Context, req domain.LoginRequest) (*doma
 		tokenSub = user.NIC
 	}
 
-	t, err := token.GenerateToken(user.ID, tokenSub, u.jwtSecret, 7*24*time.Hour)
+	t, err := token.GenerateToken(user.ID, tokenSub, string(user.Role), u.jwtSecret, 7*24*time.Hour)
 	if err != nil {
 		return nil, fmt.Errorf("failed generating token: %w", err)
 	}
