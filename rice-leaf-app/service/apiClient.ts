@@ -198,3 +198,59 @@ export const fetchDiseasesList = async () => {
   }
   return await res.json();
 };
+
+// 5. Auth API Functions
+export const registerUser = async (payload: {
+  full_name: string;
+  email?: string;
+  nic?: string;
+  password: string;
+  role: "farmer" | "shop_owner" | "sys_admin";
+  phone?: string;
+  shop_name?: string;
+  district?: string;
+  city?: string;
+  whatsapp_number?: string;
+}) => {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Registration failed");
+  }
+  return data;
+};
+
+export const loginUser = async (payload: {
+  identifier?: string;
+  email?: string;
+  password: string;
+}) => {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Login failed");
+  }
+  return data;
+};
+
+export const fetchUserProfile = async (userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to fetch user profile");
+  }
+  return data;
+};

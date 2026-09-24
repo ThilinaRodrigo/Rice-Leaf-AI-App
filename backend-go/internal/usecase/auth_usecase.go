@@ -33,9 +33,41 @@ func NewAuthUseCase(userRepo repository.UserRepository, jwtSecret string) AuthUs
 }
 
 func (u *authUseCase) Register(ctx context.Context, req domain.RegisterRequest) (*domain.AuthResponse, error) {
-	existing, _ := u.userRepo.GetByEmail(ctx, req.Email)
-	if existing != nil {
-		return nil, errors.New("user with this email already exists")
+	role := req.Role
+	if role == "" {
+		role = domain.RoleFarmer
+	}
+
+	// Role-specific validation
+	switch role {
+	case domain.RoleFarmer:
+		if req.NIC == "" {
+			return nil, errors.New("NIC number is required for farmers")
+		}
+	case domain.RoleShopOwner:
+		if req.Email == "" && req.NIC == "" {
+			return nil, errors.New("either Email or NIC number is required for shop owners")
+		}
+	case domain.RoleSysAdmin:
+		if req.Email == "" {
+			return nil, errors.New("email address is required for system administrators")
+		}
+	}
+
+	// Check existing by Email if provided
+	if req.Email != "" {
+		existing, _ := u.userRepo.GetByEmail(ctx, req.Email)
+		if existing != nil {
+			return nil, errors.New("user with this email already exists")
+		}
+	}
+
+	// Check existing by NIC if provided
+	if req.NIC != "" {
+		existing, _ := u.userRepo.GetByNIC(ctx, req.NIC)
+		if existing != nil {
+			return nil, errors.New("user with this NIC number already exists")
+		}
 	}
 
 	hashedPassword, err := hasher.HashPassword(req.Password)
@@ -44,17 +76,28 @@ func (u *authUseCase) Register(ctx context.Context, req domain.RegisterRequest) 
 	}
 
 	user := &domain.User{
-		FullName:     req.FullName,
-		Email:        req.Email,
-		PasswordHash: hashedPassword,
-		Phone:        req.Phone,
+		FullName:       req.FullName,
+		Email:          req.Email,
+		NIC:            req.NIC,
+		PasswordHash:   hashedPassword,
+		Role:           role,
+		Phone:          req.Phone,
+		ShopName:       req.ShopName,
+		District:       req.District,
+		City:           req.City,
+		WhatsAppNumber: req.WhatsAppNumber,
 	}
 
 	if err := u.userRepo.CreateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
-	t, err := token.GenerateToken(user.ID, user.Email, u.jwtSecret, 7*24*time.Hour)
+	tokenSub := user.Email
+	if tokenSub == "" {
+		tokenSub = user.NIC
+	}
+
+	t, err := token.GenerateToken(user.ID, tokenSub, u.jwtSecret, 7*24*time.Hour)
 	if err != nil {
 		return nil, fmt.Errorf("failed generating token: %w", err)
 	}
@@ -66,16 +109,30 @@ func (u *authUseCase) Register(ctx context.Context, req domain.RegisterRequest) 
 }
 
 func (u *authUseCase) Login(ctx context.Context, req domain.LoginRequest) (*domain.AuthResponse, error) {
-	user, err := u.userRepo.GetByEmail(ctx, req.Email)
+	identifier := req.Identifier
+	if identifier == "" {
+		identifier = req.Email
+	}
+
+	if identifier == "" {
+		return nil, errors.New("email or NIC number is required")
+	}
+
+	user, err := u.userRepo.GetByIdentifier(ctx, identifier)
 	if err != nil {
-		return nil, errors.New("invalid email or password")
+		return nil, errors.New("invalid email/NIC or password")
 	}
 
 	if !hasher.CheckPassword(req.Password, user.PasswordHash) {
-		return nil, errors.New("invalid email or password")
+		return nil, errors.New("invalid email/NIC or password")
 	}
 
-	t, err := token.GenerateToken(user.ID, user.Email, u.jwtSecret, 7*24*time.Hour)
+	tokenSub := user.Email
+	if tokenSub == "" {
+		tokenSub = user.NIC
+	}
+
+	t, err := token.GenerateToken(user.ID, tokenSub, u.jwtSecret, 7*24*time.Hour)
 	if err != nil {
 		return nil, fmt.Errorf("failed generating token: %w", err)
 	}
