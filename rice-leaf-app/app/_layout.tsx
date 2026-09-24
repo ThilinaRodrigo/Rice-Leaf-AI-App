@@ -5,6 +5,8 @@ import { Stack } from "expo-router";
 import './global.css';
 import { AuthProvider } from "@/context/AuthContext";
 
+export { ErrorBoundary } from 'expo-router';
+
 export default function RootLayout() {
   return (
     <AuthProvider>

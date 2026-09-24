@@ -89,9 +89,17 @@ export default function RegisterScreen() {
     <SafeAreaView className="flex-1 bg-emerald-900">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 20}
         className="flex-1"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 py-4">
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 350 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={true}
+          className="px-6 py-4"
+        >
           {/* Top Bar */}
           <TouchableOpacity
             onPress={() => router.back()}
@@ -106,7 +114,7 @@ export default function RegisterScreen() {
           </Text>
 
           {/* Form Container Card */}
-          <View className="bg-white rounded-3xl p-6 shadow-2xl mb-8">
+          <View className="bg-white rounded-3xl p-6 mb-8">
             {/* Role Selection Segment */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-3">
               Select Your Role
@@ -115,7 +123,7 @@ export default function RegisterScreen() {
               <TouchableOpacity
                 onPress={() => setRole("farmer")}
                 className={`flex-1 py-3 rounded-xl flex-row items-center justify-center ${
-                  role === "farmer" ? "bg-emerald-600 shadow-sm" : ""
+                  role === "farmer" ? "bg-emerald-600" : ""
                 }`}
               >
                 <CheckCircle2
@@ -134,7 +142,7 @@ export default function RegisterScreen() {
               <TouchableOpacity
                 onPress={() => setRole("shop_owner")}
                 className={`flex-1 py-3 rounded-xl flex-row items-center justify-center ${
-                  role === "shop_owner" ? "bg-emerald-600 shadow-sm" : ""
+                  role === "shop_owner" ? "bg-emerald-600" : ""
                 }`}
               >
                 <Store
@@ -175,7 +183,7 @@ export default function RegisterScreen() {
 
             {/* NIC Number */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-              NIC Number {role === "farmer" ? "*" : "*"}
+              NIC Number *
             </Text>
             <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200 focus:border-emerald-600">
               <CreditCard size={20} color="#6b7280" />
@@ -305,7 +313,7 @@ export default function RegisterScreen() {
             <TouchableOpacity
               onPress={handleRegister}
               disabled={isLoading}
-              className="bg-emerald-600 py-4 rounded-2xl items-center shadow-md active:opacity-90 mt-2 mb-4"
+              className="bg-emerald-600 py-4 rounded-2xl items-center active:opacity-90 mt-2 mb-4"
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />

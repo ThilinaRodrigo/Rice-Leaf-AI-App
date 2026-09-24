@@ -40,9 +40,17 @@ export default function LoginScreen() {
     <SafeAreaView className="flex-1 bg-emerald-900">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 20}
         className="flex-1"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 py-4">
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 300 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={true}
+          className="px-6 py-4"
+        >
           {/* Top Bar */}
           <TouchableOpacity
             onPress={() => router.back()}
@@ -53,7 +61,7 @@ export default function LoginScreen() {
 
           {/* Branding Header */}
           <View className="items-center mb-8">
-            <View className="w-20 h-20 rounded-3xl bg-emerald-700/80 items-center justify-center mb-4 border border-emerald-500/30 shadow-lg">
+            <View className="w-20 h-20 rounded-3xl bg-emerald-700/80 items-center justify-center mb-4 border border-emerald-500/30">
               <Leaf size={42} color="#4ade80" />
             </View>
             <Text className="text-3xl font-extrabold text-white text-center">
@@ -65,7 +73,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Form Card */}
-          <View className="bg-white rounded-3xl p-6 shadow-2xl">
+          <View className="bg-white rounded-3xl p-6">
             <Text className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</Text>
             <Text className="text-gray-500 text-sm mb-6">
               Sign in with your Email Address or NIC Number
@@ -114,7 +122,7 @@ export default function LoginScreen() {
             <TouchableOpacity
               onPress={handleLogin}
               disabled={isLoading}
-              className="bg-emerald-600 py-4 rounded-2xl items-center shadow-md active:opacity-90 mb-4"
+              className="bg-emerald-600 py-4 rounded-2xl items-center active:opacity-90 mb-4"
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
