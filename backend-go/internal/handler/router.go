@@ -90,6 +90,9 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 				admin.POST("/products", rc.AdminHandler.CreateProduct)
 				admin.PUT("/products/:id", rc.AdminHandler.UpdateProduct)
 				admin.DELETE("/products/:id", rc.AdminHandler.DeleteProduct)
+				admin.POST("/diseases", rc.DiseaseHandler.CreateDisease)
+				admin.PUT("/diseases/:class_id", rc.DiseaseHandler.UpdateDisease)
+				admin.DELETE("/diseases/:class_id", rc.DiseaseHandler.DeleteDisease)
 			}
 		}
 	}

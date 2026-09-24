@@ -54,3 +54,26 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+
+export interface DiseaseFactor {
+  label: string;
+  value: string;
+  color: string;
+  icon: string;
+}
+
+export interface DiseaseAction {
+  title: string;
+  subtitle: string;
+}
+
+export interface Disease {
+  class_id: number;
+  key: string;
+  name: string;
+  category: string;
+  description: string;
+  factors: DiseaseFactor[];
+  actions: DiseaseAction[];
+  created_at?: string;
+}

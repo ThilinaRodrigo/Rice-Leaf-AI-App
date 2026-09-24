@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sync"
 
 	"backend-go/internal/domain"
 )
@@ -12,68 +13,153 @@ import (
 type DiseaseRepository interface {
 	GetAll(ctx context.Context) ([]domain.Disease, error)
 	GetByClassID(ctx context.Context, classID int) (*domain.Disease, error)
+	Create(ctx context.Context, disease *domain.Disease) error
+	Update(ctx context.Context, classID int, disease *domain.Disease) error
+	Delete(ctx context.Context, classID int) error
 }
 
 type diseaseRepository struct {
-	db *sql.DB
+	db          *sql.DB
+	memDiseases []domain.Disease
+	mu          sync.RWMutex
 }
 
 func NewDiseaseRepository(db *sql.DB) DiseaseRepository {
-	return &diseaseRepository{db: db}
+	return &diseaseRepository{
+		db:          db,
+		memDiseases: getFallbackDiseases(),
+	}
 }
 
 func (r *diseaseRepository) GetAll(ctx context.Context) ([]domain.Disease, error) {
-	if r.db == nil {
-		return getFallbackDiseases(), nil
-	}
-	query := `
-		SELECT class_id, key, name, category, description, factors, actions, created_at
-		FROM diseases
-		ORDER BY class_id ASC
-	`
-	rows, err := r.db.QueryContext(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("error querying diseases: %w", err)
-	}
-	defer rows.Close()
-
-	var diseases []domain.Disease
-	for rows.Next() {
-		var d domain.Disease
-		if err := rows.Scan(&d.ClassID, &d.Key, &d.Name, &d.Category, &d.Description, &d.Factors, &d.Actions, &d.CreatedAt); err != nil {
-			return nil, err
+	if r.db != nil {
+		query := `
+			SELECT class_id, key, name, category, description, factors, actions, created_at
+			FROM diseases
+			ORDER BY class_id ASC
+		`
+		rows, err := r.db.QueryContext(ctx, query)
+		if err == nil {
+			defer rows.Close()
+			var diseases []domain.Disease
+			for rows.Next() {
+				var d domain.Disease
+				if err := rows.Scan(&d.ClassID, &d.Key, &d.Name, &d.Category, &d.Description, &d.Factors, &d.Actions, &d.CreatedAt); err != nil {
+					return nil, err
+				}
+				diseases = append(diseases, d)
+			}
+			if len(diseases) > 0 {
+				return diseases, nil
+			}
 		}
-		diseases = append(diseases, d)
 	}
 
-	return diseases, nil
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.memDiseases, nil
 }
 
 func (r *diseaseRepository) GetByClassID(ctx context.Context, classID int) (*domain.Disease, error) {
-	if r.db == nil {
-		diseases := getFallbackDiseases()
-		for _, d := range diseases {
-			if d.ClassID == classID {
-				return &d, nil
-			}
+	if r.db != nil {
+		query := `
+			SELECT class_id, key, name, category, description, factors, actions, created_at
+			FROM diseases
+			WHERE class_id = $1
+		`
+		d := &domain.Disease{}
+		err := r.db.QueryRowContext(ctx, query, classID).
+			Scan(&d.ClassID, &d.Key, &d.Name, &d.Category, &d.Description, &d.Factors, &d.Actions, &d.CreatedAt)
+		if err == nil {
+			return d, nil
 		}
-		return nil, errors.New("disease not found")
 	}
-	query := `
-		SELECT class_id, key, name, category, description, factors, actions, created_at
-		FROM diseases
-		WHERE class_id = $1
-	`
-	d := &domain.Disease{}
-	err := r.db.QueryRowContext(ctx, query, classID).
-		Scan(&d.ClassID, &d.Key, &d.Name, &d.Category, &d.Description, &d.Factors, &d.Actions, &d.CreatedAt)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("disease not found")
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, d := range r.memDiseases {
+		if d.ClassID == classID {
+			return &d, nil
 		}
-		return nil, err
 	}
-	return d, nil
+	return nil, errors.New("disease not found")
+}
+
+func (r *diseaseRepository) Create(ctx context.Context, d *domain.Disease) error {
+	if len(d.Factors) == 0 {
+		d.Factors = []byte("[]")
+	}
+	if len(d.Actions) == 0 {
+		d.Actions = []byte("[]")
+	}
+
+	if r.db != nil {
+		query := `
+			INSERT INTO diseases (class_id, key, name, category, description, factors, actions)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+			RETURNING created_at
+		`
+		err := r.db.QueryRowContext(ctx, query, d.ClassID, d.Key, d.Name, d.Category, d.Description, d.Factors, d.Actions).Scan(&d.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("failed creating disease: %w", err)
+		}
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.memDiseases = append(r.memDiseases, *d)
+	return nil
+}
+
+func (r *diseaseRepository) Update(ctx context.Context, classID int, d *domain.Disease) error {
+	if len(d.Factors) == 0 {
+		d.Factors = []byte("[]")
+	}
+	if len(d.Actions) == 0 {
+		d.Actions = []byte("[]")
+	}
+
+	if r.db != nil {
+		query := `
+			UPDATE diseases
+			SET class_id = $1, key = $2, name = $3, category = $4, description = $5, factors = $6, actions = $7
+			WHERE class_id = $8
+		`
+		_, err := r.db.ExecContext(ctx, query, d.ClassID, d.Key, d.Name, d.Category, d.Description, d.Factors, d.Actions, classID)
+		if err != nil {
+			return fmt.Errorf("failed updating disease: %w", err)
+		}
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, existing := range r.memDiseases {
+		if existing.ClassID == classID {
+			r.memDiseases[i] = *d
+			break
+		}
+	}
+	return nil
+}
+
+func (r *diseaseRepository) Delete(ctx context.Context, classID int) error {
+	if r.db != nil {
+		_, err := r.db.ExecContext(ctx, "DELETE FROM diseases WHERE class_id = $1", classID)
+		if err != nil {
+			return fmt.Errorf("failed deleting disease: %w", err)
+		}
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var updated []domain.Disease
+	for _, existing := range r.memDiseases {
+		if existing.ClassID != classID {
+			updated = append(updated, existing)
+		}
+	}
+	r.memDiseases = updated
+	return nil
 }
 
 func getFallbackDiseases() []domain.Disease {

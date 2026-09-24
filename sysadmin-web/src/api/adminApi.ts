@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AdminStats, AdminScan, Product, User, AuthResponse } from '../types/admin';
+import type { AdminStats, AdminScan, Product, User, AuthResponse, Disease } from '../types/admin';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -88,4 +88,24 @@ export const updateProduct = async (id: string, product: Partial<Product>): Prom
 
 export const deleteProduct = async (id: string): Promise<void> => {
   await apiClient.delete(`/admin/products/${id}`);
+};
+
+// Disease Knowledge Base APIs
+export const fetchDiseases = async (): Promise<Disease[]> => {
+  const res = await apiClient.get<Disease[]>('/diseases');
+  return res.data;
+};
+
+export const createDisease = async (disease: Partial<Disease>): Promise<Disease> => {
+  const res = await apiClient.post<Disease>('/admin/diseases', disease);
+  return res.data;
+};
+
+export const updateDisease = async (classId: number, disease: Partial<Disease>): Promise<Disease> => {
+  const res = await apiClient.put<Disease>(`/admin/diseases/${classId}`, disease);
+  return res.data;
+};
+
+export const deleteDisease = async (classId: number): Promise<void> => {
+  await apiClient.delete(`/admin/diseases/${classId}`);
 };

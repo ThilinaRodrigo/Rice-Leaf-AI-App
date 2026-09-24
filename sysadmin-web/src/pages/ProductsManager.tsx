@@ -3,6 +3,7 @@ import { fetchProducts, createProduct, updateProduct, deleteProduct } from '../a
 import type { Product } from '../types/admin';
 import { Header } from '../components/Header';
 import { Plus, Edit2, Trash2, Search, X } from 'lucide-react';
+import { showConfirmDialog, showSuccessToast, showErrorAlert } from '../utils/swal';
 
 export const ProductsManager: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -65,12 +66,21 @@ export const ProductsManager: React.FC = () => {
   };
 
   const handleDelete = async (id: string, prodName: string) => {
-    if (!window.confirm(`Delete product "${prodName}"?`)) return;
+    const confirmed = await showConfirmDialog({
+      title: 'Delete Product Listing?',
+      text: `Are you sure you want to delete product "${prodName}"? This action cannot be undone.`,
+      confirmButtonText: 'Yes, Delete Product',
+      cancelButtonText: 'Cancel',
+      icon: 'warning',
+    });
+    if (!confirmed) return;
+
     try {
       await deleteProduct(id);
       setProducts(products.filter((p) => p.id !== id));
-    } catch (err) {
-      alert('Failed deleting product');
+      showSuccessToast('Product deleted successfully');
+    } catch (err: any) {
+      showErrorAlert('Delete Failed', err.response?.data?.error || err.message || 'Failed deleting product.');
     }
   };
 
@@ -81,6 +91,17 @@ export const ProductsManager: React.FC = () => {
       return;
     }
 
+    const actionText = editingProduct ? 'update product' : 'create new product';
+    const confirmed = await showConfirmDialog({
+      title: editingProduct ? 'Save Product Changes?' : 'Create New Product?',
+      text: `Are you sure you want to ${actionText} "${name}"?`,
+      confirmButtonText: editingProduct ? 'Yes, Save Changes' : 'Yes, Create Product',
+      cancelButtonText: 'Cancel',
+      icon: 'question',
+    });
+    if (!confirmed) return;
+
+    setModalError('');
     try {
       const payload: Partial<Product> = {
         name,
@@ -101,8 +122,11 @@ export const ProductsManager: React.FC = () => {
 
       setShowModal(false);
       loadProducts();
+      showSuccessToast(editingProduct ? 'Product updated successfully' : 'Product created successfully');
     } catch (err: any) {
-      setModalError(err.response?.data?.error || err.message || 'Error saving product');
+      const msg = err.response?.data?.error || err.message || 'Error saving product';
+      setModalError(msg);
+      showErrorAlert('Save Failed', msg);
     }
   };
 

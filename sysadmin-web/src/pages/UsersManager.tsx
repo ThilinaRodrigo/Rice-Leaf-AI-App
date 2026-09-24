@@ -3,6 +3,7 @@ import { fetchAdminUsers, deleteUser, createSysAdminUser } from '../api/adminApi
 import type { User, UserRole } from '../types/admin';
 import { Header } from '../components/Header';
 import { Search, Trash2, UserPlus, ShieldAlert, Store, User as UserIcon, X } from 'lucide-react';
+import { showConfirmDialog, showSuccessToast, showErrorAlert } from '../utils/swal';
 
 export const UsersManager: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -31,12 +32,21 @@ export const UsersManager: React.FC = () => {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete user "${name}"?`)) return;
+    const confirmed = await showConfirmDialog({
+      title: 'Delete User Account?',
+      text: `Are you sure you want to delete user "${name}"? This action cannot be undone.`,
+      confirmButtonText: 'Yes, Delete User',
+      cancelButtonText: 'Cancel',
+      icon: 'warning',
+    });
+    if (!confirmed) return;
+
     try {
       await deleteUser(id);
       setUsers(users.filter((u) => u.id !== id));
-    } catch (err) {
-      alert('Failed deleting user');
+      showSuccessToast('User account deleted successfully');
+    } catch (err: any) {
+      showErrorAlert('Delete Failed', err.response?.data?.error || err.message || 'Failed deleting user account.');
     }
   };
 
@@ -46,6 +56,16 @@ export const UsersManager: React.FC = () => {
       setModalError('Please fill in all fields.');
       return;
     }
+
+    const confirmed = await showConfirmDialog({
+      title: 'Create System Administrator?',
+      text: `Are you sure you want to create a new SysAdmin account for "${adminName}" (${adminEmail})?`,
+      confirmButtonText: 'Yes, Create Admin',
+      cancelButtonText: 'Cancel',
+      icon: 'question',
+    });
+    if (!confirmed) return;
+
     setModalError('');
     setModalSubmitting(true);
     try {
@@ -59,8 +79,11 @@ export const UsersManager: React.FC = () => {
       setAdminEmail('');
       setAdminPassword('');
       loadUsers();
+      showSuccessToast('System Administrator created successfully');
     } catch (err: any) {
-      setModalError(err.response?.data?.error || err.message || 'Failed creating SysAdmin');
+      const msg = err.response?.data?.error || err.message || 'Failed creating SysAdmin';
+      setModalError(msg);
+      showErrorAlert('Creation Failed', msg);
     } finally {
       setModalSubmitting(false);
     }
