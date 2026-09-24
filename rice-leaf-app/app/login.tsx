@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { UserCheck, Lock, ArrowLeft, Leaf, ShieldCheck } from "lucide-react-native";
+import { UserCheck, Lock, ArrowLeft, Leaf, ShieldCheck, Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginScreen() {
@@ -19,6 +19,7 @@ export default function LoginScreen() {
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleLogin = async () => {
@@ -113,9 +114,16 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••"
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 className="ml-3 flex-1 text-gray-900 text-base"
               />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="p-1">
+                {showPassword ? (
+                  <EyeOff size={20} color="#6b7280" />
+                ) : (
+                  <Eye size={20} color="#6b7280" />
+                )}
+              </TouchableOpacity>
             </View>
 
             {/* Submit Button */}

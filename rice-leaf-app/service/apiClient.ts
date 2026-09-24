@@ -254,3 +254,23 @@ export const fetchUserProfile = async (userToken: string) => {
   }
   return data;
 };
+
+export const changePassword = async (currentPassword: string, newPassword: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to change password");
+  }
+  return data;
+};

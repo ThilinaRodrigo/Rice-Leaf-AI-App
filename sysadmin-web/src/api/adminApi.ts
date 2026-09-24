@@ -29,6 +29,17 @@ export const fetchAdminProfile = async (): Promise<User> => {
   return res.data;
 };
 
+export const changePassword = async (
+  currentPass: string,
+  newPass: string
+): Promise<{ message: string }> => {
+  const res = await apiClient.put<{ message: string }>('/auth/change-password', {
+    current_password: currentPass,
+    new_password: newPass,
+  });
+  return res.data;
+};
+
 // Admin Management APIs
 export const fetchAdminStats = async (): Promise<AdminStats> => {
   const res = await apiClient.get<AdminStats>('/admin/stats');

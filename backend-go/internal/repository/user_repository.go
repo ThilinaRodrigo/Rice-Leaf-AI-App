@@ -20,6 +20,7 @@ type UserRepository interface {
 	GetByNIC(ctx context.Context, nic string) (*domain.User, error)
 	GetByIdentifier(ctx context.Context, identifier string) (*domain.User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
+	UpdatePassword(ctx context.Context, id uuid.UUID, newPasswordHash string) error
 }
 
 type userRepository struct {
@@ -198,4 +199,22 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 	}
 
 	return nil, errors.New("user not found")
+}
+
+func (r *userRepository) UpdatePassword(ctx context.Context, id uuid.UUID, newPasswordHash string) error {
+	if r.db != nil {
+		query := `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`
+		_, err := r.db.ExecContext(ctx, query, newPasswordHash, id)
+		if err != nil {
+			return fmt.Errorf("failed updating password in db: %w", err)
+		}
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if mem, ok := r.memUsers[id.String()]; ok {
+		mem.PasswordHash = newPasswordHash
+		mem.UpdatedAt = time.Now()
+	}
+	return nil
 }

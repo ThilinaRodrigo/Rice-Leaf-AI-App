@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, ActivityIndicator } from "react-native";
 import {
   ArrowLeft,
   User as UserIcon,
@@ -11,12 +11,60 @@ import {
   LogIn,
   UserPlus,
   ShieldCheck,
+  Key,
+  Lock,
+  X,
+  Eye,
+  EyeOff,
 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
+import { changePassword } from "@/service/apiClient";
 
 const Profile = () => {
-  const { user, logout } = useAuth();
+  const { user, userToken, logout } = useAuth();
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setErrorMsg("Please fill in all password fields.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("New passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setErrorMsg("New password must be at least 6 characters.");
+      return;
+    }
+
+    if (!userToken) return;
+
+    setErrorMsg("");
+    setLoading(true);
+    try {
+      await changePassword(currentPassword, newPassword, userToken);
+      setShowPasswordModal(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      Alert.alert("Success", "Your password has been changed successfully!");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to change password");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ScrollView className="flex-1 bg-gray-100">
@@ -132,6 +180,17 @@ const Profile = () => {
               )}
             </View>
 
+            {/* Change Password Button */}
+            <TouchableOpacity
+              onPress={() => setShowPasswordModal(true)}
+              className="bg-white border border-emerald-200 px-5 py-4 rounded-2xl shadow-sm flex-row items-center justify-center w-full mb-3 active:opacity-80"
+            >
+              <Key size={20} color="#059669" />
+              <Text className="text-emerald-700 font-bold text-base ml-2">
+                Change Password
+              </Text>
+            </TouchableOpacity>
+
             {/* Logout Action */}
             <TouchableOpacity
               onPress={logout}
@@ -171,6 +230,125 @@ const Profile = () => {
           </View>
         )}
       </View>
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={showPasswordModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPasswordModal(false)}
+      >
+        <View className="flex-1 bg-black/60 items-center justify-center p-4">
+          <View className="bg-white w-full max-w-md p-6 rounded-3xl shadow-xl relative">
+            <TouchableOpacity
+              onPress={() => setShowPasswordModal(false)}
+              className="absolute top-4 right-4 p-1 text-gray-400"
+            >
+              <X size={22} color="#6b7280" />
+            </TouchableOpacity>
+
+            <View className="flex-row items-center mb-1">
+              <Key size={22} color="#059669" />
+              <Text className="text-xl font-bold text-gray-900 ml-2">
+                Change Password
+              </Text>
+            </View>
+            <Text className="text-xs text-gray-500 mb-5">
+              Enter your current password and a new secure password.
+            </Text>
+
+            {errorMsg ? (
+              <View className="bg-red-50 border border-red-200 p-3 rounded-xl mb-4">
+                <Text className="text-red-600 text-xs font-semibold text-center">
+                  {errorMsg}
+                </Text>
+              </View>
+            ) : null}
+
+            {/* Current Password Input */}
+            <View className="mb-4">
+              <Text className="text-xs font-bold text-gray-600 uppercase mb-1">
+                Current Password
+              </Text>
+              <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
+                <Lock size={18} color="#9ca3af" />
+                <TextInput
+                  secureTextEntry={!showCurrent}
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  placeholder="••••••••"
+                  className="flex-1 ml-2 text-gray-900 text-sm"
+                />
+                <TouchableOpacity onPress={() => setShowCurrent(!showCurrent)} className="p-1">
+                  {showCurrent ? <EyeOff size={18} color="#6b7280" /> : <Eye size={18} color="#6b7280" />}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* New Password Input */}
+            <View className="mb-4">
+              <Text className="text-xs font-bold text-gray-600 uppercase mb-1">
+                New Password (min 6 chars)
+              </Text>
+              <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
+                <Lock size={18} color="#9ca3af" />
+                <TextInput
+                  secureTextEntry={!showNew}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  placeholder="••••••••"
+                  className="flex-1 ml-2 text-gray-900 text-sm"
+                />
+                <TouchableOpacity onPress={() => setShowNew(!showNew)} className="p-1">
+                  {showNew ? <EyeOff size={18} color="#6b7280" /> : <Eye size={18} color="#6b7280" />}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Confirm New Password Input */}
+            <View className="mb-6">
+              <Text className="text-xs font-bold text-gray-600 uppercase mb-1">
+                Confirm New Password
+              </Text>
+              <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
+                <Lock size={18} color="#9ca3af" />
+                <TextInput
+                  secureTextEntry={!showConfirm}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="••••••••"
+                  className="flex-1 ml-2 text-gray-900 text-sm"
+                />
+                <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} className="p-1">
+                  {showConfirm ? <EyeOff size={18} color="#6b7280" /> : <Eye size={18} color="#6b7280" />}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Actions */}
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                onPress={() => setShowPasswordModal(false)}
+                className="flex-1 bg-gray-100 py-3 rounded-xl items-center"
+              >
+                <Text className="font-bold text-gray-700 text-sm">Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleChangePassword}
+                disabled={loading}
+                className="flex-1 bg-emerald-600 py-3 rounded-xl items-center shadow-md active:opacity-90"
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text className="font-bold text-white text-sm">Save Password</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };

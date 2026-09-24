@@ -44,6 +44,7 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 			auth.POST("/register", rc.AuthHandler.Register)
 			auth.POST("/login", rc.AuthHandler.Login)
 			auth.GET("/me", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.AuthHandler.GetProfile)
+			auth.PUT("/change-password", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.AuthHandler.ChangePassword)
 		}
 
 		// Scans & Diagnosis Routes

@@ -22,6 +22,8 @@ import {
   ArrowLeft,
   CheckCircle2,
   CreditCard,
+  Eye,
+  EyeOff,
 } from "lucide-react-native";
 import { useAuth, UserRole } from "@/context/AuthContext";
 
@@ -33,6 +35,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [nic, setNic] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
 
   // Shop Owner fields
@@ -222,9 +225,16 @@ export default function RegisterScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••"
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 className="ml-3 flex-1 text-gray-900 text-base"
               />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="p-1">
+                {showPassword ? (
+                  <EyeOff size={20} color="#6b7280" />
+                ) : (
+                  <Eye size={20} color="#6b7280" />
+                )}
+              </TouchableOpacity>
             </View>
 
             {/* Phone Number */}

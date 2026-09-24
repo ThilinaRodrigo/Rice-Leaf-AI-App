@@ -18,6 +18,7 @@ type AuthUseCase interface {
 	Register(ctx context.Context, req domain.RegisterRequest) (*domain.AuthResponse, error)
 	Login(ctx context.Context, req domain.LoginRequest) (*domain.AuthResponse, error)
 	GetProfile(ctx context.Context, userID uuid.UUID) (*domain.User, error)
+	ChangePassword(ctx context.Context, userID uuid.UUID, req domain.ChangePasswordRequest) error
 }
 
 type authUseCase struct {
@@ -145,4 +146,30 @@ func (u *authUseCase) Login(ctx context.Context, req domain.LoginRequest) (*doma
 
 func (u *authUseCase) GetProfile(ctx context.Context, userID uuid.UUID) (*domain.User, error) {
 	return u.userRepo.GetByID(ctx, userID)
+}
+
+func (u *authUseCase) ChangePassword(ctx context.Context, userID uuid.UUID, req domain.ChangePasswordRequest) error {
+	if req.CurrentPassword == "" || req.NewPassword == "" {
+		return errors.New("current password and new password are required")
+	}
+
+	if len(req.NewPassword) < 6 {
+		return errors.New("new password must be at least 6 characters long")
+	}
+
+	user, err := u.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	if !hasher.CheckPassword(req.CurrentPassword, user.PasswordHash) {
+		return errors.New("current password is incorrect")
+	}
+
+	newHash, err := hasher.HashPassword(req.NewPassword)
+	if err != nil {
+		return fmt.Errorf("failed hashing new password: %w", err)
+	}
+
+	return u.userRepo.UpdatePassword(ctx, userID, newHash)
 }
