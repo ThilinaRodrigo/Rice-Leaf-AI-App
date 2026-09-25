@@ -23,7 +23,7 @@ import { useAuth } from "@/context/AuthContext";
 import { changePassword } from "@/service/apiClient";
 
 const Profile = () => {
-  const { user, userToken, logout } = useAuth();
+  const { user, token, logout } = useAuth();
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -49,12 +49,12 @@ const Profile = () => {
       return;
     }
 
-    if (!userToken) return;
+    if (!token) return;
 
     setErrorMsg("");
     setLoading(true);
     try {
-      await changePassword(currentPassword, newPassword, userToken);
+      await changePassword(currentPassword, newPassword, token);
       setShowPasswordModal(false);
       setCurrentPassword("");
       setNewPassword("");

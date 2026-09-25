@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -62,8 +63,12 @@ export default function LoginScreen() {
 
           {/* Branding Header */}
           <View className="items-center mb-8">
-            <View className="w-20 h-20 rounded-3xl bg-emerald-700/80 items-center justify-center mb-4 border border-emerald-500/30">
-              <Leaf size={42} color="#4ade80" />
+            <View className="w-24 h-24 rounded-3xl bg-emerald-950/80 items-center justify-center mb-3 border border-emerald-500/30 overflow-hidden p-2">
+              <Image
+                source={require("@/assets/images/logo.png")}
+                className="w-full h-full"
+                resizeMode="contain"
+              />
             </View>
             <Text className="text-3xl font-extrabold text-white text-center">
               Rice Leaf AI

@@ -12,6 +12,8 @@ export default function RootLayout() {
     <AuthProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="camera" options={{ animation: "slide_from_bottom" }} />
+        <Stack.Screen name="shop-ads" />
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
       </Stack>

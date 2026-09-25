@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -111,10 +112,21 @@ export default function RegisterScreen() {
             <ArrowLeft size={20} color="#fff" />
           </TouchableOpacity>
 
-          <Text className="text-3xl font-extrabold text-white mb-1">Create Account</Text>
-          <Text className="text-emerald-200 text-sm mb-6">
-            Join the Sri Lanka Rice Leaf AI & Agrochemical Network
-          </Text>
+          <View className="flex-row items-center mb-4 space-x-3">
+            <View className="w-14 h-14 rounded-2xl bg-emerald-950/80 items-center justify-center border border-emerald-500/30 overflow-hidden p-1.5">
+              <Image
+                source={require("@/assets/images/logo.png")}
+                className="w-full h-full"
+                resizeMode="contain"
+              />
+            </View>
+            <View>
+              <Text className="text-2xl font-extrabold text-white">Create Account</Text>
+              <Text className="text-emerald-200 text-xs">
+                Rice Leaf AI & Agrochemical Network
+              </Text>
+            </View>
+          </View>
 
           {/* Form Container Card */}
           <View className="bg-white rounded-3xl p-6 mb-8">
