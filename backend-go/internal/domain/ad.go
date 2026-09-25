@@ -19,6 +19,7 @@ type Ad struct {
 	ShopName        string          `json:"shop_name"`
 	ContactPhone    string          `json:"contact_phone"`
 	Title           string          `json:"title"`
+	Category        string          `json:"category"`
 	Description     string          `json:"description"`
 	PriceUnit       string          `json:"price_unit"`
 	ImageURL        string          `json:"image_url"`

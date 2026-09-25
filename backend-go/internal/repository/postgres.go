@@ -103,6 +103,7 @@ func InitTablesAndSeeds(db *sql.DB) error {
 		shop_name VARCHAR(150) NOT NULL,
 		contact_phone VARCHAR(30) NOT NULL,
 		title VARCHAR(200) NOT NULL,
+		category VARCHAR(100) NOT NULL DEFAULT 'Fungicides & Remedies',
 		description TEXT NOT NULL,
 		price_unit VARCHAR(100),
 		image_url TEXT NOT NULL,
@@ -112,6 +113,8 @@ func InitTablesAndSeeds(db *sql.DB) error {
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 	);
+
+	ALTER TABLE shop_ads ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT 'Fungicides & Remedies';
 	`
 
 	_, err := db.Exec(schema)

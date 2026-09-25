@@ -167,6 +167,7 @@ export const ProductsManager: React.FC = () => {
               className="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-300 focus:outline-none focus:border-emerald-500"
             >
               <option value="All">All Categories</option>
+              <option value="Fungicides & Remedies">Fungicides & Remedies</option>
               <option value="Seeds">Seeds</option>
               <option value="Fertilizers">Fertilizers</option>
               <option value="Sprayers">Sprayers</option>
@@ -286,6 +287,7 @@ export const ProductsManager: React.FC = () => {
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
                   >
+                    <option value="Fungicides & Remedies">Fungicides & Remedies</option>
                     <option value="Seeds">Seeds</option>
                     <option value="Fertilizers">Fertilizers</option>
                     <option value="Sprayers">Sprayers</option>

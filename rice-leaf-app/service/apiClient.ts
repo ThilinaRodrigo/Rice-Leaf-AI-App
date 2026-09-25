@@ -397,6 +397,7 @@ export const createShopAd = async (
     shop_name: string;
     contact_phone: string;
     title: string;
+    category?: string;
     description: string;
     price_unit: string;
     image_url: string;
@@ -426,6 +427,7 @@ export const updateShopAd = async (
     shop_name: string;
     contact_phone: string;
     title: string;
+    category?: string;
     description: string;
     price_unit: string;
     image_url: string;

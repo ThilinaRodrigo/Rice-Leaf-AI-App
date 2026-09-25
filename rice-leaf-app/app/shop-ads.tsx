@@ -38,6 +38,14 @@ const DISEASE_OPTIONS = [
   { key: "healthy", label: "Healthy Leaf" },
 ];
 
+const CATEGORY_OPTIONS = [
+  "Fungicides & Remedies",
+  "Fertilizers",
+  "Seeds",
+  "Sprayers",
+  "Tools",
+];
+
 export default function ShopAdsScreen() {
   const { user, token } = useAuth();
   const [ads, setAds] = useState<any[]>([]);
@@ -47,6 +55,7 @@ export default function ShopAdsScreen() {
   const [showModal, setShowModal] = useState(false);
   const [editingAdId, setEditingAdId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("Fungicides & Remedies");
   const [description, setDescription] = useState("");
   const [priceUnit, setPriceUnit] = useState("");
   const [contactPhone, setContactPhone] = useState(user?.phone || user?.whatsapp_number || "");
@@ -74,6 +83,7 @@ export default function ShopAdsScreen() {
   const handleOpenCreateModal = () => {
     setEditingAdId(null);
     setTitle("");
+    setCategory("Fungicides & Remedies");
     setDescription("");
     setPriceUnit("");
     setContactPhone(user?.phone || user?.whatsapp_number || "");
@@ -85,6 +95,7 @@ export default function ShopAdsScreen() {
   const handleOpenEditModal = (ad: any) => {
     setEditingAdId(ad.id);
     setTitle(ad.title || "");
+    setCategory(ad.category || "Fungicides & Remedies");
     setDescription(ad.description || "");
     setPriceUnit(ad.price_unit || "");
     setContactPhone(ad.contact_phone || user?.phone || user?.whatsapp_number || "");
@@ -150,6 +161,7 @@ export default function ShopAdsScreen() {
         shop_name: user?.shop_name || user?.full_name || "Agro Shop Owner",
         contact_phone: contactPhone || "+94 77 123 4567",
         title,
+        category,
         description,
         price_unit: priceUnit,
         image_url: finalImagePath,
@@ -175,6 +187,7 @@ export default function ShopAdsScreen() {
       setShowModal(false);
       setEditingAdId(null);
       setTitle("");
+      setCategory("Fungicides & Remedies");
       setDescription("");
       setPriceUnit("");
       setSelectedTags([]);
@@ -313,7 +326,14 @@ export default function ShopAdsScreen() {
                       </View>
                     </View>
 
-                    <Text className="text-lg font-bold text-gray-900">{ad.title}</Text>
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-lg font-bold text-gray-900 flex-1 mr-2">{ad.title}</Text>
+                      {ad.category && (
+                        <View className="bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                          <Text className="text-[11px] font-bold text-emerald-700">{ad.category}</Text>
+                        </View>
+                      )}
+                    </View>
                     {ad.price_unit ? <Text className="text-emerald-600 font-bold text-sm">{ad.price_unit}</Text> : null}
                     <Text className="text-xs text-gray-600 leading-relaxed">{ad.description}</Text>
 
@@ -395,6 +415,29 @@ export default function ShopAdsScreen() {
                   placeholder="e.g. Copper Fungicide for BLB Control"
                   className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900"
                 />
+              </View>
+
+              {/* Product Category */}
+              <View>
+                <Text className="text-xs font-bold text-gray-500 uppercase mb-2">Product Category *</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {CATEGORY_OPTIONS.map((cat) => {
+                    const isSelected = category === cat;
+                    return (
+                      <TouchableOpacity
+                        key={cat}
+                        onPress={() => setCategory(cat)}
+                        className={`px-3 py-2 rounded-xl border ${
+                          isSelected ? "bg-emerald-600 border-emerald-600" : "bg-gray-100 border-gray-200"
+                        }`}
+                      >
+                        <Text className={`text-xs font-semibold ${isSelected ? "text-white" : "text-gray-700"}`}>
+                          {cat}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
 
               {/* Price */}

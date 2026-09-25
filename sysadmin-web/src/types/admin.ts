@@ -92,6 +92,7 @@ export interface ShopAd {
   shop_name: string;
   contact_phone: string;
   title: string;
+  category?: string;
   description: string;
   price_unit: string;
   image_url: string;

@@ -9,6 +9,7 @@ export const AdsManager: React.FC = () => {
   const [ads, setAds] = useState<ShopAd[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+  const [categoryFilter, setCategoryFilter] = useState('All');
   const [loading, setLoading] = useState(false);
 
   const loadAds = async () => {
@@ -104,7 +105,8 @@ export const AdsManager: React.FC = () => {
       ad.title?.toLowerCase().includes(search.toLowerCase()) ||
       ad.shop_name?.toLowerCase().includes(search.toLowerCase()) ||
       ad.description?.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch;
+    const matchesCategory = categoryFilter === 'All' || ad.category === categoryFilter;
+    return matchesSearch && matchesCategory;
   });
 
   const pendingCount = safeAds.filter((a) => a?.status === 'pending').length;
@@ -174,15 +176,30 @@ export const AdsManager: React.FC = () => {
             </button>
           </div>
 
-          <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search ad title or shop name..."
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500"
-            />
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search ad title or shop name..."
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+            >
+              <option value="All">All Categories</option>
+              <option value="Fungicides & Remedies">Fungicides & Remedies</option>
+              <option value="Seeds">Seeds</option>
+              <option value="Fertilizers">Fertilizers</option>
+              <option value="Sprayers">Sprayers</option>
+              <option value="Tools">Tools</option>
+            </select>
           </div>
         </div>
 
@@ -257,11 +274,18 @@ export const AdsManager: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Title & Price */}
+                      {/* Title, Category & Price */}
                       <div>
-                        <h3 className="font-extrabold text-white text-base leading-snug mb-1">
-                          {ad.title}
-                        </h3>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <h3 className="font-extrabold text-white text-base leading-snug">
+                            {ad.title}
+                          </h3>
+                          {ad.category && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold shrink-0">
+                              {ad.category}
+                            </span>
+                          )}
+                        </div>
                         {ad.price_unit && (
                           <span className="text-sm font-black text-emerald-400 block">
                             {ad.price_unit}

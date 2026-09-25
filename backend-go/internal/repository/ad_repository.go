@@ -46,6 +46,9 @@ func (r *adRepository) CreateAd(ctx context.Context, ad *domain.Ad) error {
 	if ad.Status == "" {
 		ad.Status = domain.AdStatusPending
 	}
+	if ad.Category == "" {
+		ad.Category = "Fungicides & Remedies"
+	}
 	if len(ad.DiseaseTags) == 0 {
 		ad.DiseaseTags = []byte("[]")
 	}
@@ -54,11 +57,11 @@ func (r *adRepository) CreateAd(ctx context.Context, ad *domain.Ad) error {
 
 	if r.db != nil {
 		query := `
-			INSERT INTO shop_ads (id, shop_owner_id, shop_name, contact_phone, title, description, price_unit, image_url, disease_tags, status, rejection_reason, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			INSERT INTO shop_ads (id, shop_owner_id, shop_name, contact_phone, title, category, description, price_unit, image_url, disease_tags, status, rejection_reason, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		`
 		_, err := r.db.ExecContext(ctx, query,
-			ad.ID, ad.ShopOwnerID, ad.ShopName, ad.ContactPhone, ad.Title, ad.Description,
+			ad.ID, ad.ShopOwnerID, ad.ShopName, ad.ContactPhone, ad.Title, ad.Category, ad.Description,
 			ad.PriceUnit, ad.ImageURL, ad.DiseaseTags, ad.Status, ad.RejectionReason, ad.CreatedAt, ad.UpdatedAt,
 		)
 		if err != nil {
@@ -75,12 +78,12 @@ func (r *adRepository) CreateAd(ctx context.Context, ad *domain.Ad) error {
 func (r *adRepository) GetByID(ctx context.Context, id string) (*domain.Ad, error) {
 	if r.db != nil {
 		query := `
-			SELECT id, shop_owner_id, shop_name, contact_phone, title, description, price_unit, image_url, disease_tags, status, COALESCE(rejection_reason, ''), created_at, updated_at
+			SELECT id, shop_owner_id, shop_name, contact_phone, title, COALESCE(category, 'Fungicides & Remedies'), description, price_unit, image_url, disease_tags, status, COALESCE(rejection_reason, ''), created_at, updated_at
 			FROM shop_ads WHERE id = $1
 		`
 		ad := &domain.Ad{}
 		err := r.db.QueryRowContext(ctx, query, id).Scan(
-			&ad.ID, &ad.ShopOwnerID, &ad.ShopName, &ad.ContactPhone, &ad.Title, &ad.Description,
+			&ad.ID, &ad.ShopOwnerID, &ad.ShopName, &ad.ContactPhone, &ad.Title, &ad.Category, &ad.Description,
 			&ad.PriceUnit, &ad.ImageURL, &ad.DiseaseTags, &ad.Status, &ad.RejectionReason, &ad.CreatedAt, &ad.UpdatedAt,
 		)
 		if err == nil {
@@ -101,7 +104,7 @@ func (r *adRepository) GetByID(ctx context.Context, id string) (*domain.Ad, erro
 func (r *adRepository) GetByShopOwner(ctx context.Context, shopOwnerID string) ([]domain.Ad, error) {
 	if r.db != nil {
 		query := `
-			SELECT id, shop_owner_id, shop_name, contact_phone, title, description, price_unit, image_url, disease_tags, status, COALESCE(rejection_reason, ''), created_at, updated_at
+			SELECT id, shop_owner_id, shop_name, contact_phone, title, COALESCE(category, 'Fungicides & Remedies'), description, price_unit, image_url, disease_tags, status, COALESCE(rejection_reason, ''), created_at, updated_at
 			FROM shop_ads WHERE shop_owner_id = $1 ORDER BY created_at DESC
 		`
 		rows, err := r.db.QueryContext(ctx, query, shopOwnerID)
@@ -111,7 +114,7 @@ func (r *adRepository) GetByShopOwner(ctx context.Context, shopOwnerID string) (
 			for rows.Next() {
 				var a domain.Ad
 				if err := rows.Scan(
-					&a.ID, &a.ShopOwnerID, &a.ShopName, &a.ContactPhone, &a.Title, &a.Description,
+					&a.ID, &a.ShopOwnerID, &a.ShopName, &a.ContactPhone, &a.Title, &a.Category, &a.Description,
 					&a.PriceUnit, &a.ImageURL, &a.DiseaseTags, &a.Status, &a.RejectionReason, &a.CreatedAt, &a.UpdatedAt,
 				); err == nil {
 					ads = append(ads, a)
@@ -135,7 +138,7 @@ func (r *adRepository) GetByShopOwner(ctx context.Context, shopOwnerID string) (
 func (r *adRepository) GetApprovedAds(ctx context.Context, diseaseTag string) ([]domain.Ad, error) {
 	if r.db != nil {
 		query := `
-			SELECT id, shop_owner_id, shop_name, contact_phone, title, description, price_unit, image_url, disease_tags, status, COALESCE(rejection_reason, ''), created_at, updated_at
+			SELECT id, shop_owner_id, shop_name, contact_phone, title, COALESCE(category, 'Fungicides & Remedies'), description, price_unit, image_url, disease_tags, status, COALESCE(rejection_reason, ''), created_at, updated_at
 			FROM shop_ads WHERE status = 'approved'
 		`
 		args := []interface{}{}
@@ -152,7 +155,7 @@ func (r *adRepository) GetApprovedAds(ctx context.Context, diseaseTag string) ([
 			for rows.Next() {
 				var a domain.Ad
 				if err := rows.Scan(
-					&a.ID, &a.ShopOwnerID, &a.ShopName, &a.ContactPhone, &a.Title, &a.Description,
+					&a.ID, &a.ShopOwnerID, &a.ShopName, &a.ContactPhone, &a.Title, &a.Category, &a.Description,
 					&a.PriceUnit, &a.ImageURL, &a.DiseaseTags, &a.Status, &a.RejectionReason, &a.CreatedAt, &a.UpdatedAt,
 				); err == nil {
 					ads = append(ads, a)
@@ -183,7 +186,7 @@ func (r *adRepository) GetApprovedAds(ctx context.Context, diseaseTag string) ([
 func (r *adRepository) GetAllAdsForAdmin(ctx context.Context, status string) ([]domain.Ad, error) {
 	if r.db != nil {
 		query := `
-			SELECT id, shop_owner_id, shop_name, contact_phone, title, description, price_unit, image_url, disease_tags, status, COALESCE(rejection_reason, ''), created_at, updated_at
+			SELECT id, shop_owner_id, shop_name, contact_phone, title, COALESCE(category, 'Fungicides & Remedies'), description, price_unit, image_url, disease_tags, status, COALESCE(rejection_reason, ''), created_at, updated_at
 			FROM shop_ads
 		`
 		args := []interface{}{}
@@ -200,7 +203,7 @@ func (r *adRepository) GetAllAdsForAdmin(ctx context.Context, status string) ([]
 			for rows.Next() {
 				var a domain.Ad
 				if err := rows.Scan(
-					&a.ID, &a.ShopOwnerID, &a.ShopName, &a.ContactPhone, &a.Title, &a.Description,
+					&a.ID, &a.ShopOwnerID, &a.ShopName, &a.ContactPhone, &a.Title, &a.Category, &a.Description,
 					&a.PriceUnit, &a.ImageURL, &a.DiseaseTags, &a.Status, &a.RejectionReason, &a.CreatedAt, &a.UpdatedAt,
 				); err == nil {
 					ads = append(ads, a)
@@ -226,15 +229,18 @@ func (r *adRepository) UpdateAd(ctx context.Context, ad *domain.Ad) error {
 	ad.UpdatedAt = time.Now()
 	ad.Status = domain.AdStatusPending
 	ad.RejectionReason = ""
+	if ad.Category == "" {
+		ad.Category = "Fungicides & Remedies"
+	}
 
 	if r.db != nil {
 		query := `
 			UPDATE shop_ads 
-			SET title = $1, description = $2, price_unit = $3, contact_phone = $4, image_url = $5, disease_tags = $6, status = $7, rejection_reason = $8, updated_at = $9
-			WHERE id = $10 AND shop_owner_id = $11
+			SET title = $1, category = $2, description = $3, price_unit = $4, contact_phone = $5, image_url = $6, disease_tags = $7, status = $8, rejection_reason = $9, updated_at = $10
+			WHERE id = $11 AND shop_owner_id = $12
 		`
 		_, err := r.db.ExecContext(ctx, query,
-			ad.Title, ad.Description, ad.PriceUnit, ad.ContactPhone, ad.ImageURL, ad.DiseaseTags,
+			ad.Title, ad.Category, ad.Description, ad.PriceUnit, ad.ContactPhone, ad.ImageURL, ad.DiseaseTags,
 			ad.Status, ad.RejectionReason, ad.UpdatedAt, ad.ID, ad.ShopOwnerID,
 		)
 		if err != nil {
@@ -247,6 +253,7 @@ func (r *adRepository) UpdateAd(ctx context.Context, ad *domain.Ad) error {
 	for i, a := range r.memAds {
 		if a.ID == ad.ID && a.ShopOwnerID == ad.ShopOwnerID {
 			r.memAds[i].Title = ad.Title
+			r.memAds[i].Category = ad.Category
 			r.memAds[i].Description = ad.Description
 			r.memAds[i].PriceUnit = ad.PriceUnit
 			r.memAds[i].ContactPhone = ad.ContactPhone
@@ -323,6 +330,7 @@ func getFallbackAds() []domain.Ad {
 			ShopName:     "Polonnaruwa Agrarian Center",
 			ContactPhone: "+94 77 123 4567",
 			Title:        "Bactericide Copper Hydroxide (BLB Control)",
+			Category:     "Fungicides & Remedies",
 			Description:  "Effective bactericide recommended for early Bacterial Leaf Blight control in Rice fields.",
 			PriceUnit:    "Rs.1,450 / 500g",
 			ImageURL:     "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60",
@@ -337,6 +345,7 @@ func getFallbackAds() []domain.Ad {
 			ShopName:     "Kurunegala Paddy Supplies",
 			ContactPhone: "+94 71 987 6543",
 			Title:        "Potash & Organic Bio-Fertilizer",
+			Category:     "Fertilizers",
 			Description:  "High quality Potash mix to treat Brown Spot and nutrient deficiency in paddy soil.",
 			PriceUnit:    "Rs.2,100 / 5kg",
 			ImageURL:     "https://images.unsplash.com/photo-1587316745629-1a81c7b54e9b?auto=format&fit=crop&w=500&q=60",
@@ -351,6 +360,7 @@ func getFallbackAds() []domain.Ad {
 			ShopName:     "Polonnaruwa Agrarian Center",
 			ContactPhone: "+94 77 123 4567",
 			Title:        "Knapsack Battery Sprayer 16L",
+			Category:     "Sprayers",
 			Description:  "Rechargeable battery sprayer with 4 adjustable nozzles for quick foliar application.",
 			PriceUnit:    "Rs.14,500",
 			ImageURL:     "https://images.unsplash.com/photo-1606312611231-1d6e0f51e3f1?auto=format&fit=crop&w=500&q=60",
