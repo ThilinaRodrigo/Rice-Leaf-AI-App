@@ -5,7 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  MessageCircle,
+  ShoppingBag,
+  User,
+  Image as ImageIcon,
+  RefreshCw,
+} from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { useState } from "react";
 import { useImagePicker } from "@/hooks/useImagePicker";
@@ -48,29 +54,36 @@ export default function Index() {
 
       {/* Top Floating Buttons */}
       <View style={styles.topButtons}>
-        <BlurView intensity={50} tint="dark" style={styles.glassButton}>
-          <Ionicons name="chatbubble-outline" size={26} color="white" onPress={handleNavigateChat} />
-        </BlurView>
+        <TouchableOpacity onPress={handleNavigateChat} activeOpacity={0.8}>
+          <BlurView intensity={60} tint="dark" style={styles.glassButton}>
+            <MessageCircle size={24} color="#ffffff" />
+          </BlurView>
+        </TouchableOpacity>
 
         <View style={styles.topMiddleButtons}>
-          <BlurView intensity={50} tint="dark" style={styles.glassButton}>
-            <Ionicons name="bag-outline" size={26} color="white" onPress={handleNavigateMarket} />
-          </BlurView>
-          <BlurView intensity={50} tint="dark" style={styles.glassButton}>
-            <Ionicons name="person-outline" size={26} color="white" onPress={handleNavigateProfile} />
-          </BlurView>
+          <TouchableOpacity onPress={handleNavigateMarket} activeOpacity={0.8}>
+            <BlurView intensity={60} tint="dark" style={styles.glassButton}>
+              <ShoppingBag size={24} color="#ffffff" />
+            </BlurView>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleNavigateProfile} activeOpacity={0.8}>
+            <BlurView intensity={60} tint="dark" style={styles.glassButton}>
+              <User size={24} color="#ffffff" />
+            </BlurView>
+          </TouchableOpacity>
         </View>
       </View>
 
       {/* Bottom Controls */}
       <View style={styles.bottomControls}>
         {/* Gallery */}
-        <TouchableOpacity onPress={handleOpenGallery} style={styles.controlButton}>
-          <Ionicons name="images-outline" size={32} color="white" />
+        <TouchableOpacity onPress={handleOpenGallery} style={styles.controlButton} activeOpacity={0.8}>
+          <ImageIcon size={28} color="#ffffff" />
         </TouchableOpacity>
 
         {/* Shutter */}
-        <TouchableOpacity onPress={capturePhoto} style={styles.shutterButton}>
+        <TouchableOpacity onPress={capturePhoto} style={styles.shutterButton} activeOpacity={0.8}>
           <View style={styles.innerShutter} />
         </TouchableOpacity>
 
@@ -78,8 +91,9 @@ export default function Index() {
         <TouchableOpacity
           onPress={() => setFacing(facing === "back" ? "front" : "back")}
           style={styles.controlButton}
+          activeOpacity={0.8}
         >
-          <Ionicons name="camera-reverse-outline" size={32} color="white" />
+          <RefreshCw size={26} color="#ffffff" />
         </TouchableOpacity>
       </View>
     </View>

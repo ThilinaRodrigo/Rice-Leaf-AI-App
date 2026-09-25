@@ -82,6 +82,9 @@ func (h *AdminHandler) GetAllScans(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	if scans == nil {
+		scans = []repository.AdminScan{}
+	}
 	c.JSON(http.StatusOK, scans)
 }
 
