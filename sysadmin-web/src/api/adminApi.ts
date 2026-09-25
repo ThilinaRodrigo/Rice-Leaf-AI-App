@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AdminStats, AdminScan, Product, User, AuthResponse, Disease } from '../types/admin';
+import type { AdminStats, AdminScan, Product, User, AuthResponse, Disease, ShopAd } from '../types/admin';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -108,4 +108,23 @@ export const updateDisease = async (classId: number, disease: Partial<Disease>):
 
 export const deleteDisease = async (classId: number): Promise<void> => {
   await apiClient.delete(`/admin/diseases/${classId}`);
+};
+
+// Shop Owner Ads Verification APIs
+export const fetchAdminAds = async (status?: string): Promise<ShopAd[]> => {
+  const res = await apiClient.get<ShopAd[]>('/admin/ads', {
+    params: { status: status || 'all' },
+  });
+  return res.data;
+};
+
+export const updateAdStatus = async (
+  id: string,
+  status: 'approved' | 'rejected' | 'pending',
+  rejectionReason?: string
+): Promise<void> => {
+  await apiClient.put(`/admin/ads/${id}/status`, {
+    status,
+    rejection_reason: rejectionReason || '',
+  });
 };

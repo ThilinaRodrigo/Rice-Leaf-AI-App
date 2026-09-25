@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  Linking,
 } from "react-native";
-import { ArrowLeft, Search, X } from "lucide-react-native";
+import { ArrowLeft, Search, X, Store, Phone, Tag } from "lucide-react-native";
 import { router } from "expo-router";
-import { fetchMarketProducts } from "@/service/apiClient";
+import { fetchMarketProducts, fetchApprovedMarketplaceAds } from "@/service/apiClient";
+import { API_BASE_URL } from "@/constant/api";
 
 const categories = ["All", "Seeds", "Fertilizers", "Tools", "Sprayers"];
 const allProducts = [
@@ -51,8 +53,9 @@ const Market = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<any[]>(allProducts);
+  const [shopAds, setShopAds] = useState<any[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchMarketProducts(selectedCategory, search)
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -75,13 +78,46 @@ const Market = () => {
       });
   }, [selectedCategory, search]);
 
-  const filteredProducts = products;
+  useEffect(() => {
+    fetchApprovedMarketplaceAds()
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setShopAds(data);
+        }
+      })
+      .catch((err) => console.log("Error fetching shop ads:", err));
+  }, []);
 
+  const getImageUrl = (url: string) => {
+    if (!url) return "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60";
+    if (url.startsWith("/uploads")) {
+      const serverDomain = API_BASE_URL.replace("/api/v1", "");
+      return `${serverDomain}${url}`;
+    }
+    return url;
+  };
+
+  const handleCallShop = (phone: string) => {
+    if (!phone) return;
+    Linking.openURL(`tel:${phone.replace(/\s+/g, "")}`);
+  };
+
+  const parseTags = (raw: any): string[] => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  };
+
+  const filteredProducts = products;
 
   return (
     <ScrollView className="flex-1 bg-gray-100 p-4">
       {/* Header */}
-      <View className="flex-row items-center mb-10 mt-10">
+      <View className="flex-row items-center mb-6 mt-10">
         <TouchableOpacity
           onPress={() => router.back()}
           className="p-2 rounded-full bg-gray-200 mr-4"
@@ -90,6 +126,74 @@ const Market = () => {
         </TouchableOpacity>
         <Text className="text-2xl font-bold text-gray-900">Agri Market</Text>
       </View>
+
+      {/* Featured Verified Shop Owner Ads Carousel */}
+      {shopAds.length > 0 && (
+        <View className="mb-6">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-base font-extrabold text-gray-900">
+              Verified Shop Remedies & Offers
+            </Text>
+            <Text className="text-xs text-emerald-600 font-bold">Admin Verified</Text>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {shopAds.map((ad) => {
+              const tags = parseTags(ad.disease_tags);
+              return (
+                <View
+                  key={ad.id}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-200 mr-4 w-72 overflow-hidden"
+                >
+                  <Image
+                    source={{ uri: getImageUrl(ad.image_url) }}
+                    className="w-full h-36"
+                    resizeMode="cover"
+                  />
+                  <View className="p-3.5 space-y-1.5">
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center space-x-1">
+                        <Store size={14} color="#059669" />
+                        <Text className="text-xs font-bold text-emerald-800">{ad.shop_name}</Text>
+                      </View>
+                      {ad.price_unit ? (
+                        <Text className="text-xs font-black text-gray-900">{ad.price_unit}</Text>
+                      ) : null}
+                    </View>
+
+                    <Text className="text-sm font-bold text-gray-900" numberOfLines={1}>
+                      {ad.title}
+                    </Text>
+                    <Text className="text-xs text-gray-500" numberOfLines={2}>
+                      {ad.description}
+                    </Text>
+
+                    {tags.length > 0 && (
+                      <View className="flex-row flex-wrap gap-1 pt-1">
+                        {tags.slice(0, 2).map((tg, idx) => (
+                          <View key={idx} className="bg-purple-50 px-2 py-0.5 rounded">
+                            <Text className="text-[10px] text-purple-700 font-semibold">
+                              {tg.replace(/_/g, " ")}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
+                    <TouchableOpacity
+                      onPress={() => handleCallShop(ad.contact_phone)}
+                      className="bg-emerald-600 py-2 rounded-xl flex-row items-center justify-center space-x-1 mt-2"
+                    >
+                      <Phone size={14} color="#fff" />
+                      <Text className="text-white text-xs font-bold">Contact Store</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Search Bar */}
       <View className="flex-row items-center bg-white rounded-2xl px-4 py-2 mb-4 shadow">

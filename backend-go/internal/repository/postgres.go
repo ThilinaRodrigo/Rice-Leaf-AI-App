@@ -93,6 +93,22 @@ func InitTablesAndSeeds(db *sql.DB) error {
 		message TEXT NOT NULL,
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 	);
+
+	CREATE TABLE IF NOT EXISTS shop_ads (
+		id VARCHAR(100) PRIMARY KEY,
+		shop_owner_id UUID REFERENCES users(id) ON DELETE CASCADE,
+		shop_name VARCHAR(150) NOT NULL,
+		contact_phone VARCHAR(30) NOT NULL,
+		title VARCHAR(200) NOT NULL,
+		description TEXT NOT NULL,
+		price_unit VARCHAR(100),
+		image_url TEXT NOT NULL,
+		disease_tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+		status VARCHAR(20) NOT NULL DEFAULT 'pending',
+		rejection_reason TEXT,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	);
 	`
 
 	_, err := db.Exec(schema)

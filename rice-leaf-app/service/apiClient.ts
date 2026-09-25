@@ -274,3 +274,113 @@ export const changePassword = async (currentPassword: string, newPassword: strin
   }
   return data;
 };
+
+// 6. Shop Owner Ads API Functions
+export const uploadAdImage = async (imageUri: string, userToken: string): Promise<string> => {
+  const targetUrl = `${API_BASE_URL}/shop/ads/upload`;
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${userToken}`,
+  };
+
+  if (Platform.OS === "web") {
+    const formData = new FormData();
+    const imageResponse = await fetch(imageUri);
+    const blob = await imageResponse.blob();
+    formData.append("image", blob, "ad_image.jpg");
+
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed uploading ad image");
+    return data.image_url;
+  } else {
+    const { uri: uploadUri, isTemp } = await getReadableNativeFileUri(imageUri);
+    try {
+      const uploadResult = await FileSystem.uploadAsync(targetUrl, uploadUri, {
+        httpMethod: "POST",
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: "image",
+        mimeType: "image/jpeg",
+        headers,
+      });
+
+      if (uploadResult.status >= 200 && uploadResult.status < 300) {
+        const parsed = JSON.parse(uploadResult.body);
+        return parsed.image_url;
+      }
+      throw new Error(`Image upload failed (${uploadResult.status}): ${uploadResult.body}`);
+    } finally {
+      if (isTemp) {
+        try {
+          await FileSystem.deleteAsync(uploadUri, { idempotent: true });
+        } catch (e) {}
+      }
+    }
+  }
+};
+
+export const createShopAd = async (
+  payload: {
+    shop_name: string;
+    contact_phone: string;
+    title: string;
+    description: string;
+    price_unit: string;
+    image_url: string;
+    disease_tags: string[];
+  },
+  userToken: string
+) => {
+  const res = await fetch(`${API_BASE_URL}/shop/ads`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed creating shop advertisement");
+  }
+  return data;
+};
+
+export const fetchMyShopAds = async (userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/shop/ads/my-ads`, {
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to fetch shop ads");
+  }
+  return data;
+};
+
+export const deleteShopAd = async (adId: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/shop/ads/${adId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to delete ad");
+  }
+  return data;
+};
+
+export const fetchApprovedMarketplaceAds = async (diseaseTag?: string) => {
+  const url = diseaseTag
+    ? `${API_BASE_URL}/marketplace/ads?disease_tag=${encodeURIComponent(diseaseTag)}`
+    : `${API_BASE_URL}/marketplace/ads`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error("Failed to fetch marketplace ads");
+  }
+  return data;
+};

@@ -16,6 +16,7 @@ type RouterConfig struct {
 	ProductHandler *ProductHandler
 	ChatHandler    *ChatHandler
 	AdminHandler   *AdminHandler
+	AdHandler      *AdHandler
 }
 
 func SetupRouter(rc RouterConfig) *gin.Engine {
@@ -32,7 +33,7 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	r.Use(cors.New(corsConfig))
 
-	// Static File Server for uploaded scan images
+	// Static File Server for uploaded scan & ad images
 	r.Static("/uploads", rc.Cfg.UploadsDir)
 
 	// API Root
@@ -62,11 +63,24 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 			diseases.GET("/:class_id", rc.DiseaseHandler.GetDiseaseByClassID)
 		}
 
-		// Marketplace Products
+		// Marketplace Products & Ads
 		products := v1.Group("/products")
 		{
 			products.GET("", rc.ProductHandler.GetProducts)
 			products.GET("/:id", rc.ProductHandler.GetProductByID)
+		}
+
+		if rc.AdHandler != nil {
+			v1.GET("/marketplace/ads", rc.AdHandler.GetApprovedMarketplaceAds)
+
+			shop := v1.Group("/shop/ads")
+			shop.Use(middleware.AuthMiddleware(rc.Cfg.JWTSecret))
+			{
+				shop.POST("/upload", rc.AdHandler.UploadAdImage)
+				shop.POST("", rc.AdHandler.CreateAd)
+				shop.GET("/my-ads", rc.AdHandler.GetMyAds)
+				shop.DELETE("/:id", rc.AdHandler.DeleteAd)
+			}
 		}
 
 		// AI Chat Assistant
@@ -93,6 +107,11 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 				admin.POST("/diseases", rc.DiseaseHandler.CreateDisease)
 				admin.PUT("/diseases/:class_id", rc.DiseaseHandler.UpdateDisease)
 				admin.DELETE("/diseases/:class_id", rc.DiseaseHandler.DeleteDisease)
+
+				if rc.AdHandler != nil {
+					admin.GET("/ads", rc.AdHandler.GetAdminAds)
+					admin.PUT("/ads/:id/status", rc.AdHandler.UpdateAdStatus)
+				}
 			}
 		}
 	}

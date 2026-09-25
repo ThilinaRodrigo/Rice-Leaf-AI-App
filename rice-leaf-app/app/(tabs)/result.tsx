@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import {
@@ -16,6 +17,8 @@ import {
   Zap,
   AlertTriangle,
   HelpCircle,
+  Store,
+  Phone,
 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Factor from "@/components/Factor";
@@ -24,6 +27,8 @@ import { HelpModal } from "@/components/HelpModal";
 import { useState, useEffect } from "react";
 import { predictImage } from "@/service/mlService";
 import { DISEASE_DATA } from "@/constant/data";
+import { fetchApprovedMarketplaceAds } from "@/service/apiClient";
+import { API_BASE_URL } from "@/constant/api";
 
 type ResultType = {
   class_id: number;
@@ -59,6 +64,7 @@ const Result = () => {
   const [result, setResult] = useState<ResultType | null>(null);
   const [disease, setDisease] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [targetedAds, setTargetedAds] = useState<any[]>([]);
 
   const imageSource =
     typeof imageUri === "string" ? imageUri : imageUri?.[0];
@@ -100,6 +106,15 @@ const Result = () => {
             factors,
             actions,
           };
+
+          // Fetch targeted shop ads matching disease key
+          if (fetchedDisease.key) {
+            fetchApprovedMarketplaceAds(fetchedDisease.key)
+              .then((adsData) => {
+                if (Array.isArray(adsData)) setTargetedAds(adsData);
+              })
+              .catch((e) => console.log("Failed fetching targeted ads:", e));
+          }
         }
 
         setDisease(fetchedDisease);
@@ -110,6 +125,20 @@ const Result = () => {
       })
       .finally(() => setIsLoading(false));
   }, [imageSource]);
+
+  const getImageUrl = (url: string) => {
+    if (!url) return "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60";
+    if (url.startsWith("/uploads")) {
+      const serverDomain = API_BASE_URL.replace("/api/v1", "");
+      return `${serverDomain}${url}`;
+    }
+    return url;
+  };
+
+  const handleCallShop = (phone: string) => {
+    if (!phone) return;
+    Linking.openURL(`tel:${phone.replace(/\s+/g, "")}`);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
@@ -206,7 +235,7 @@ const Result = () => {
             </View>
 
             {/* Actions */}
-            <View className="bg-white mx-4 mt-4 mb-28 p-5 rounded-2xl shadow-sm">
+            <View className="bg-white mx-4 mt-4 p-5 rounded-2xl shadow-sm">
               <Text className="text-lg font-semibold mb-4">
                 Recommended Actions
               </Text>
@@ -219,6 +248,51 @@ const Result = () => {
                 />
               ))}
             </View>
+
+            {/* Targeted Shop Remedies & Offers */}
+            {targetedAds.length > 0 && (
+              <View className="bg-white mx-4 mt-4 mb-28 p-5 rounded-2xl shadow-sm">
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text className="text-lg font-bold text-gray-900">
+                    Verified Shop Remedies Available
+                  </Text>
+                  <Text className="text-xs font-bold text-emerald-600">Store Direct</Text>
+                </View>
+
+                <View className="space-y-3">
+                  {targetedAds.map((ad) => (
+                    <View
+                      key={ad.id}
+                      className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 flex-row items-center justify-between"
+                    >
+                      <Image
+                        source={{ uri: getImageUrl(ad.image_url) }}
+                        className="w-16 h-16 rounded-lg mr-3 bg-gray-200"
+                        resizeMode="cover"
+                      />
+                      <View className="flex-1 pr-2">
+                        <Text className="text-xs font-bold text-emerald-800">{ad.shop_name}</Text>
+                        <Text className="text-sm font-bold text-gray-900" numberOfLines={1}>
+                          {ad.title}
+                        </Text>
+                        {ad.price_unit ? (
+                          <Text className="text-xs font-bold text-gray-700">{ad.price_unit}</Text>
+                        ) : null}
+                      </View>
+
+                      <TouchableOpacity
+                        onPress={() => handleCallShop(ad.contact_phone)}
+                        className="bg-emerald-600 px-3 py-2 rounded-xl flex-row items-center space-x-1"
+                      >
+                        <Phone size={14} color="#fff" />
+                        <Text className="text-white text-xs font-bold">Call</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+            {targetedAds.length === 0 && <View className="mb-28" />}
           </ScrollView>
         )}
 

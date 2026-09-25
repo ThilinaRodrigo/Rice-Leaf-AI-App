@@ -16,6 +16,7 @@ import {
   X,
   Eye,
   EyeOff,
+  Megaphone,
 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
@@ -179,6 +180,19 @@ const Profile = () => {
                 </>
               )}
             </View>
+
+            {/* Shop Owner Ads Management Button */}
+            {user.role === "shop_owner" && (
+              <TouchableOpacity
+                onPress={() => router.push("/shop-ads")}
+                className="bg-amber-50 border border-amber-200 px-5 py-4 rounded-2xl shadow-sm flex-row items-center justify-center w-full mb-3 active:opacity-80"
+              >
+                <Megaphone size={20} color="#d97706" />
+                <Text className="text-amber-800 font-bold text-base ml-2">
+                  Manage My Shop Ads
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* Change Password Button */}
             <TouchableOpacity

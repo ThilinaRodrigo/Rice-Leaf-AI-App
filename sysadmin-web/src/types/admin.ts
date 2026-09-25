@@ -77,3 +77,21 @@ export interface Disease {
   actions: DiseaseAction[];
   created_at?: string;
 }
+
+export type AdStatus = "pending" | "approved" | "rejected";
+
+export interface ShopAd {
+  id: string;
+  shop_owner_id: string;
+  shop_name: string;
+  contact_phone: string;
+  title: string;
+  description: string;
+  price_unit: string;
+  image_url: string;
+  disease_tags: string[] | string;
+  status: AdStatus;
+  rejection_reason?: string;
+  created_at: string;
+  updated_at: string;
+}

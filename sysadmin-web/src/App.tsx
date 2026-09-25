@@ -8,6 +8,7 @@ import { UsersManager } from './pages/UsersManager';
 import { ScansManager } from './pages/ScansManager';
 import { ProductsManager } from './pages/ProductsManager';
 import { DiseasesManager } from './pages/DiseasesManager';
+import { AdsManager } from './pages/AdsManager';
 
 const ProtectedLayout: React.FC = () => {
   const { user, isLoading } = useAdminAuth();
@@ -48,6 +49,7 @@ export function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/users" element={<UsersManager />} />
             <Route path="/scans" element={<ScansManager />} />
+            <Route path="/ads" element={<AdsManager />} />
             <Route path="/products" element={<ProductsManager />} />
             <Route path="/diseases" element={<DiseasesManager />} />
           </Route>
