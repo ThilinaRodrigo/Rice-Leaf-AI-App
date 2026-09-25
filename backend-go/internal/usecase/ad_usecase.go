@@ -13,6 +13,7 @@ type AdUseCase interface {
 	GetByShopOwner(ctx context.Context, shopOwnerID string) ([]domain.Ad, error)
 	GetApprovedAds(ctx context.Context, diseaseTag string) ([]domain.Ad, error)
 	GetAllAdsForAdmin(ctx context.Context, status string) ([]domain.Ad, error)
+	UpdateAd(ctx context.Context, ad *domain.Ad) error
 	UpdateAdStatus(ctx context.Context, id string, status domain.AdStatus, reason string) error
 	DeleteAd(ctx context.Context, id string, shopOwnerID string) error
 }
@@ -43,6 +44,10 @@ func (u *adUseCase) GetApprovedAds(ctx context.Context, diseaseTag string) ([]do
 
 func (u *adUseCase) GetAllAdsForAdmin(ctx context.Context, status string) ([]domain.Ad, error) {
 	return u.adRepo.GetAllAdsForAdmin(ctx, status)
+}
+
+func (u *adUseCase) UpdateAd(ctx context.Context, ad *domain.Ad) error {
+	return u.adRepo.UpdateAd(ctx, ad)
 }
 
 func (u *adUseCase) UpdateAdStatus(ctx context.Context, id string, status domain.AdStatus, reason string) error {

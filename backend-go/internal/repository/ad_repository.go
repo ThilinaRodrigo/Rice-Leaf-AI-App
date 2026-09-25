@@ -21,6 +21,7 @@ type AdRepository interface {
 	GetByShopOwner(ctx context.Context, shopOwnerID string) ([]domain.Ad, error)
 	GetApprovedAds(ctx context.Context, diseaseTag string) ([]domain.Ad, error)
 	GetAllAdsForAdmin(ctx context.Context, status string) ([]domain.Ad, error)
+	UpdateAd(ctx context.Context, ad *domain.Ad) error
 	UpdateAdStatus(ctx context.Context, id string, status domain.AdStatus, reason string) error
 	DeleteAd(ctx context.Context, id string, shopOwnerID string) error
 }
@@ -219,6 +220,45 @@ func (r *adRepository) GetAllAdsForAdmin(ctx context.Context, status string) ([]
 		result = append(result, a)
 	}
 	return result, nil
+}
+
+func (r *adRepository) UpdateAd(ctx context.Context, ad *domain.Ad) error {
+	ad.UpdatedAt = time.Now()
+	ad.Status = domain.AdStatusPending
+	ad.RejectionReason = ""
+
+	if r.db != nil {
+		query := `
+			UPDATE shop_ads 
+			SET title = $1, description = $2, price_unit = $3, contact_phone = $4, image_url = $5, disease_tags = $6, status = $7, rejection_reason = $8, updated_at = $9
+			WHERE id = $10 AND shop_owner_id = $11
+		`
+		_, err := r.db.ExecContext(ctx, query,
+			ad.Title, ad.Description, ad.PriceUnit, ad.ContactPhone, ad.ImageURL, ad.DiseaseTags,
+			ad.Status, ad.RejectionReason, ad.UpdatedAt, ad.ID, ad.ShopOwnerID,
+		)
+		if err != nil {
+			return fmt.Errorf("failed updating shop ad: %w", err)
+		}
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, a := range r.memAds {
+		if a.ID == ad.ID && a.ShopOwnerID == ad.ShopOwnerID {
+			r.memAds[i].Title = ad.Title
+			r.memAds[i].Description = ad.Description
+			r.memAds[i].PriceUnit = ad.PriceUnit
+			r.memAds[i].ContactPhone = ad.ContactPhone
+			r.memAds[i].ImageURL = ad.ImageURL
+			r.memAds[i].DiseaseTags = ad.DiseaseTags
+			r.memAds[i].Status = domain.AdStatusPending
+			r.memAds[i].RejectionReason = ""
+			r.memAds[i].UpdatedAt = ad.UpdatedAt
+			return nil
+		}
+	}
+	return nil
 }
 
 func (r *adRepository) UpdateAdStatus(ctx context.Context, id string, status domain.AdStatus, reason string) error {

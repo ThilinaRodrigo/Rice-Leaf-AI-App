@@ -59,8 +59,11 @@ func InitTablesAndSeeds(db *sql.DB) error {
 		description TEXT NOT NULL,
 		factors JSONB NOT NULL,
 		actions JSONB NOT NULL,
+		translations JSONB DEFAULT '{}'::jsonb,
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 	);
+
+	ALTER TABLE diseases ADD COLUMN IF NOT EXISTS translations JSONB DEFAULT '{}'::jsonb;
 
 	CREATE TABLE IF NOT EXISTS scans (
 		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

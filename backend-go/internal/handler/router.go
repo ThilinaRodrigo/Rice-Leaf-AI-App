@@ -79,6 +79,7 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 				shop.POST("/upload", rc.AdHandler.UploadAdImage)
 				shop.POST("", rc.AdHandler.CreateAd)
 				shop.GET("/my-ads", rc.AdHandler.GetMyAds)
+				shop.PUT("/:id", rc.AdHandler.UpdateAd)
 				shop.DELETE("/:id", rc.AdHandler.DeleteAd)
 			}
 		}

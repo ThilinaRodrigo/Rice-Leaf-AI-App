@@ -75,6 +75,12 @@ export interface Disease {
   description: string;
   factors: DiseaseFactor[];
   actions: DiseaseAction[];
+  translations?: Record<string, {
+    name?: string;
+    category?: string;
+    description?: string;
+    actions?: DiseaseAction[];
+  }>;
   created_at?: string;
 }
 

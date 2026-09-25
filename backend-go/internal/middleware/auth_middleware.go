@@ -43,6 +43,7 @@ func AuthMiddleware(secret string) gin.HandlerFunc {
 		}
 
 		c.Set(AuthorizationPayloadKey, claims)
+		c.Set("userID", claims.UserID.String())
 		c.Next()
 	}
 }

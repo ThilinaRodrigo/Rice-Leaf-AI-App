@@ -10,11 +10,24 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import { ArrowLeft, Plus, Trash2, Clock, CheckCircle, XCircle, Image as ImageIcon, Tag, Phone, Store, AlertTriangle, X } from "lucide-react-native";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Image as ImageIcon,
+  AlertTriangle,
+  X,
+  Edit2,
+  RotateCcw,
+  Store,
+} from "lucide-react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/context/AuthContext";
-import { uploadAdImage, createShopAd, fetchMyShopAds, deleteShopAd } from "@/service/apiClient";
+import { uploadAdImage, createShopAd, updateShopAd, fetchMyShopAds, deleteShopAd } from "@/service/apiClient";
 import { API_BASE_URL } from "@/constant/api";
 
 const DISEASE_OPTIONS = [
@@ -30,8 +43,9 @@ export default function ShopAdsScreen() {
   const [ads, setAds] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Modal State
+  // Modal & Form State
   const [showModal, setShowModal] = useState(false);
+  const [editingAdId, setEditingAdId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priceUnit, setPriceUnit] = useState("");
@@ -57,15 +71,43 @@ export default function ShopAdsScreen() {
     loadAds();
   }, [token]);
 
+  const handleOpenCreateModal = () => {
+    setEditingAdId(null);
+    setTitle("");
+    setDescription("");
+    setPriceUnit("");
+    setContactPhone(user?.phone || user?.whatsapp_number || "");
+    setSelectedTags([]);
+    setSelectedImageUri(null);
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = (ad: any) => {
+    setEditingAdId(ad.id);
+    setTitle(ad.title || "");
+    setDescription(ad.description || "");
+    setPriceUnit(ad.price_unit || "");
+    setContactPhone(ad.contact_phone || user?.phone || user?.whatsapp_number || "");
+    setSelectedTags(parseTags(ad.disease_tags));
+    setSelectedImageUri(getImageUrl(ad.image_url));
+    setShowModal(true);
+  };
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
+      base64: true,
     });
 
-    if (!result.canceled && result.assets[0].uri) {
-      setSelectedImageUri(result.assets[0].uri);
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      if (asset.base64) {
+        setSelectedImageUri(`data:image/jpeg;base64,${asset.base64}`);
+      } else {
+        setSelectedImageUri(asset.uri);
+      }
     }
   };
 
@@ -89,28 +131,49 @@ export default function ShopAdsScreen() {
 
     setSubmitting(true);
     try {
-      // 1. Upload Ad image locally to Go backend
-      const uploadedPath = await uploadAdImage(selectedImageUri, token);
+      let finalImagePath = selectedImageUri;
 
-      // 2. Submit Ad payload
-      await createShopAd(
-        {
-          shop_name: user?.shop_name || user?.full_name || "Agro Shop Owner",
-          contact_phone: contactPhone || "+94 77 123 4567",
-          title,
-          description,
-          price_unit: priceUnit,
-          image_url: uploadedPath,
-          disease_tags: selectedTags,
-        },
-        token
-      );
+      // If new local image (data URI or file URI), upload first
+      if (
+        selectedImageUri.startsWith("data:") ||
+        selectedImageUri.startsWith("file://") ||
+        selectedImageUri.startsWith("content://")
+      ) {
+        finalImagePath = await uploadAdImage(selectedImageUri, token);
+      } else if (selectedImageUri.includes("/uploads/ads/")) {
+        // Retain relative server path
+        const idx = selectedImageUri.indexOf("/uploads/ads/");
+        finalImagePath = selectedImageUri.substring(idx);
+      }
 
-      Alert.alert(
-        "Ad Submitted!",
-        "Your advertisement has been submitted for Admin verification. It will be live in the Marketplace once approved."
-      );
+      const payload = {
+        shop_name: user?.shop_name || user?.full_name || "Agro Shop Owner",
+        contact_phone: contactPhone || "+94 77 123 4567",
+        title,
+        description,
+        price_unit: priceUnit,
+        image_url: finalImagePath,
+        disease_tags: selectedTags,
+      };
+
+      if (editingAdId) {
+        // Edit & Re-submit Mode
+        await updateShopAd(editingAdId, payload, token);
+        Alert.alert(
+          "Ad Re-Submitted!",
+          "Your updated advertisement has been sent for Admin re-verification. It will be live once approved."
+        );
+      } else {
+        // Create Mode
+        await createShopAd(payload, token);
+        Alert.alert(
+          "Ad Submitted!",
+          "Your advertisement has been submitted for Admin verification. It will be live once approved."
+        );
+      }
+
       setShowModal(false);
+      setEditingAdId(null);
       setTitle("");
       setDescription("");
       setPriceUnit("");
@@ -173,12 +236,12 @@ export default function ShopAdsScreen() {
           </TouchableOpacity>
           <View>
             <Text className="text-xl font-bold text-gray-900">My Shop Ads</Text>
-            <Text className="text-xs text-gray-500">Manage Marketplace Advertisements</Text>
+            <Text className="text-xs text-gray-500">Manage & Re-submit Advertisements</Text>
           </View>
         </View>
 
         <TouchableOpacity
-          onPress={() => setShowModal(true)}
+          onPress={handleOpenCreateModal}
           className="bg-emerald-600 px-3 py-2 rounded-xl flex-row items-center space-x-1"
         >
           <Plus size={16} color="#fff" />
@@ -197,7 +260,7 @@ export default function ShopAdsScreen() {
               Post product advertisements linked to specific rice diseases to reach thousands of farmers.
             </Text>
             <TouchableOpacity
-              onPress={() => setShowModal(true)}
+              onPress={handleOpenCreateModal}
               className="bg-emerald-600 px-5 py-3 rounded-xl mt-2"
             >
               <Text className="text-white font-bold text-sm">Post First Advertisement</Text>
@@ -211,8 +274,8 @@ export default function ShopAdsScreen() {
                 <View key={ad.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
                   <Image source={{ uri: getImageUrl(ad.image_url) }} className="w-full h-44" resizeMode="cover" />
 
-                  <View className="p-4 space-y-2">
-                    {/* Status Badge */}
+                  <View className="p-4 space-y-3">
+                    {/* Status Badge & Actions */}
                     <View className="flex-row items-center justify-between">
                       {ad.status === "pending" && (
                         <View className="bg-amber-100 px-3 py-1 rounded-full flex-row items-center space-x-1">
@@ -233,9 +296,21 @@ export default function ShopAdsScreen() {
                         </View>
                       )}
 
-                      <TouchableOpacity onPress={() => handleDeleteAd(ad.id, ad.title)} className="p-1">
-                        <Trash2 size={18} color="#EF4444" />
-                      </TouchableOpacity>
+                      <View className="flex-row items-center space-x-2">
+                        {/* Edit Button */}
+                        <TouchableOpacity
+                          onPress={() => handleOpenEditModal(ad)}
+                          className="bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg flex-row items-center space-x-1"
+                        >
+                          <Edit2 size={13} color="#2563EB" />
+                          <Text className="text-blue-600 font-bold text-xs">Edit</Text>
+                        </TouchableOpacity>
+
+                        {/* Delete Button */}
+                        <TouchableOpacity onPress={() => handleDeleteAd(ad.id, ad.title)} className="p-1">
+                          <Trash2 size={18} color="#EF4444" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
 
                     <Text className="text-lg font-bold text-gray-900">{ad.title}</Text>
@@ -253,11 +328,25 @@ export default function ShopAdsScreen() {
                       </View>
                     )}
 
-                    {/* Rejection Reason */}
-                    {ad.status === "rejected" && ad.rejection_reason && (
-                      <View className="bg-red-50 p-2.5 rounded-xl border border-red-200 flex-row items-start space-x-2 mt-2">
-                        <AlertTriangle size={16} color="#DC2626" />
-                        <Text className="text-xs text-red-700 flex-1">Reason: {ad.rejection_reason}</Text>
+                    {/* Rejection Reason & Re-submit Button */}
+                    {ad.status === "rejected" && (
+                      <View className="bg-red-50 p-3 rounded-xl border border-red-200 space-y-2 mt-2">
+                        {ad.rejection_reason ? (
+                          <View className="flex-row items-start space-x-2">
+                            <AlertTriangle size={16} color="#DC2626" />
+                            <Text className="text-xs text-red-700 flex-1 font-medium">
+                              Reason: {ad.rejection_reason}
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        <TouchableOpacity
+                          onPress={() => handleOpenEditModal(ad)}
+                          className="bg-red-600 py-2 rounded-lg items-center flex-row justify-center space-x-1.5"
+                        >
+                          <RotateCcw size={14} color="#fff" />
+                          <Text className="text-white font-bold text-xs">Edit & Re-submit Ad to Admin</Text>
+                        </TouchableOpacity>
                       </View>
                     )}
                   </View>
@@ -268,12 +357,14 @@ export default function ShopAdsScreen() {
         )}
       </ScrollView>
 
-      {/* Create Ad Modal */}
+      {/* Create / Edit Ad Modal */}
       <Modal visible={showModal} animationType="slide" transparent>
         <View className="flex-1 bg-black/60 justify-end">
           <View className="bg-white rounded-t-3xl p-6 max-h-[85%] space-y-4">
             <View className="flex-row items-center justify-between pb-2 border-b border-gray-100">
-              <Text className="text-xl font-bold text-gray-900">New Shop Advertisement</Text>
+              <Text className="text-xl font-bold text-gray-900">
+                {editingAdId ? "Edit & Re-submit Advertisement" : "New Shop Advertisement"}
+              </Text>
               <TouchableOpacity onPress={() => setShowModal(false)} className="p-1">
                 <X size={22} color="#666" />
               </TouchableOpacity>
@@ -373,7 +464,9 @@ export default function ShopAdsScreen() {
                 {submitting ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text className="text-white font-bold text-base">Submit Ad for Admin Verification</Text>
+                  <Text className="text-white font-bold text-base">
+                    {editingAdId ? "Re-submit Ad for Admin Verification" : "Submit Ad for Admin Verification"}
+                  </Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
