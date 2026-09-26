@@ -17,6 +17,7 @@ type RouterConfig struct {
 	ChatHandler    *ChatHandler
 	AdminHandler   *AdminHandler
 	AdHandler      *AdHandler
+	PostHandler    *PostHandler
 }
 
 func SetupRouter(rc RouterConfig) *gin.Engine {
@@ -89,6 +90,25 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 		{
 			chat.POST("/message", middleware.OptionalAuthMiddleware(rc.Cfg.JWTSecret), rc.ChatHandler.SendMessage)
 			chat.GET("/history", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.ChatHandler.GetHistory)
+		}
+
+		// Community Posts & Knowledge Base
+		if rc.PostHandler != nil {
+			v1.GET("/posts/suggested", rc.PostHandler.GetSuggestedPosts)
+			v1.GET("/posts", middleware.OptionalAuthMiddleware(rc.Cfg.JWTSecret), rc.PostHandler.GetPosts)
+			v1.GET("/posts/:id", middleware.OptionalAuthMiddleware(rc.Cfg.JWTSecret), rc.PostHandler.GetPostByID)
+			v1.GET("/posts/:id/comments", rc.PostHandler.GetComments)
+
+			posts := v1.Group("/posts")
+			posts.Use(middleware.AuthMiddleware(rc.Cfg.JWTSecret))
+			{
+				posts.POST("/upload", rc.PostHandler.UploadPostImage)
+				posts.POST("", rc.PostHandler.CreatePost)
+				posts.POST("/:id/vote", rc.PostHandler.VotePost)
+				posts.POST("/:id/comments", rc.PostHandler.AddComment)
+				posts.DELETE("/:id", rc.PostHandler.DeletePost)
+				posts.DELETE("/comments/:comment_id", rc.PostHandler.DeleteComment)
+			}
 		}
 
 		// Sys Admin Routes

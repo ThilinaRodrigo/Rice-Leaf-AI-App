@@ -9,6 +9,7 @@ import { ScansManager } from './pages/ScansManager';
 import { ProductsManager } from './pages/ProductsManager';
 import { DiseasesManager } from './pages/DiseasesManager';
 import { AdsManager } from './pages/AdsManager';
+import { PostsManager } from './pages/PostsManager';
 
 const ProtectedLayout: React.FC = () => {
   const { user, isLoading } = useAdminAuth();
@@ -31,7 +32,7 @@ const ProtectedLayout: React.FC = () => {
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden">
       <Sidebar />
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden p-6 overflow-y-auto">
         <Outlet />
       </main>
     </div>
@@ -50,6 +51,7 @@ export function App() {
             <Route path="/users" element={<UsersManager />} />
             <Route path="/scans" element={<ScansManager />} />
             <Route path="/ads" element={<AdsManager />} />
+            <Route path="/posts" element={<PostsManager />} />
             <Route path="/products" element={<ProductsManager />} />
             <Route path="/diseases" element={<DiseasesManager />} />
           </Route>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Linking,
 } from "react-native";
 import { ArrowLeft, Search, X, Store, Phone, Tag } from "lucide-react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { fetchMarketProducts, fetchApprovedMarketplaceAds } from "@/service/apiClient";
 import { API_BASE_URL } from "@/constant/api";
 
@@ -78,15 +78,20 @@ const Market = () => {
       });
   }, [selectedCategory, search]);
 
-  useEffect(() => {
-    fetchApprovedMarketplaceAds()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setShopAds(data);
-        }
-      })
-      .catch((err) => console.log("Error fetching shop ads:", err));
-  }, []);
+
+  // Reload shop ads every time this screen comes into focus
+  // (e.g. after shop owner navigates back from posting a new ad)
+  useFocusEffect(
+    useCallback(() => {
+      fetchApprovedMarketplaceAds()
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setShopAds(data);
+          }
+        })
+        .catch((err) => console.log("Error fetching shop ads:", err));
+    }, [])
+  );
 
   const getImageUrl = (url: string) => {
     if (!url) return "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60";

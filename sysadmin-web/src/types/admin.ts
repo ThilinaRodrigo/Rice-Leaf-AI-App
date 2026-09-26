@@ -102,3 +102,19 @@ export interface ShopAd {
   created_at: string;
   updated_at: string;
 }
+
+export interface CommunityPost {
+  id: string;
+  user_id: string;
+  author_name: string;
+  author_role: string;
+  author_avatar?: string;
+  title: string;
+  content: string;
+  disease_tag: string;
+  image_url?: string;
+  likes_count: number;
+  dislikes_count: number;
+  comments_count: number;
+  created_at: string;
+}

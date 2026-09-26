@@ -27,8 +27,9 @@ import { HelpModal } from "@/components/HelpModal";
 import { useState, useEffect } from "react";
 import { predictImage } from "@/service/mlService";
 import { DISEASE_DATA } from "@/constant/data";
-import { fetchApprovedMarketplaceAds } from "@/service/apiClient";
+import { fetchApprovedMarketplaceAds, fetchSuggestedPosts } from "@/service/apiClient";
 import { API_BASE_URL } from "@/constant/api";
+import { ThumbsUp } from "lucide-react-native";
 
 type ResultType = {
   class_id: number;
@@ -65,6 +66,7 @@ const Result = () => {
   const [disease, setDisease] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [targetedAds, setTargetedAds] = useState<any[]>([]);
+  const [suggestedPosts, setSuggestedPosts] = useState<any[]>([]);
 
   const imageSource =
     typeof imageUri === "string" ? imageUri : imageUri?.[0];
@@ -114,6 +116,12 @@ const Result = () => {
                 if (Array.isArray(adsData)) setTargetedAds(adsData);
               })
               .catch((e) => console.log("Failed fetching targeted ads:", e));
+
+            fetchSuggestedPosts(fetchedDisease.key)
+              .then((postsData) => {
+                if (Array.isArray(postsData)) setSuggestedPosts(postsData);
+              })
+              .catch((e) => console.log("Failed fetching suggested posts:", e));
           }
         }
 
@@ -248,6 +256,43 @@ const Result = () => {
                 />
               ))}
             </View>
+
+            {/* Top Community Solutions & Farmer Advice */}
+            {suggestedPosts.length > 0 && (
+              <View className="bg-white mx-4 mt-4 p-5 rounded-2xl shadow-sm">
+                <View className="flex-row items-center justify-between mb-3">
+                  <Text className="text-lg font-bold text-gray-900">
+                    Community Advice & Solutions
+                  </Text>
+                  <TouchableOpacity onPress={() => router.push("/community" as any)}>
+                    <Text className="text-xs font-bold text-emerald-700">View All</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View className="space-y-3">
+                  {suggestedPosts.map((post) => (
+                    <View
+                      key={post.id}
+                      className="bg-slate-50 p-3.5 rounded-xl border border-gray-200/80 space-y-1.5"
+                    >
+                      <View className="flex-row items-center justify-between">
+                        <Text className="text-xs font-bold text-emerald-800">{post.author_name}</Text>
+                        <View className="flex-row items-center space-x-1">
+                          <ThumbsUp size={13} color="#059669" />
+                          <Text className="text-[11px] font-bold text-emerald-800">{post.likes_count}</Text>
+                        </View>
+                      </View>
+                      <Text className="text-sm font-bold text-gray-900" numberOfLines={1}>
+                        {post.title}
+                      </Text>
+                      <Text className="text-xs text-gray-600 leading-relaxed" numberOfLines={2}>
+                        {post.content}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
 
             {/* Targeted Shop Remedies & Offers */}
             {targetedAds.length > 0 && (

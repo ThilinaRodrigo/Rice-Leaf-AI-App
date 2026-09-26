@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AdminStats, AdminScan, Product, User, AuthResponse, Disease, ShopAd } from '../types/admin';
+import type { AdminStats, AdminScan, Product, User, AuthResponse, Disease, ShopAd, CommunityPost } from '../types/admin';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -127,4 +127,16 @@ export const updateAdStatus = async (
     status,
     rejection_reason: rejectionReason || '',
   });
+};
+
+// Community Posts Admin Management APIs
+export const fetchAdminPosts = async (diseaseTag?: string): Promise<CommunityPost[]> => {
+  const res = await apiClient.get<CommunityPost[]>('/posts', {
+    params: { disease_tag: diseaseTag && diseaseTag !== 'All' ? diseaseTag : '' },
+  });
+  return res.data;
+};
+
+export const deleteAdminPost = async (id: string): Promise<void> => {
+  await apiClient.delete(`/posts/${id}`);
 };

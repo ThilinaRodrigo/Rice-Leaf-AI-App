@@ -485,3 +485,147 @@ export const fetchApprovedMarketplaceAds = async (diseaseTag?: string) => {
   }
   return data;
 };
+
+// --- Community Posts & Knowledge Base API ---
+export const uploadPostImage = async (imageUri: string, userToken: string) => {
+  const targetUrl = `${API_BASE_URL}/posts/upload`;
+
+  // Strategy: read as base64 via FileSystem, then POST as JSON { image_base64 }.
+  // The backend's UploadPostImage handler accepts this at the /posts/upload endpoint.
+  // We avoid Blob/ArrayBuffer entirely — Hermes (React Native JS engine) does NOT
+  // support creating Blobs from ArrayBuffer/Uint8Array.
+  try {
+    let base64Data: string;
+    try {
+      base64Data = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    } catch {
+      // If direct read fails (e.g. double-encoded Expo Go scoped path), decode URI and retry
+      const decoded = decodeURIComponent(imageUri);
+      const withScheme = decoded.startsWith("file://") ? decoded : `file://${decoded}`;
+      base64Data = await FileSystem.readAsStringAsync(withScheme, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    }
+
+    // POST as JSON base64 — backend decodes and saves the file
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ image_base64: base64Data }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to upload post image");
+    return data;
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to upload post image");
+  }
+};
+
+export const createCommunityPost = async (
+  payload: {
+    title: string;
+    content: string;
+    disease_tag: string;
+    image_url?: string;
+  },
+  userToken: string
+) => {
+  const res = await fetch(`${API_BASE_URL}/posts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed creating community post");
+  return data;
+};
+
+export const fetchCommunityPosts = async (diseaseTag?: string, userToken?: string) => {
+  let url = `${API_BASE_URL}/posts`;
+  if (diseaseTag && diseaseTag !== "All") {
+    url += `?disease_tag=${encodeURIComponent(diseaseTag)}`;
+  }
+  const headers: Record<string, string> = {};
+  if (userToken) {
+    headers["Authorization"] = `Bearer ${userToken}`;
+  }
+  const res = await fetch(url, { headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch community posts");
+  return data;
+};
+
+export const fetchSuggestedPosts = async (diseaseTag?: string) => {
+  let url = `${API_BASE_URL}/posts/suggested`;
+  if (diseaseTag) {
+    url += `?disease_tag=${encodeURIComponent(diseaseTag)}`;
+  }
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch suggested posts");
+  return data;
+};
+
+export const voteCommunityPost = async (postId: string, voteType: "like" | "dislike", userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/${postId}/vote`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify({ vote_type: voteType }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to vote on post");
+  return data;
+};
+
+export const fetchPostComments = async (postId: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/${postId}/comments`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch post comments");
+  return data;
+};
+
+export const addPostComment = async (postId: string, comment: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify({ comment }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to add comment");
+  return data;
+};
+
+export const deleteCommunityPost = async (postId: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to delete post");
+  return data;
+};
+
+export const deletePostComment = async (commentId: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/comments/${commentId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to delete comment");
+  return data;
+};

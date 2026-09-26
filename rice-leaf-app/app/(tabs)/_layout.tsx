@@ -1,6 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { Home, ShoppingBag, User, MessageCircle, Scan } from "lucide-react-native";
+import { Home, ShoppingBag, User, MessageCircle, Scan, Users } from "lucide-react-native";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -17,7 +17,7 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: "#FFFFFF",
           borderRadius: 30,
-          marginHorizontal: 16,
+          marginHorizontal: 12,
           bottom: bottomMargin,
           height: 60,
           position: "absolute",
@@ -32,7 +32,7 @@ export default function TabsLayout() {
           elevation: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: "700",
         },
       }}
@@ -42,7 +42,7 @@ export default function TabsLayout() {
         options={{
           headerShown: false,
           title: "Home",
-          tabBarIcon: ({ color }) => <Home size={22} color={color} />,
+          tabBarIcon: ({ color }) => <Home size={20} color={color} />,
         }}
       />
 
@@ -53,13 +53,22 @@ export default function TabsLayout() {
           title: "AI Scan",
           tabBarIcon: ({ color, focused }) => (
             <View
-              className={`w-10 h-10 rounded-full items-center justify-center ${
+              className={`w-9 h-9 rounded-full items-center justify-center ${
                 focused ? "bg-emerald-600 border border-emerald-400" : "bg-slate-100 border border-slate-200"
               }`}
             >
-              <Scan size={20} color={focused ? "#FFFFFF" : color} />
+              <Scan size={18} color={focused ? "#FFFFFF" : color} />
             </View>
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="community"
+        options={{
+          headerShown: false,
+          title: "Community",
+          tabBarIcon: ({ color }) => <Users size={20} color={color} />,
         }}
       />
 
@@ -68,7 +77,7 @@ export default function TabsLayout() {
         options={{
           headerShown: false,
           title: "Market",
-          tabBarIcon: ({ color }) => <ShoppingBag size={22} color={color} />,
+          tabBarIcon: ({ color }) => <ShoppingBag size={20} color={color} />,
         }}
       />
 
@@ -77,7 +86,7 @@ export default function TabsLayout() {
         options={{
           headerShown: false,
           title: "AI Chat",
-          tabBarIcon: ({ color }) => <MessageCircle size={22} color={color} />,
+          tabBarIcon: ({ color }) => <MessageCircle size={20} color={color} />,
         }}
       />
 
@@ -86,7 +95,7 @@ export default function TabsLayout() {
         options={{
           headerShown: false,
           title: "Profile",
-          tabBarIcon: ({ color }) => <User size={22} color={color} />,
+          tabBarIcon: ({ color }) => <User size={20} color={color} />,
         }}
       />
 

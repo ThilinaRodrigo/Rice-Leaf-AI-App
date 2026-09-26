@@ -115,6 +115,37 @@ func InitTablesAndSeeds(db *sql.DB) error {
 	);
 
 	ALTER TABLE shop_ads ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT 'Fungicides & Remedies';
+
+	CREATE TABLE IF NOT EXISTS community_posts (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+		user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+		title VARCHAR(200) NOT NULL,
+		content TEXT NOT NULL,
+		disease_tag VARCHAR(100) NOT NULL,
+		image_url TEXT,
+		likes_count INT NOT NULL DEFAULT 0,
+		dislikes_count INT NOT NULL DEFAULT 0,
+		comments_count INT NOT NULL DEFAULT 0,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS post_votes (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+		post_id UUID REFERENCES community_posts(id) ON DELETE CASCADE,
+		user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+		vote_type VARCHAR(10) NOT NULL CHECK (vote_type IN ('like', 'dislike')),
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(post_id, user_id)
+	);
+
+	CREATE TABLE IF NOT EXISTS post_comments (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+		post_id UUID REFERENCES community_posts(id) ON DELETE CASCADE,
+		user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+		comment TEXT NOT NULL,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	);
 	`
 
 	_, err := db.Exec(schema)

@@ -37,6 +37,7 @@ func main() {
 	chatRepo := repository.NewChatRepository(db)
 	adminRepo := repository.NewAdminRepository(db)
 	adRepo := repository.NewAdRepository(db)
+	postRepo := repository.NewPostRepository(db)
 
 	// 4. Initialize Local Storage & External Clients
 	localStorage := storage.NewLocalStorage(cfg.UploadsDir, cfg.BaseURL)
@@ -50,6 +51,7 @@ func main() {
 	chatUC := usecase.NewChatUseCase(chatRepo)
 	adminUC := usecase.NewAdminUseCase(adminRepo)
 	adUC := usecase.NewAdUseCase(adRepo)
+	postUC := usecase.NewPostUsecase(postRepo)
 
 	// 6. Initialize Handlers
 	authHandler := handler.NewAuthHandler(authUC)
@@ -59,6 +61,7 @@ func main() {
 	chatHandler := handler.NewChatHandler(chatUC)
 	adminHandler := handler.NewAdminHandler(adminUC, authUC, productRepo)
 	adHandler := handler.NewAdHandler(adUC, cfg)
+	postHandler := handler.NewPostHandler(postUC, cfg)
 
 	// 7. Setup Router & Start Gin Server
 	r := handler.SetupRouter(handler.RouterConfig{
@@ -70,6 +73,7 @@ func main() {
 		ChatHandler:    chatHandler,
 		AdminHandler:   adminHandler,
 		AdHandler:      adHandler,
+		PostHandler:    postHandler,
 	})
 
 	serverAddr := fmt.Sprintf(":%s", cfg.Port)

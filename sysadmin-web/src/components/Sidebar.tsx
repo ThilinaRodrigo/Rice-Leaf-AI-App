@@ -10,6 +10,7 @@ import {
   LogOut,
   Leaf,
   Megaphone,
+  MessageSquare,
 } from 'lucide-react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 
@@ -21,6 +22,7 @@ export const Sidebar: React.FC = () => {
     { label: 'User Directory', path: '/users', icon: Users },
     { label: 'Leaf Scans Audit', path: '/scans', icon: ScanLine },
     { label: 'Ads Verification', path: '/ads', icon: Megaphone },
+    { label: 'Community Posts', path: '/posts', icon: MessageSquare },
     { label: 'Agro Marketplace', path: '/products', icon: ShoppingBag },
     { label: 'Disease Remedies', path: '/diseases', icon: BookOpen },
   ];
