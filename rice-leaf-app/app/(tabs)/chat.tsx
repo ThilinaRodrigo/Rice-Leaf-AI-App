@@ -156,28 +156,28 @@ const Chat = () => {
   // Message bubble component
   const MessageBubble = ({ message }: { message: Message }) => {
     const isUser = message.sender === "user";
-    
+
     return (
       <View
         className={`mb-4 flex-row ${isUser ? "justify-end" : "justify-start"}`}
       >
         <View
-          className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+          className={`max-w-[82%] rounded-2xl px-4 py-3 shadow-sm ${
             isUser
-              ? "bg-green-600 rounded-tr-sm"
-              : "bg-gray-100 rounded-tl-sm"
+              ? "bg-emerald-800 rounded-tr-sm border border-emerald-700"
+              : "bg-white rounded-tl-sm border border-gray-200/80"
           }`}
         >
           <Text
-            className={`text-base leading-5 ${
-              isUser ? "text-white" : "text-gray-800"
+            className={`text-sm leading-relaxed ${
+              isUser ? "text-white font-medium" : "text-gray-800 font-medium"
             }`}
           >
             {message.text}
           </Text>
           <Text
-            className={`text-xs mt-1 ${
-              isUser ? "text-green-100" : "text-gray-500"
+            className={`text-[10px] mt-1.5 font-bold ${
+              isUser ? "text-emerald-200 text-right" : "text-gray-400"
             }`}
           >
             {formatTime(message.timestamp)}
@@ -190,15 +190,15 @@ const Chat = () => {
   // Typing indicator component
   const TypingIndicator = () => (
     <View className="mb-4 flex-row justify-start">
-      <View className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
-        <View className="flex-row items-center space-x-1">
-          <View className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
+      <View className="bg-white border border-gray-200/80 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+        <View className="flex-row items-center space-x-1.5">
+          <View className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse" />
           <View
-            className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
+            className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse"
             style={{ animationDelay: "0.2s" }}
           />
           <View
-            className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
+            className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse"
             style={{ animationDelay: "0.4s" }}
           />
         </View>
@@ -207,29 +207,31 @@ const Chat = () => {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#16a34a' }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#065f46" }} edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <View style={{ flex: 1, backgroundColor: 'white' }}>
-          {/* Header */}
-          <View className="bg-green-600 pb-4 px-4 shadow-lg">
+        <View style={{ flex: 1, backgroundColor: "#F8FAFC" }}>
+          {/* Header Banner */}
+          <View className="bg-emerald-800 pt-3 pb-5 px-5 rounded-b-3xl border-b border-emerald-900/20 shadow-sm">
             <View className="flex-row items-center">
               <TouchableOpacity
                 onPress={() => router.back()}
-                className="p-2 -ml-2"
-                activeOpacity={0.7}
+                className="w-11 h-11 rounded-2xl bg-emerald-700 border border-emerald-600 items-center justify-center shadow-sm active:opacity-80"
               >
-                <ArrowLeft size={24} color="white" />
+                <ArrowLeft size={20} color="#FFFFFF" />
               </TouchableOpacity>
-              <View className="ml-3 flex-1">
-                <Text className="text-white text-lg font-semibold">
-                  AgriScan AI Assistant
-                </Text>
-                <Text className="text-green-100 text-sm">
-                  {isTyping ? "Typing..." : "Online"}
+              <View className="flex-1 ml-3">
+                <View className="flex-row items-center space-x-2 mb-0.5">
+                  <View className="w-2 h-2 rounded-full bg-emerald-300" />
+                  <Text className="text-emerald-200 text-xs font-bold uppercase tracking-wider">
+                    {isTyping ? "AI Typing..." : "Online Assistant"}
+                  </Text>
+                </View>
+                <Text className="text-xl font-black text-white" numberOfLines={1}>
+                  Agronomist AI Chat
                 </Text>
               </View>
             </View>
@@ -238,21 +240,21 @@ const Chat = () => {
           {/* Chat Body */}
           <ScrollView
             ref={scrollRef}
-            className="flex-1 px-4 pt-4 bg-white"
+            className="flex-1 px-4 pt-4 bg-slate-50"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 16 }}
+            contentContainerStyle={{ paddingBottom: 24 }}
             keyboardShouldPersistTaps="handled"
           >
             {messages.map((msg) => (
               <MessageBubble key={msg.id} message={msg} />
             ))}
-            
+
             {isTyping && <TypingIndicator />}
           </ScrollView>
 
           {/* Quick Reply Buttons */}
           {!isTyping && messages.length < 4 && (
-            <View className="px-4 pb-2">
+            <View className="px-4 pb-2 bg-slate-50">
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -263,10 +265,9 @@ const Chat = () => {
                   <TouchableOpacity
                     key={reply.id}
                     onPress={() => handleQuickReply(reply)}
-                    className="bg-green-50 border border-green-200 rounded-full px-4 py-2 mr-2"
-                    activeOpacity={0.7}
+                    className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2.5 mr-2 active:opacity-80 shadow-sm"
                   >
-                    <Text className="text-green-700 text-sm font-medium">
+                    <Text className="text-emerald-800 text-xs font-bold">
                       {reply.text}
                     </Text>
                   </TouchableOpacity>
@@ -276,13 +277,13 @@ const Chat = () => {
           )}
 
           {/* Input Box */}
-          <View className="border-t border-gray-200 bg-white px-4 py-3">
-            <View className="flex-row items-center bg-gray-100 rounded-full px-4 py-1">
+          <View className="border-t border-gray-200/80 bg-white px-4 py-3 mb-20">
+            <View className="flex-row items-center bg-slate-100 border border-slate-200/80 rounded-2xl px-4 py-1.5">
               <TextInput
                 ref={inputRef}
-                className="flex-1 text-base py-2 text-gray-800"
-                placeholder="Type your message..."
-                placeholderTextColor="#9CA3AF"
+                className="flex-1 text-sm py-2 text-gray-900 font-medium"
+                placeholder="Ask about rice plant health, remedies..."
+                placeholderTextColor="#94A3B8"
                 value={input}
                 onChangeText={setInput}
                 onSubmitEditing={sendMessage}
@@ -294,15 +295,14 @@ const Chat = () => {
               <TouchableOpacity
                 onPress={sendMessage}
                 disabled={!input.trim() || isTyping}
-                className={`ml-2 p-2 rounded-full ${
-                  input.trim() && !isTyping ? "bg-green-600" : "bg-gray-300"
+                className={`ml-2 w-9 h-9 rounded-xl items-center justify-center ${
+                  input.trim() && !isTyping ? "bg-emerald-800 shadow-sm active:opacity-90" : "bg-slate-200"
                 }`}
-                activeOpacity={0.7}
               >
                 {isTyping ? (
-                  <ActivityIndicator size="small" color="white" />
+                  <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Send size={20} color="white" />
+                  <Send size={18} color={input.trim() && !isTyping ? "#FFFFFF" : "#94A3B8"} />
                 )}
               </TouchableOpacity>
             </View>

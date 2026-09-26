@@ -14,3 +14,10 @@ func TestHashPassword(t *testing.T) {
 		t.Fatalf("CheckPassword failed for generated hash")
 	}
 }
+
+func TestAdminHash(t *testing.T) {
+	seededHash := "$2a$10$cVyhfPbv/olF8fVJ4yI4YujbWOQqlEu7iSJT0p3VP4QagY6HSztLO"
+	if !CheckPassword("admin123", seededHash) {
+		t.Errorf("Seeded hash in postgres.go failed CheckPassword for admin123!")
+	}
+}

@@ -171,11 +171,13 @@ export const ScansManager: React.FC = () => {
 
   const getImageUrl = (url: string) => {
     if (!url)
-      return 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=500&q=60';
-    if (url.startsWith('/uploads')) {
+      return 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=500&q=60';
+    const uploadIndex = url.indexOf('/uploads');
+    if (uploadIndex !== -1) {
+      const relPath = url.substring(uploadIndex);
       const apiEnv = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
       const host = apiEnv.replace('/api/v1', '');
-      return `${host}${url}`;
+      return `${host}${relPath}`;
     }
     return url;
   };
@@ -387,7 +389,7 @@ export const ScansManager: React.FC = () => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
                       (e.target as any).src =
-                        'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=500&q=60';
+                        'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=500&q=60';
                     }}
                   />
                   <div className="absolute top-3 right-3">
@@ -488,7 +490,7 @@ export const ScansManager: React.FC = () => {
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               (e.target as any).src =
-                                'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=500&q=60';
+                                'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=500&q=60';
                             }}
                           />
                         </div>
@@ -564,7 +566,7 @@ export const ScansManager: React.FC = () => {
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as any).src =
-                      'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=500&q=60';
+                      'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=500&q=60';
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">

@@ -124,8 +124,8 @@ func InitTablesAndSeeds(db *sql.DB) error {
 
 	seeds := `
 	INSERT INTO users (full_name, email, password_hash, role) VALUES
-	('System Administrator', 'admin@riceleaf.lk', '$2a$10$wT282n0F0K5O2/U03J94eeE490W9S/dO78r8sFmE2pS3JqFq3eC1y', 'sys_admin')
-	ON CONFLICT (email) DO NOTHING;
+	('System Administrator', 'admin@riceleaf.lk', '$2a$10$cVyhfPbv/olF8fVJ4yI4YujbWOQqlEu7iSJT0p3VP4QagY6HSztLO', 'sys_admin')
+	ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
 	INSERT INTO diseases (class_id, key, name, category, description, factors, actions) VALUES
 	(0, 'bacterial_leaf_blight', 'Bacterial Leaf Blight (BLB)', 'Bacterial (Xanthomonas oryzae)', 'One of the most destructive diseases in Sri Lanka. It causes yellowing and drying of leaves (Kresek). Common in both Yala and Maha seasons, especially after heavy rains and strong winds.', '[{"label": "Humidity", "value": "High", "color": "#3B82F6", "icon": "Droplet"}, {"label": "Weather", "value": "Strong Winds", "color": "#64748B", "icon": "Zap"}, {"label": "Temp", "value": "25-34°C", "color": "#F97316", "icon": "Thermometer"}]'::jsonb, '[{"title": "Stop Water Supply", "subtitle": "Drain the field immediately to stop spread"}, {"title": "Apply Potassium Fertilizer", "subtitle": "Helps manage further spread (DOA recommendation)"}, {"title": "Avoid Excess Nitrogen", "subtitle": "Reduce Urea application temporarily"}]'::jsonb),

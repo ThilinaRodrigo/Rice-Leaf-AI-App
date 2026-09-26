@@ -41,7 +41,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 		ID:           adminID,
 		FullName:     "System Administrator",
 		Email:        "admin@riceleaf.lk",
-		PasswordHash: "$2a$10$ZM3/PPhkiCzQN9GInT0K..VfvZBvexgeoCMZZOFTZi2VjOu.wNK1K",
+		PasswordHash: "$2a$10$cVyhfPbv/olF8fVJ4yI4YujbWOQqlEu7iSJT0p3VP4QagY6HSztLO",
 		Role:         domain.RoleSysAdmin,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),

@@ -10,25 +10,26 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: "#059669",
-        tabBarInactiveTintColor: "#94A3B8",
+        tabBarInactiveTintColor: "#64748B",
         tabBarStyle: {
-          backgroundColor: "#0F172A",
+          backgroundColor: "#FFFFFF",
           borderRadius: 30,
           marginHorizontal: 16,
           bottom: bottomMargin,
           height: 60,
           position: "absolute",
           borderWidth: 1,
-          borderColor: "#1E293B",
+          borderColor: "#E2E8F0",
           paddingBottom: 6,
           paddingTop: 6,
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.35,
-          shadowRadius: 10,
-          elevation: 12,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 8,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -53,7 +54,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View
               className={`w-10 h-10 rounded-full items-center justify-center ${
-                focused ? "bg-emerald-600 border border-emerald-400" : "bg-slate-800"
+                focused ? "bg-emerald-600 border border-emerald-400" : "bg-slate-100 border border-slate-200"
               }`}
             >
               <Scan size={20} color={focused ? "#FFFFFF" : color} />
