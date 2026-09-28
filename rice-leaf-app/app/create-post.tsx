@@ -17,19 +17,21 @@ import { ArrowLeft, Camera, Image as ImageIcon, X, PlusCircle } from "lucide-rea
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { uploadPostImage, createCommunityPost } from "@/service/apiClient";
 
 const DISEASE_OPTIONS = [
-  { label: "Bacterial Leaf Blight", value: "bacterial_leaf_blight" },
-  { label: "Brown Spot", value: "brown_spot" },
-  { label: "Healthy Leaf", value: "healthy" },
-  { label: "Leaf Scald", value: "leaf_scald" },
-  { label: "Narrow Brown Spot", value: "narrow_brown_spot" },
-  { label: "General Farmer Query", value: "general" },
+  { labelKey: "diseaseTagBlight" as const, value: "bacterial_leaf_blight" },
+  { labelKey: "diseaseTagBrownSpot" as const, value: "brown_spot" },
+  { labelKey: "diseaseTagHealthy" as const, value: "healthy" },
+  { labelKey: "diseaseTagLeafScald" as const, value: "leaf_scald" },
+  { labelKey: "diseaseTagNarrowSpot" as const, value: "narrow_brown_spot" },
+  { labelKey: "diseaseTagGeneral" as const, value: "general" },
 ];
 
 export default function CreatePost() {
   const { user, token } = useAuth();
+  const { t } = useLanguage();
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -134,10 +136,10 @@ export default function CreatePost() {
           <View style={styles.headerText}>
             <View style={styles.badgeRow}>
               <View style={styles.badgeDot} />
-              <Text style={styles.badgeLabel}>Farmer Knowledge Base</Text>
+              <Text style={styles.badgeLabel}>{t("communityTitle")}</Text>
             </View>
             <Text style={styles.headerTitle} numberOfLines={1}>
-              Create Community Post
+              {t("createPostHeader")}
             </Text>
           </View>
         </View>
@@ -150,17 +152,17 @@ export default function CreatePost() {
           keyboardDismissMode="on-drag"
         >
           {/* ── Post Title ── */}
-          <Text style={styles.fieldLabel}>Post Title / Disease Summary *</Text>
+          <Text style={styles.fieldLabel}>{t("postTitle")} *</Text>
           <TextInput
             style={styles.textInput}
-            placeholder="e.g. Effective remedy for Bacterial Blight kresek"
+            placeholder={t("postTitlePlaceholder")}
             placeholderTextColor="#94A3B8"
             value={title}
             onChangeText={setTitle}
           />
 
           {/* ── Disease Tag Selector ── */}
-          <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Select Disease Tag *</Text>
+          <Text style={[styles.fieldLabel, { marginTop: 16 }]}>{t("diseaseCategory")} *</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScroll}>
             {DISEASE_OPTIONS.map((opt) => {
               const isSelected = diseaseTag === opt.value;
@@ -171,7 +173,7 @@ export default function CreatePost() {
                   style={[styles.tagPill, isSelected ? styles.tagPillActive : styles.tagPillInactive]}
                 >
                   <Text style={[styles.tagPillText, isSelected ? styles.tagPillTextActive : styles.tagPillTextInactive]}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -179,7 +181,7 @@ export default function CreatePost() {
           </ScrollView>
 
           {/* ── Photo Upload ── */}
-          <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Upload Paddy Leaf Photo (Optional)</Text>
+          <Text style={[styles.fieldLabel, { marginTop: 16 }]}>{t("attachImage")}</Text>
 
           {selectedImage ? (
             <View style={styles.imagePreviewWrapper}>
@@ -190,25 +192,25 @@ export default function CreatePost() {
             </View>
           ) : (
             <View style={styles.imagePickerRow}>
-              {/* Take Photo Button — uses plain StyleSheet, no NativeWind */}
+              {/* Take Photo Button */}
               <TouchableOpacity onPress={handleSelectCamera} style={styles.imagePickerBtn} activeOpacity={0.75}>
                 <Camera size={18} color="#059669" />
-                <Text style={styles.imagePickerBtnText}>Take Photo</Text>
+                <Text style={styles.imagePickerBtnText}>{t("takePhoto")}</Text>
               </TouchableOpacity>
 
               {/* Choose Gallery Button */}
               <TouchableOpacity onPress={handleSelectGallery} style={styles.imagePickerBtn} activeOpacity={0.75}>
                 <ImageIcon size={18} color="#059669" />
-                <Text style={styles.imagePickerBtnText}>Choose Gallery</Text>
+                <Text style={styles.imagePickerBtnText}>{t("pickImage")}</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {/* ── Solution Description ── */}
-          <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Description &amp; Remedy Details *</Text>
+          <Text style={[styles.fieldLabel, { marginTop: 16 }]}>{t("solutionDescription")} *</Text>
           <TextInput
             style={[styles.textInput, styles.textArea]}
-            placeholder="Share step-by-step field observations, dosage, fertilizers, or organic treatments that worked for your crop..."
+            placeholder={t("solutionPlaceholder")}
             placeholderTextColor="#94A3B8"
             value={content}
             onChangeText={setContent}
@@ -228,8 +230,8 @@ export default function CreatePost() {
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
               <>
-                <PlusCircle size={20} color="#FFFFFF" />
-                <Text style={styles.submitBtnText}>Publish Community Post</Text>
+                <PlusCircle size={18} color="#FFFFFF" />
+                <Text style={styles.submitBtnText}>{t("publishPost")}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -319,7 +321,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#374151",
     textTransform: "uppercase",
-    letterSpacing: 0.8,
     marginBottom: 8,
   },
   // Text inputs
@@ -391,11 +392,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -406,6 +407,8 @@ const styles = StyleSheet.create({
     color: "#065f46",
     fontWeight: "700",
     fontSize: 12,
+    marginLeft: 8,
+    flexShrink: 1,
   },
   imagePreviewWrapper: {
     borderRadius: 16,

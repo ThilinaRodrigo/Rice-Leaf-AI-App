@@ -270,10 +270,10 @@ const Result = () => {
               <View className="bg-white mx-4 mt-4 p-5 rounded-2xl shadow-sm">
                 <View className="flex-row items-center justify-between mb-3">
                   <Text className="text-lg font-bold text-gray-900">
-                    Community Advice & Solutions
+                    {t("communitySolutionsTitle")}
                   </Text>
                   <TouchableOpacity onPress={() => router.push("/community" as any)}>
-                    <Text className="text-xs font-bold text-emerald-700">View All</Text>
+                    <Text className="text-xs font-bold text-emerald-700">{t("viewAll")}</Text>
                   </TouchableOpacity>
                 </View>
 

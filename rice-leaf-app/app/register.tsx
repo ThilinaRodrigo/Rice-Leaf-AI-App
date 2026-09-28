@@ -27,9 +27,11 @@ import {
   EyeOff,
 } from "lucide-react-native";
 import { useAuth, UserRole } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function RegisterScreen() {
   const { register, isLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [role, setRole] = useState<UserRole>("farmer");
   const [fullName, setFullName] = useState("");
@@ -120,10 +122,10 @@ export default function RegisterScreen() {
                 resizeMode="contain"
               />
             </View>
-            <View>
-              <Text className="text-2xl font-extrabold text-white">Create Account</Text>
+            <View className="ml-3">
+              <Text className="text-2xl font-extrabold text-white">{t("createAccount")}</Text>
               <Text className="text-emerald-200 text-xs">
-                Rice Leaf AI & Agrochemical Network
+                {t("welcomeSub")}
               </Text>
             </View>
           </View>
@@ -132,7 +134,7 @@ export default function RegisterScreen() {
           <View className="bg-white rounded-3xl p-6 mb-8">
             {/* Role Selection Segment */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-3">
-              Select Your Role
+              {t("selectRole")}
             </Text>
             <View className="flex-row bg-gray-100 p-1.5 rounded-2xl mb-6 border border-gray-200">
               <TouchableOpacity
@@ -150,7 +152,7 @@ export default function RegisterScreen() {
                     role === "farmer" ? "text-white" : "text-gray-600"
                   }`}
                 >
-                  🌾 Farmer
+                  🌾 {t("roleFarmer")}
                 </Text>
               </TouchableOpacity>
 
@@ -169,7 +171,7 @@ export default function RegisterScreen() {
                     role === "shop_owner" ? "text-white" : "text-gray-600"
                   }`}
                 >
-                  🏪 Shop Owner
+                  🏪 {t("roleShopOwner")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -184,7 +186,7 @@ export default function RegisterScreen() {
 
             {/* Common Inputs: Full Name */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-              Full Name *
+              {t("fullNameLabel")} *
             </Text>
             <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200">
               <UserIcon size={20} color="#6b7280" />
@@ -198,7 +200,7 @@ export default function RegisterScreen() {
 
             {/* NIC Number */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-              NIC Number *
+              {t("nicLabel")} *
             </Text>
             <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200 focus:border-emerald-600">
               <CreditCard size={20} color="#6b7280" />
@@ -213,7 +215,7 @@ export default function RegisterScreen() {
 
             {/* Email Address */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-              Email Address {role === "shop_owner" ? "*" : "(Optional)"}
+              {t("emailLabel")} {role === "shop_owner" ? "*" : "(Optional)"}
             </Text>
             <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200">
               <Mail size={20} color="#6b7280" />
@@ -229,7 +231,7 @@ export default function RegisterScreen() {
 
             {/* Password */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-              Password * (min 6 chars)
+              {t("passwordLabel")} * (min 6 chars)
             </Text>
             <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200">
               <Lock size={20} color="#6b7280" />
@@ -251,7 +253,7 @@ export default function RegisterScreen() {
 
             {/* Phone Number */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-              Phone Number
+              {t("phoneLabel")}
             </Text>
             <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200">
               <Phone size={20} color="#6b7280" />
@@ -268,11 +270,11 @@ export default function RegisterScreen() {
             {role === "shop_owner" && (
               <>
                 <Text className="text-emerald-800 text-xs font-bold uppercase mb-3 mt-2">
-                  🏪 Agro Shop Details
+                  🏪 {t("shopDetails")}
                 </Text>
 
                 <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-                  Shop Name *
+                  {t("shopNameLabel")} *
                 </Text>
                 <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200">
                   <Store size={20} color="#059669" />
@@ -285,7 +287,7 @@ export default function RegisterScreen() {
                 </View>
 
                 <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-                  District / Location
+                  {t("districtLabel")}
                 </Text>
                 <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200">
                   <MapPin size={20} color="#059669" />
@@ -298,7 +300,7 @@ export default function RegisterScreen() {
                 </View>
 
                 <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-                  WhatsApp Ordering Number
+                  {t("whatsAppLabel")}
                 </Text>
                 <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200">
                   <MessageSquare size={20} color="#059669" />
@@ -317,7 +319,7 @@ export default function RegisterScreen() {
             {role === "farmer" && (
               <>
                 <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-                  Paddy Farming District
+                  {t("paddyDistrictLabel")}
                 </Text>
                 <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200">
                   <MapPin size={20} color="#6b7280" />
@@ -340,15 +342,15 @@ export default function RegisterScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text className="text-white font-bold text-lg">Create Account</Text>
+                <Text className="text-white font-bold text-lg">{t("createAccount")}</Text>
               )}
             </TouchableOpacity>
 
             {/* Switch to Login */}
             <View className="flex-row justify-center items-center">
-              <Text className="text-gray-500 text-sm">Already have an account? </Text>
+              <Text className="text-gray-500 text-sm">{t("alreadyHaveAccount")}{" "}</Text>
               <TouchableOpacity onPress={() => router.push("/login" as const)}>
-                <Text className="text-emerald-700 font-bold text-sm">Sign In</Text>
+                <Text className="text-emerald-700 font-bold text-sm">{t("signIn")}</Text>
               </TouchableOpacity>
             </View>
           </View>

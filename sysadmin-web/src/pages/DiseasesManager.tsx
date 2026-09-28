@@ -24,7 +24,7 @@ export const DiseasesManager: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingDisease, setEditingDisease] = useState<Disease | null>(null);
 
-  // Form Fields
+  // English Form Fields
   const [classId, setClassId] = useState<number>(0);
   const [key, setKey] = useState('');
   const [name, setName] = useState('');
@@ -33,17 +33,24 @@ export const DiseasesManager: React.FC = () => {
   const [factors, setFactors] = useState<DiseaseFactor[]>([]);
   const [actions, setActions] = useState<DiseaseAction[]>([]);
 
+  // Sinhala Translation Form Fields
+  const [nameSi, setNameSi] = useState('');
+  const [categorySi, setCategorySi] = useState('');
+  const [descriptionSi, setDescriptionSi] = useState('');
+  const [activeTab, setActiveTab] = useState<'en' | 'si'>('en');
+
   const [modalError, setModalError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const loadDiseases = async () => {
     try {
       const data = await fetchDiseases();
-      // Normalize Factors and Actions if returned as raw JSON or string
+      // Normalize Factors, Actions, and Translations if returned as raw JSON or string
       const parsedData = data.map((d) => ({
         ...d,
         factors: typeof d.factors === 'string' ? JSON.parse(d.factors) : d.factors || [],
         actions: typeof d.actions === 'string' ? JSON.parse(d.actions) : d.actions || [],
+        translations: typeof d.translations === 'string' ? JSON.parse(d.translations) : d.translations || {},
       }));
       setDiseases(parsedData);
     } catch (err) {
@@ -62,11 +69,15 @@ export const DiseasesManager: React.FC = () => {
     setName('');
     setCategory('Fungal');
     setDescription('');
+    setNameSi('');
+    setCategorySi('');
+    setDescriptionSi('');
+    setActiveTab('en');
     setFactors([
-      { label: 'Humidity', value: 'High', color: '#3B82F6', icon: 'Droplet' },
-      { label: 'Temp', value: '25-34°C', color: '#F97316', icon: 'Thermometer' },
+      { label: 'Humidity', value: 'High', label_si: 'ආද්‍රතාවය', value_si: 'අධිකයි', color: '#3B82F6', icon: 'Droplet' },
+      { label: 'Temp', value: '25-34°C', label_si: 'උෂ්ණත්වය', value_si: '25-34°C', color: '#F97316', icon: 'Thermometer' },
     ]);
-    setActions([{ title: '', subtitle: '' }]);
+    setActions([{ title: '', subtitle: '', title_si: '', subtitle_si: '' }]);
     setModalError('');
     setShowModal(true);
   };
@@ -78,8 +89,41 @@ export const DiseasesManager: React.FC = () => {
     setName(d.name || '');
     setCategory(d.category || '');
     setDescription(d.description || '');
-    setFactors(Array.isArray(d.factors) ? [...d.factors] : []);
-    setActions(Array.isArray(d.actions) ? [...d.actions] : []);
+
+    // Parse Sinhala Translations if available
+    let siTr: any = {};
+    if (d.translations) {
+      if (typeof d.translations === 'string') {
+        try {
+          siTr = JSON.parse(d.translations).si || {};
+        } catch (e) {}
+      } else if (d.translations.si) {
+        siTr = d.translations.si;
+      }
+    }
+    setNameSi(siTr.name || '');
+    setCategorySi(siTr.category || '');
+    setDescriptionSi(siTr.description || '');
+    setActiveTab('en');
+
+    const rawFactors = Array.isArray(d.factors) ? d.factors : [];
+    const siFactors = Array.isArray(siTr.factors) ? siTr.factors : [];
+    const mergedFactors = rawFactors.map((fac, i) => ({
+      ...fac,
+      label_si: siFactors[i]?.label || fac.label_si || '',
+      value_si: siFactors[i]?.value || fac.value_si || '',
+    }));
+    setFactors(mergedFactors);
+
+    const rawActions = Array.isArray(d.actions) ? d.actions : [];
+    const siActions = Array.isArray(siTr.actions) ? siTr.actions : [];
+    const mergedActions = rawActions.map((act, i) => ({
+      ...act,
+      title_si: siActions[i]?.title || act.title_si || '',
+      subtitle_si: siActions[i]?.subtitle || act.subtitle_si || '',
+    }));
+    setActions(mergedActions);
+
     setModalError('');
     setShowModal(true);
   };
@@ -104,7 +148,7 @@ export const DiseasesManager: React.FC = () => {
   };
 
   const handleAddFactor = () => {
-    setFactors([...factors, { label: 'Factor', value: 'High', color: '#3B82F6', icon: 'Droplet' }]);
+    setFactors([...factors, { label: 'Factor', value: 'High', label_si: '', value_si: '', color: '#3B82F6', icon: 'Droplet' }]);
   };
 
   const handleRemoveFactor = (index: number) => {
@@ -118,7 +162,7 @@ export const DiseasesManager: React.FC = () => {
   };
 
   const handleAddAction = () => {
-    setActions([...actions, { title: '', subtitle: '' }]);
+    setActions([...actions, { title: '', subtitle: '', title_si: '', subtitle_si: '' }]);
   };
 
   const handleRemoveAction = (index: number) => {
@@ -151,14 +195,39 @@ export const DiseasesManager: React.FC = () => {
     setModalError('');
     setSubmitting(true);
     try {
+      // Build Sinhala translations JSON
+      const siActions = actions.map((act) => ({
+        title: act.title_si || act.title,
+        subtitle: act.subtitle_si || act.subtitle,
+      }));
+
+      const siFactorsPayload = factors.map((fac) => ({
+        label: fac.label_si || fac.label,
+        value: fac.value_si || fac.value,
+        color: fac.color || '#3B82F6',
+        icon: fac.icon || 'Droplet',
+      }));
+
+      const translationsPayload: Record<string, any> = {};
+      if (nameSi || categorySi || descriptionSi || siActions.length > 0 || siFactorsPayload.length > 0) {
+        translationsPayload.si = {
+          name: nameSi || name,
+          category: categorySi || category,
+          description: descriptionSi || description,
+          factors: siFactorsPayload,
+          actions: siActions,
+        };
+      }
+
       const payload: Partial<Disease> = {
         class_id: Number(classId),
         key: key || name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
         name,
         category,
         description,
-        factors,
-        actions,
+        factors: factors.map(({ label, value, color, icon }) => ({ label, value, color, icon })),
+        actions: actions.map(({ title, subtitle }) => ({ title, subtitle })),
+        translations: translationsPayload,
       };
 
       if (editingDisease) {
@@ -231,8 +300,20 @@ export const DiseasesManager: React.FC = () => {
                       {d.class_id}
                     </div>
                     <div>
-                      <h3 className="font-extrabold text-white text-lg">{d.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-white text-lg">{d.name}</h3>
+                        {d.translations?.si?.name && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                            🇱🇰 SI
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-emerald-400 font-semibold">{d.category}</p>
+                      {d.translations?.si?.name && (
+                        <p className="text-xs text-slate-400 font-medium mt-0.5">
+                          සිංහල: <span className="text-emerald-300 font-bold">{d.translations.si.name}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -256,6 +337,11 @@ export const DiseasesManager: React.FC = () => {
 
                 <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                   {d.description}
+                  {d.translations?.si?.description && (
+                    <span className="block mt-2 pt-2 border-t border-slate-800 text-xs text-slate-400 italic">
+                      🇱🇰 {d.translations.si.description}
+                    </span>
+                  )}
                 </p>
 
                 {/* Environmental Factors Badge List */}
@@ -287,17 +373,25 @@ export const DiseasesManager: React.FC = () => {
                       <span>DOA Recommended Actions & Remedies</span>
                     </h4>
                     <ul className="space-y-2">
-                      {d.actions.map((act, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                          <div>
-                            <span className="font-bold text-white">{act.title}</span>
-                            {act.subtitle && (
-                              <span className="text-slate-400 block mt-0.5">{act.subtitle}</span>
-                            )}
-                          </div>
-                        </li>
-                      ))}
+                      {d.actions.map((act, i) => {
+                        const siAct = d.translations?.si?.actions?.[i];
+                        return (
+                          <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                            <div>
+                              <span className="font-bold text-white">{act.title}</span>
+                              {siAct?.title && siAct.title !== act.title && (
+                                <span className="text-emerald-400 text-[11px] block font-medium">
+                                  ({siAct.title})
+                                </span>
+                              )}
+                              {act.subtitle && (
+                                <span className="text-slate-400 block mt-0.5">{act.subtitle}</span>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 )}
@@ -325,6 +419,35 @@ export const DiseasesManager: React.FC = () => {
               Configure classification ID, pathogen details, environmental triggers, and recommended remedies.
             </p>
 
+            {/* Language Tab Switcher */}
+            <div className="flex bg-slate-900 p-1.5 rounded-2xl border border-slate-800 mb-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab('en')}
+                className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                  activeTab === 'en'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                🇬🇧 English Content
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('si')}
+                className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
+                  activeTab === 'si'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>🇱🇰 Sinhala Translation (සිංහල)</span>
+                {nameSi ? (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                ) : null}
+              </button>
+            </div>
+
             {modalError && (
               <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center font-semibold">
                 {modalError}
@@ -332,6 +455,7 @@ export const DiseasesManager: React.FC = () => {
             )}
 
             <form onSubmit={handleSave} className="space-y-4">
+              {/* Common Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
@@ -361,44 +485,97 @@ export const DiseasesManager: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
-                  Disease Name *
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Bacterial Leaf Blight (BLB)"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
+              {/* Tab 1: English Content */}
+              {activeTab === 'en' ? (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
+                      Disease Name (English) *
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Bacterial Leaf Blight (BLB)"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
-                  Category / Pathogen *
-                </label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Bacterial (Xanthomonas oryzae)"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
+                      Category / Pathogen (English) *
+                    </label>
+                    <input
+                      type="text"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      placeholder="Bacterial (Xanthomonas oryzae)"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
-                  Description *
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="One of the most destructive diseases in Sri Lanka..."
-                  rows={3}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
+                      Description (English) *
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="One of the most destructive diseases in Sri Lanka..."
+                      rows={3}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </>
+              ) : (
+                /* Tab 2: Sinhala Translation */
+                <>
+                  <div className="bg-emerald-950/40 border border-emerald-500/20 p-3 rounded-2xl mb-2">
+                    <p className="text-xs text-emerald-300 font-semibold flex items-center gap-1.5">
+                      <span>🇱🇰</span> Enter Sinhala (සිංහල) translations to show farmers in the mobile app when Sinhala language is selected.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-400 uppercase mb-1">
+                      Disease Name (සිංහල නම)
+                    </label>
+                    <input
+                      type="text"
+                      value={nameSi}
+                      onChange={(e) => setNameSi(e.target.value)}
+                      placeholder="උදා: කොළ පාළුව (BLB)"
+                      className="w-full bg-slate-900 border border-emerald-500/40 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-400 uppercase mb-1">
+                      Category / Pathogen (සිංහල කාණ්ඩය)
+                    </label>
+                    <input
+                      type="text"
+                      value={categorySi}
+                      onChange={(e) => setCategorySi(e.target.value)}
+                      placeholder="උදා: බැක්ටීරියා (Xanthomonas oryzae)"
+                      className="w-full bg-slate-900 border border-emerald-500/40 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-400 uppercase mb-1">
+                      Description (සිංහල විස්තරය)
+                    </label>
+                    <textarea
+                      value={descriptionSi}
+                      onChange={(e) => setDescriptionSi(e.target.value)}
+                      placeholder="උදා: ශ්‍රී ලංකාවේ වඩාත්ම හානිකර ගොයම් රෝගයකි. යල සහ මහ කන්න දෙකෙහිම ප්‍රබල ලෙස දක්නට ලැබේ..."
+                      rows={3}
+                      className="w-full bg-slate-900 border border-emerald-500/40 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Environmental Factors Builder */}
               <div className="space-y-3 pt-2">
@@ -417,28 +594,60 @@ export const DiseasesManager: React.FC = () => {
                 </div>
 
                 {factors.map((fac, idx) => (
-                  <div key={idx} className="flex gap-2 items-center bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-                    <input
-                      type="text"
-                      placeholder="Label (e.g. Temp)"
-                      value={fac.label}
-                      onChange={(e) => handleFactorChange(idx, 'label', e.target.value)}
-                      className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Value (e.g. 25-34°C)"
-                      value={fac.value}
-                      onChange={(e) => handleFactorChange(idx, 'value', e.target.value)}
-                      className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white"
-                    />
+                  <div key={idx} className="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800 relative">
                     <button
                       type="button"
                       onClick={() => handleRemoveFactor(idx)}
-                      className="p-1.5 text-red-400 hover:text-red-300"
+                      className="absolute top-3 right-3 text-red-400 hover:text-red-300"
                     >
                       <Trash className="w-4 h-4" />
                     </button>
+
+                    {/* English Inputs */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">
+                        Factor #{idx + 1} (English)
+                      </label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          placeholder="Label (e.g. Humidity)"
+                          value={fac.label}
+                          onChange={(e) => handleFactorChange(idx, 'label', e.target.value)}
+                          className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Value (e.g. High)"
+                          value={fac.value}
+                          onChange={(e) => handleFactorChange(idx, 'value', e.target.value)}
+                          className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Sinhala Inputs */}
+                    <div className="space-y-1 pt-1.5 border-t border-slate-800/80">
+                      <label className="text-[10px] font-bold text-emerald-400 uppercase">
+                        Factor #{idx + 1} (සිංහල)
+                      </label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          placeholder="සිංහල ලේබලය (උදා: ආද්‍රතාවය)"
+                          value={fac.label_si || ''}
+                          onChange={(e) => handleFactorChange(idx, 'label_si', e.target.value)}
+                          className="flex-1 bg-slate-950 border border-emerald-500/30 rounded-lg p-2 text-xs text-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="සිංහල අගය (උදා: අධිකයි)"
+                          value={fac.value_si || ''}
+                          onChange={(e) => handleFactorChange(idx, 'value_si', e.target.value)}
+                          className="flex-1 bg-slate-950 border border-emerald-500/30 rounded-lg p-2 text-xs text-white"
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -468,20 +677,48 @@ export const DiseasesManager: React.FC = () => {
                     >
                       <Trash className="w-4 h-4" />
                     </button>
-                    <input
-                      type="text"
-                      placeholder="Action Title (e.g. Apply Potassium Fertilizer)"
-                      value={act.title}
-                      onChange={(e) => handleActionChange(idx, 'title', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Details / Subtitle (e.g. Helps manage further spread)"
-                      value={act.subtitle}
-                      onChange={(e) => handleActionChange(idx, 'subtitle', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300"
-                    />
+
+                    {/* English Title & Subtitle */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">
+                        Action #{idx + 1} (English)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Action Title (e.g. Apply Potassium Fertilizer)"
+                        value={act.title}
+                        onChange={(e) => handleActionChange(idx, 'title', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Details / Subtitle (e.g. Helps manage further spread)"
+                        value={act.subtitle}
+                        onChange={(e) => handleActionChange(idx, 'subtitle', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300"
+                      />
+                    </div>
+
+                    {/* Sinhala Title & Subtitle */}
+                    <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                      <label className="text-[10px] font-bold text-emerald-400 uppercase">
+                        Action #{idx + 1} (සිංහල)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="සිංහල පියවර (උදා: පොටෑසියම් පොරෝර යොදන්න)"
+                        value={act.title_si || ''}
+                        onChange={(e) => handleActionChange(idx, 'title_si', e.target.value)}
+                        className="w-full bg-slate-950 border border-emerald-500/30 rounded-lg p-2 text-xs text-white font-bold"
+                      />
+                      <input
+                        type="text"
+                        placeholder="සිංහල විස්තරය (උදා: රෝගය තවදුරටත් පැතිරීම පාලනය කරයි)"
+                        value={act.subtitle_si || ''}
+                        onChange={(e) => handleActionChange(idx, 'subtitle_si', e.target.value)}
+                        className="w-full bg-slate-950 border border-emerald-500/30 rounded-lg p-2 text-xs text-slate-300"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

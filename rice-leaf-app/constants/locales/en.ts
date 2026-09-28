@@ -15,12 +15,99 @@ export const en = {
   sinhala: "සිංහල",
   selectLanguage: "Select App Language",
 
-  // Home Screen
+  // Home Screen Banner & Hero
   welcomeTitle: "Empowering Sri Lankan Rice Farmers",
   welcomeSub: "AI-powered paddy leaf disease detection & agronomy advice",
+  aiPoweredDiagnosis: "AI Powered Diagnosis",
+  heroScanTitle: "Scan Paddy Leaf to Detect Diseases Instantly",
+  heroScanSub: "Take a clear photo of infected leaves or upload from gallery to get diagnosis, recommended remedies, and nearby agro store products.",
+  openCamera: "Open Camera",
+  uploadPhoto: "Upload Photo",
   quickScan: "Quick Leaf Scan",
   quickScanSub: "Take a photo to detect diseases instantly",
   scanButton: "Scan Paddy Leaf",
+
+  // Home Screen Quick Services
+  quickServices: "Quick Services",
+  aiScanSub: "Leaf diagnosis",
+  agroStore: "Agro Store",
+  agroStoreSub: "Buy remedies",
+  agronomistQA: "Agronomist Q&A",
+  profileSub: "Account & Ads",
+
+  // Home Screen Paddy Diseases Section
+  commonPaddyDiseases: "Common Paddy Diseases",
+  askAI: "Ask AI",
+  findRemedies: "Find Remedies",
+  highRisk: "High Risk",
+  moderate: "Moderate",
+  lowRisk: "Low Risk",
+
+  // Community Advice & Solutions Section
+  communitySolutionsTitle: "Community Advice & Solutions",
+  viewAll: "View All",
+  farmerExperience: "Farmer Experience & Solutions",
+  communityForumSub: "Connect with fellow farmers, ask questions & share remedies",
+  diseaseTagAll: "All",
+  diseaseTagBlight: "Bacterial Blight",
+  diseaseTagBrownSpot: "Brown Spot",
+  diseaseTagHealthy: "Healthy Leaf",
+  diseaseTagLeafScald: "Leaf Scald",
+  diseaseTagNarrowSpot: "Narrow Brown Spot",
+  diseaseTagGeneral: "General",
+  writeComment: "Write a comment...",
+  sendComment: "Post Comment",
+
+  // Create Community Post
+  createPostHeader: "Create Community Post",
+  postTitle: "Post Title",
+  postTitlePlaceholder: "e.g., Effective remedy for Bacterial Leaf Blight",
+  diseaseCategory: "Disease Category Tag",
+  solutionDescription: "Detailed Solution / Query",
+  solutionPlaceholder: "Describe the symptoms, treatment applied, fertilizer dosage, or question for fellow farmers...",
+  attachImage: "Attach Image (Optional)",
+  publishPost: "Publish Post",
+  uploading: "Uploading...",
+
+  // Market Screen Section
+  agroMarketplaceTitle: "Agro Marketplace",
+  marketBannerSub: "Seeds, Remedies & Tools",
+  searchMarketPlaceholder: "Search products or remedies...",
+  catSeeds: "Seeds",
+  catFertilizers: "Fertilizers",
+  catTools: "Tools",
+  catSprayers: "Sprayers",
+  verifiedShopOffers: "Verified Shop Offers",
+  adminVerified: "Admin Verified",
+  contactStore: "Contact Store",
+  allProducts: "All Products",
+  buyNow: "Buy Now",
+  noProductsFound: "No products found",
+
+  // Auth (Login & Register) Screen Keys
+  welcomeBack: "Welcome Back",
+  loginInstruction: "Sign in with your Email Address or NIC Number",
+  emailOrNic: "Email Address or NIC Number",
+  emailOrNicPlaceholder: "farmer@example.com or 991234567V",
+  passwordLabel: "Password",
+  dontHaveAccount: "Don't have an account?",
+  signUp: "Sign Up",
+  secureAgriNet: "Secure Sri Lankan Agricultural Network",
+  selectRole: "Select Your Role",
+  roleFarmer: "Farmer",
+  roleShopOwner: "Shop Owner",
+  fullNameLabel: "Full Name",
+  nicLabel: "NIC Number",
+  emailLabel: "Email Address",
+  phoneLabel: "Phone Number",
+  shopDetails: "Agro Shop Details",
+  shopNameLabel: "Shop Name",
+  districtLabel: "District / Location",
+  whatsAppLabel: "WhatsApp Ordering Number",
+  paddyDistrictLabel: "Paddy Farming District",
+  alreadyHaveAccount: "Already have an account?",
+
+  // Navigation Subtitles
   remediesTitle: "Disease Remedies",
   remediesSub: "Department of Agriculture (DOA) guide",
   marketTitle: "Agro Marketplace",
@@ -42,10 +129,8 @@ export const en = {
   riskFactors: "Key Risk Factors",
   saveToHistory: "Save to Scan History",
   
-  // Market Screen
-  marketHeader: "Agro Marketplace",
+  // Market Screen Common Keys
   allCategories: "All Products",
-  searchPlaceholder: "Search products, fertilizers...",
   contactSeller: "Contact Seller / Shop",
   callShop: "Call Shop",
   whatsappShop: "WhatsApp",
@@ -57,6 +142,13 @@ export const en = {
   noPosts: "No community posts found.",
   like: "Like",
   comments: "Comments",
+  farmerKnowledgeBase: "Farmer Knowledge Base",
+  haveDiseaseSolution: "Have a crop disease solution?",
+  shareExperienceSub: "Share your experience & remedies with farmers",
+  loadingPosts: "Loading community posts...",
+  noPostsYet: "No community posts yet",
+  noPostsSub: "Be the first farmer or expert to share a crop remedy or post for this category!",
+  noCommentsYet: "No comments yet. Start the conversation!",
 
   // Profile Screen
   accountInfo: "Account Information",
@@ -70,6 +162,13 @@ export const en = {
   signIn: "Sign In",
   createAccount: "Create Account",
   guestMessage: "Sign in to access personalized scan history and community features.",
+  currentPassword: "Current Password",
+  newPassword: "New Password (min 6 chars)",
+  confirmPasswordLabel: "Confirm New Password",
+  savePassword: "Save Password",
+  cancel: "Cancel",
+  sysAdminRole: "System Administrator",
+  whatsAppContact: "WhatsApp Contact",
 };
 
 export type TranslationKeys = keyof typeof en;

@@ -58,6 +58,8 @@ export interface AuthResponse {
 export interface DiseaseFactor {
   label: string;
   value: string;
+  label_si?: string;
+  value_si?: string;
   color: string;
   icon: string;
 }
@@ -65,6 +67,8 @@ export interface DiseaseFactor {
 export interface DiseaseAction {
   title: string;
   subtitle: string;
+  title_si?: string;
+  subtitle_si?: string;
 }
 
 export interface Disease {

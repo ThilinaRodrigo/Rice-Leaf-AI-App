@@ -25,6 +25,7 @@ import {
 } from "lucide-react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   fetchCommunityPosts,
   voteCommunityPost,
@@ -36,17 +37,18 @@ import {
 import { API_BASE_URL } from "@/constant/api";
 
 const DISEASE_TAGS = [
-  { label: "All", value: "All" },
-  { label: "Bacterial Blight", value: "bacterial_leaf_blight" },
-  { label: "Brown Spot", value: "brown_spot" },
-  { label: "Healthy Leaf", value: "healthy" },
-  { label: "Leaf Scald", value: "leaf_scald" },
-  { label: "Narrow Brown Spot", value: "narrow_brown_spot" },
-  { label: "General", value: "general" },
+  { labelKey: "diseaseTagAll" as const, value: "All" },
+  { labelKey: "diseaseTagBlight" as const, value: "bacterial_leaf_blight" },
+  { labelKey: "diseaseTagBrownSpot" as const, value: "brown_spot" },
+  { labelKey: "diseaseTagHealthy" as const, value: "healthy" },
+  { labelKey: "diseaseTagLeafScald" as const, value: "leaf_scald" },
+  { labelKey: "diseaseTagNarrowSpot" as const, value: "narrow_brown_spot" },
+  { labelKey: "diseaseTagGeneral" as const, value: "general" },
 ];
 
 export default function Community() {
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   const [selectedTag, setSelectedTag] = useState("All");
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -225,11 +227,11 @@ export default function Community() {
             <View className="flex-row items-center space-x-2 mb-0.5">
               <View className="w-2 h-2 rounded-full bg-emerald-300" />
               <Text className="text-emerald-200 text-xs font-bold uppercase tracking-wider">
-                Farmer Knowledge Base
+                {t("farmerKnowledgeBase")}
               </Text>
             </View>
             <Text className="text-xl font-black text-white" numberOfLines={1}>
-              Community Solutions & Advice
+              {t("communitySolutionsTitle")}
             </Text>
           </View>
 
@@ -256,7 +258,7 @@ export default function Community() {
                 }`}
               >
                 <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-gray-700"}`}>
-                  {tag.label}
+                  {t(tag.labelKey)}
                 </Text>
               </TouchableOpacity>
             );
@@ -272,8 +274,8 @@ export default function Community() {
             <Plus size={20} color="#059669" />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-900 font-bold text-sm">Have a crop disease solution?</Text>
-            <Text className="text-gray-500 text-xs">Share your experience & remedies with farmers</Text>
+            <Text className="text-gray-900 font-bold text-sm">{t("haveDiseaseSolution")}</Text>
+            <Text className="text-gray-500 text-xs">{t("shareExperienceSub")}</Text>
           </View>
         </TouchableOpacity>
 
@@ -281,7 +283,7 @@ export default function Community() {
         {loading ? (
           <View className="py-20 items-center">
             <ActivityIndicator size="large" color="#059669" />
-            <Text className="text-gray-500 text-xs font-bold mt-3">Loading community posts...</Text>
+            <Text className="text-gray-500 text-xs font-bold mt-3">{t("loadingPosts")}</Text>
           </View>
         ) : posts.length > 0 ? (
           posts.map((post) => {
@@ -313,10 +315,10 @@ export default function Community() {
                       </View>
                       <Text className="text-[10px] text-gray-400 font-medium">
                         {post.author_role === "shop_owner"
-                          ? "Agro Store Owner"
+                          ? t("roleShopOwner")
                           : post.author_role === "sys_admin"
-                          ? "System Admin"
-                          : "Farmer"}
+                          ? t("sysAdminRole")
+                          : t("roleFarmer")}
                       </Text>
                     </View>
                   </View>
@@ -398,7 +400,7 @@ export default function Community() {
                     className="flex-row items-center space-x-1.5 bg-slate-50 border border-gray-200/80 px-3 py-1.5 rounded-xl active:opacity-80"
                   >
                     <MessageSquare size={15} color="#059669" />
-                    <Text className="text-xs font-bold text-gray-700">{post.comments_count} Comments</Text>
+                    <Text className="text-xs font-bold text-gray-700">{post.comments_count} {t("comments")}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -406,9 +408,9 @@ export default function Community() {
           })
         ) : (
           <View className="py-16 items-center bg-white rounded-2xl border border-gray-200/80 px-6">
-            <Text className="text-gray-900 font-bold text-base mb-1">No community posts yet</Text>
+            <Text className="text-gray-900 font-bold text-base mb-1">{t("noPostsYet")}</Text>
             <Text className="text-gray-500 text-xs text-center leading-relaxed">
-              Be the first farmer or expert to share a crop remedy or post for this category!
+              {t("noPostsSub")}
             </Text>
           </View>
         )}
@@ -426,7 +428,7 @@ export default function Community() {
             {/* Modal Header */}
             <View className="flex-row items-center justify-between pb-3 border-b border-gray-100">
               <View>
-                <Text className="text-base font-black text-gray-900">Comments</Text>
+                <Text className="text-base font-black text-gray-900">{t("comments")}</Text>
                 <Text className="text-xs text-gray-500" numberOfLines={1}>
                   {activePostForComments?.title}
                 </Text>
@@ -460,7 +462,7 @@ export default function Community() {
                 })
               ) : (
                 <Text className="text-center text-gray-400 text-xs py-8">
-                  No comments yet. Start the conversation!
+                  {t("noCommentsYet")}
                 </Text>
               )}
             </ScrollView>
@@ -469,7 +471,7 @@ export default function Community() {
             <View className="flex-row items-center bg-slate-100 border border-slate-200 rounded-2xl px-4 py-1.5 pt-2">
               <TextInput
                 className="flex-1 text-xs py-2 text-gray-900"
-                placeholder="Write a comment..."
+                placeholder={t("writeComment")}
                 placeholderTextColor="#94A3B8"
                 value={commentInput}
                 onChangeText={setCommentInput}

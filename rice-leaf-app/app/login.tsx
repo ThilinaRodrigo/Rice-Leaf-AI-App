@@ -14,9 +14,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { UserCheck, Lock, ArrowLeft, Leaf, ShieldCheck, Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function LoginScreen() {
   const { login, isLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -71,18 +73,18 @@ export default function LoginScreen() {
               />
             </View>
             <Text className="text-3xl font-extrabold text-white text-center">
-              Rice Leaf AI
+              {t("appName")}
             </Text>
             <Text className="text-emerald-200 text-sm mt-1 text-center">
-              Smart Diagnostics & Agro Marketplace
+              {t("welcomeSub")}
             </Text>
           </View>
 
           {/* Form Card */}
           <View className="bg-white rounded-3xl p-6">
-            <Text className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</Text>
+            <Text className="text-2xl font-bold text-gray-900 mb-2">{t("welcomeBack")}</Text>
             <Text className="text-gray-500 text-sm mb-6">
-              Sign in with your Email Address or NIC Number
+              {t("loginInstruction")}
             </Text>
 
             {errorMessage ? (
@@ -95,14 +97,14 @@ export default function LoginScreen() {
 
             {/* Email or NIC Field */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-              Email Address or NIC Number
+              {t("emailOrNic")}
             </Text>
             <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-4 border border-gray-200 focus:border-emerald-600">
               <UserCheck size={20} color="#6b7280" />
               <TextInput
                 value={identifier}
                 onChangeText={setIdentifier}
-                placeholder="farmer@example.com or 991234567V"
+                placeholder={t("emailOrNicPlaceholder")}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 className="ml-3 flex-1 text-gray-900 text-base"
@@ -111,7 +113,7 @@ export default function LoginScreen() {
 
             {/* Password Field */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-2">
-              Password
+              {t("passwordLabel")}
             </Text>
             <View className="flex-row items-center bg-gray-100 rounded-2xl px-4 py-3 mb-6 border border-gray-200 focus:border-emerald-600">
               <Lock size={20} color="#6b7280" />
@@ -140,15 +142,15 @@ export default function LoginScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text className="text-white font-bold text-lg">Sign In</Text>
+                <Text className="text-white font-bold text-lg">{t("signIn")}</Text>
               )}
             </TouchableOpacity>
 
             {/* Switch to Register */}
             <View className="flex-row justify-center items-center mt-2">
-              <Text className="text-gray-500 text-sm">Don't have an account? </Text>
+              <Text className="text-gray-500 text-sm">{t("dontHaveAccount")}{" "}</Text>
               <TouchableOpacity onPress={() => router.push("/register" as const)}>
-                <Text className="text-emerald-700 font-bold text-sm">Sign Up</Text>
+                <Text className="text-emerald-700 font-bold text-sm">{t("signUp")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -157,7 +159,7 @@ export default function LoginScreen() {
           <View className="flex-row items-center justify-center mt-auto py-6">
             <ShieldCheck size={16} color="#6ee7b7" />
             <Text className="text-emerald-200 text-xs ml-1 font-medium">
-              Secure Sri Lankan Agricultural Network
+              {t("secureAgriNet")}
             </Text>
           </View>
         </ScrollView>

@@ -32,10 +32,12 @@ import {
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { changePassword } from "@/service/apiClient";
 
 const Profile = () => {
   const { user, token, logout } = useAuth();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -148,21 +150,21 @@ const Profile = () => {
                   <>
                     <Store size={15} color="#D97706" />
                     <Text style={[styles.roleBadgeText, { color: "#78350F" }]}>
-                      Agro Shop Owner
+                      {t("roleShopOwner")}
                     </Text>
                   </>
                 ) : user.role === "sys_admin" ? (
                   <>
                     <ShieldCheck size={15} color="#7E22CE" />
                     <Text style={[styles.roleBadgeText, { color: "#581C87" }]}>
-                      System Administrator
+                      {t("sysAdminRole")}
                     </Text>
                   </>
                 ) : (
                   <>
                     <ShieldCheck size={15} color="#059669" />
                     <Text style={[styles.roleBadgeText, { color: "#064E3B" }]}>
-                      Registered Farmer
+                      {t("roleFarmer")}
                     </Text>
                   </>
                 )}
@@ -181,9 +183,9 @@ const Profile = () => {
                     <Megaphone size={22} color="#D97706" />
                   </View>
                   <View style={{ marginLeft: 12 }}>
-                    <Text style={styles.shopCardTitle}>Manage My Shop Ads</Text>
+                    <Text style={styles.shopCardTitle}>{t("postAd")}</Text>
                     <Text style={styles.shopCardSub}>
-                      Post & update your agro product listings
+                      {t("marketBannerSub")}
                     </Text>
                   </View>
                 </View>
@@ -193,7 +195,7 @@ const Profile = () => {
 
             {/* Account Information Card */}
             <View style={styles.infoCard}>
-              <Text style={styles.cardHeaderTitle}>Account Information</Text>
+              <Text style={styles.cardHeaderTitle}>{t("accountInfo")}</Text>
 
               {user.nic ? (
                 <View style={styles.infoRow}>
@@ -201,7 +203,7 @@ const Profile = () => {
                     <UserIcon size={16} color="#64748B" />
                   </View>
                   <View>
-                    <Text style={styles.infoLabel}>NIC Number</Text>
+                    <Text style={styles.infoLabel}>{t("nicNumber")}</Text>
                     <Text style={styles.infoValue}>{user.nic}</Text>
                   </View>
                 </View>
@@ -213,7 +215,7 @@ const Profile = () => {
                     <Phone size={16} color="#64748B" />
                   </View>
                   <View>
-                    <Text style={styles.infoLabel}>Phone Number</Text>
+                    <Text style={styles.infoLabel}>{t("phoneNumber")}</Text>
                     <Text style={styles.infoValue}>{user.phone}</Text>
                   </View>
                 </View>
@@ -225,7 +227,7 @@ const Profile = () => {
                     <MapPin size={16} color="#64748B" />
                   </View>
                   <View>
-                    <Text style={styles.infoLabel}>Location</Text>
+                    <Text style={styles.infoLabel}>{t("location")}</Text>
                     <Text style={styles.infoValue}>
                       {user.district} {user.city ? `, ${user.city}` : ""}
                     </Text>
@@ -245,7 +247,7 @@ const Profile = () => {
                       <Store size={16} color="#D97706" />
                     </View>
                     <View>
-                      <Text style={styles.infoLabel}>Agro Shop Name</Text>
+                      <Text style={styles.infoLabel}>{t("agroShopName")}</Text>
                       <Text
                         style={[
                           styles.infoValue,
@@ -268,7 +270,7 @@ const Profile = () => {
                         <MessageSquare size={16} color="#059669" />
                       </View>
                       <View>
-                        <Text style={styles.infoLabel}>WhatsApp Contact</Text>
+                        <Text style={styles.infoLabel}>{t("whatsAppContact")}</Text>
                         <Text
                           style={[
                             styles.infoValue,
@@ -286,7 +288,7 @@ const Profile = () => {
 
             {/* Account Settings & Security Options */}
             <View style={styles.infoCard}>
-              <Text style={styles.cardHeaderTitle}>Security & Preferences</Text>
+              <Text style={styles.cardHeaderTitle}>{t("securityPreferences")}</Text>
 
               <TouchableOpacity
                 onPress={() => setShowPasswordModal(true)}
@@ -297,7 +299,7 @@ const Profile = () => {
                   <View style={styles.settingIconBox}>
                     <Key size={16} color="#059669" />
                   </View>
-                  <Text style={styles.settingText}>Change Password</Text>
+                  <Text style={styles.settingText}>{t("changePassword")}</Text>
                 </View>
                 <ChevronRight size={16} color="#94A3B8" />
               </TouchableOpacity>
@@ -310,16 +312,15 @@ const Profile = () => {
               activeOpacity={0.8}
             >
               <LogOut size={18} color="#EF4444" />
-              <Text style={styles.signOutText}>Sign Out</Text>
+              <Text style={styles.signOutText}>{t("signOut")}</Text>
             </TouchableOpacity>
           </>
         ) : (
           /* Guest State Prompt */
           <View style={styles.guestCard}>
-            <Text style={styles.guestTitle}>Sign In to Your Account</Text>
+            <Text style={styles.guestTitle}>{t("signIn")}</Text>
             <Text style={styles.guestSubText}>
-              Connect with local agro stores, post product listings, and save
-              your rice leaf scan history.
+              {t("guestMessage")}
             </Text>
 
             <TouchableOpacity
@@ -328,7 +329,7 @@ const Profile = () => {
               activeOpacity={0.9}
             >
               <LogIn size={18} color="#FFFFFF" />
-              <Text style={styles.signInButtonText}>Sign In</Text>
+              <Text style={styles.signInButtonText}>{t("signIn")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -338,7 +339,7 @@ const Profile = () => {
             >
               <UserPlus size={18} color="#059669" />
               <Text style={styles.createAccountButtonText}>
-                Create Account (Farmer / Shop Owner)
+                {t("createAccount")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -363,7 +364,7 @@ const Profile = () => {
 
             <View style={styles.modalHeaderRow}>
               <Key size={20} color="#059669" />
-              <Text style={styles.modalTitle}>Change Password</Text>
+              <Text style={styles.modalTitle}>{t("changePassword")}</Text>
             </View>
             <Text style={styles.modalSubTitle}>
               Enter your current password and a new secure password.
@@ -377,7 +378,7 @@ const Profile = () => {
 
             {/* Current Password Input */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Current Password</Text>
+              <Text style={styles.inputLabel}>{t("currentPassword")}</Text>
               <View style={styles.inputWrapper}>
                 <Lock size={16} color="#94A3B8" />
                 <TextInput
@@ -403,7 +404,7 @@ const Profile = () => {
 
             {/* New Password Input */}
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>New Password (min 6 chars)</Text>
+              <Text style={styles.inputLabel}>{t("newPassword")}</Text>
               <View style={styles.inputWrapper}>
                 <Lock size={16} color="#94A3B8" />
                 <TextInput
@@ -429,7 +430,7 @@ const Profile = () => {
 
             {/* Confirm New Password Input */}
             <View style={[styles.inputGroup, { marginBottom: 24 }]}>
-              <Text style={styles.inputLabel}>Confirm New Password</Text>
+              <Text style={styles.inputLabel}>{t("confirmPasswordLabel")}</Text>
               <View style={styles.inputWrapper}>
                 <Lock size={16} color="#94A3B8" />
                 <TextInput
@@ -459,7 +460,7 @@ const Profile = () => {
                 onPress={() => setShowPasswordModal(false)}
                 style={styles.modalCancelBtn}
               >
-                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+                <Text style={styles.modalCancelBtnText}>{t("cancel")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -471,7 +472,7 @@ const Profile = () => {
                 {loading ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.modalSaveBtnText}>Save Password</Text>
+                  <Text style={styles.modalSaveBtnText}>{t("savePassword")}</Text>
                 )}
               </TouchableOpacity>
             </View>

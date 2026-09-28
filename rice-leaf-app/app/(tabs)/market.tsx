@@ -8,48 +8,65 @@ import {
   TextInput,
   Linking,
 } from "react-native";
-import { ArrowLeft, Search, X, Store, Phone, Tag } from "lucide-react-native";
+import { ArrowLeft, Search, X, Store, Phone } from "lucide-react-native";
 import { router, useFocusEffect } from "expo-router";
+import { useLanguage } from "@/context/LanguageContext";
 import { fetchMarketProducts, fetchApprovedMarketplaceAds } from "@/service/apiClient";
 import { API_BASE_URL } from "@/constant/api";
 
-const categories = ["All", "Seeds", "Fertilizers", "Tools", "Sprayers"];
+const categories = [
+  { key: "diseaseTagAll" as const, value: "All" },
+  { key: "catSeeds" as const, value: "Seeds" },
+  { key: "catFertilizers" as const, value: "Fertilizers" },
+  { key: "catTools" as const, value: "Tools" },
+  { key: "catSprayers" as const, value: "Sprayers" },
+];
+
 const allProducts = [
   {
     id: 1,
     name: "High-Quality Rice Seeds",
+    sinhalaName: "උසස් තත්ත්වයේ වී බීජ",
     price: "Rs.450 / kg",
     category: "Seeds",
+    categoryKey: "catSeeds" as const,
     image:
       "https://images.unsplash.com/photo-1607703700242-7a37b2fbb5bc?auto=format&fit=crop&w=500&q=60",
   },
   {
     id: 2,
     name: "Organic Fertilizer",
+    sinhalaName: "කාබනික පොහොර",
     price: "Rs.120 / kg",
     category: "Fertilizers",
+    categoryKey: "catFertilizers" as const,
     image:
       "https://images.unsplash.com/photo-1587316745629-1a81c7b54e9b?auto=format&fit=crop&w=500&q=60",
   },
   {
     id: 3,
     name: "Sprayer Tool",
+    sinhalaName: "ස්ප්‍රේ යන්ත්‍රය",
     price: "Rs.2,200",
     category: "Sprayers",
+    categoryKey: "catSprayers" as const,
     image:
       "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60",
   },
   {
     id: 4,
     name: "Watering Can",
+    sinhalaName: "වතුර මල (Watering Can)",
     price: "Rs.750",
     category: "Tools",
+    categoryKey: "catTools" as const,
     image:
       "https://images.unsplash.com/photo-1606312611231-1d6e0f51e3f1?auto=format&fit=crop&w=500&q=60",
   },
 ];
 
 const Market = () => {
+  const { language, t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<any[]>(allProducts);
@@ -61,26 +78,33 @@ const Market = () => {
         if (Array.isArray(data) && data.length > 0) {
           setProducts(data);
         } else {
-          setProducts(allProducts.filter((p) => {
-            const matchesCat = selectedCategory === "All" || p.category === selectedCategory;
-            const matchesSrch = p.name.toLowerCase().includes(search.toLowerCase());
-            return matchesCat && matchesSrch;
-          }));
+          setProducts(
+            allProducts.filter((p) => {
+              const matchesCat =
+                selectedCategory === "All" || p.category === selectedCategory;
+              const matchesSrch =
+                p.name.toLowerCase().includes(search.toLowerCase()) ||
+                p.sinhalaName.toLowerCase().includes(search.toLowerCase());
+              return matchesCat && matchesSrch;
+            })
+          );
         }
       })
       .catch((err) => {
         console.log("Using fallback product data:", err);
-        setProducts(allProducts.filter((p) => {
-          const matchesCat = selectedCategory === "All" || p.category === selectedCategory;
-          const matchesSrch = p.name.toLowerCase().includes(search.toLowerCase());
-          return matchesCat && matchesSrch;
-        }));
+        setProducts(
+          allProducts.filter((p) => {
+            const matchesCat =
+              selectedCategory === "All" || p.category === selectedCategory;
+            const matchesSrch =
+              p.name.toLowerCase().includes(search.toLowerCase()) ||
+              p.sinhalaName.toLowerCase().includes(search.toLowerCase());
+            return matchesCat && matchesSrch;
+          })
+        );
       });
   }, [selectedCategory, search]);
 
-
-  // Reload shop ads every time this screen comes into focus
-  // (e.g. after shop owner navigates back from posting a new ad)
   useFocusEffect(
     useCallback(() => {
       fetchApprovedMarketplaceAds()
@@ -94,7 +118,8 @@ const Market = () => {
   );
 
   const getImageUrl = (url: string) => {
-    if (!url) return "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60";
+    if (!url)
+      return "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60";
     if (url.startsWith("/uploads")) {
       const serverDomain = API_BASE_URL.replace("/api/v1", "");
       return `${serverDomain}${url}`;
@@ -134,11 +159,11 @@ const Market = () => {
             <View className="flex-row items-center space-x-2 mb-0.5">
               <View className="w-2 h-2 rounded-full bg-emerald-300" />
               <Text className="text-emerald-200 text-xs font-bold uppercase tracking-wider">
-                Agro Marketplace
+                {t("agroMarketplaceTitle")}
               </Text>
             </View>
             <Text className="text-xl font-black text-white" numberOfLines={1}>
-              Seeds, Remedies & Tools
+              {t("marketBannerSub")}
             </Text>
           </View>
         </View>
@@ -153,7 +178,7 @@ const Market = () => {
           <Search size={18} color="#059669" />
           <TextInput
             className="ml-2.5 flex-1 text-sm font-medium text-gray-900"
-            placeholder="Search products or remedies..."
+            placeholder={t("searchMarketPlaceholder")}
             placeholderTextColor="#94A3B8"
             value={search}
             onChangeText={setSearch}
@@ -171,12 +196,12 @@ const Market = () => {
           showsHorizontalScrollIndicator={false}
           className="mb-5 -mx-5 px-5"
         >
-          {categories.map((cat) => {
-            const isSelected = selectedCategory === cat;
+          {categories.map((catItem) => {
+            const isSelected = selectedCategory === catItem.value;
             return (
               <TouchableOpacity
-                key={cat}
-                onPress={() => setSelectedCategory(cat)}
+                key={catItem.value}
+                onPress={() => setSelectedCategory(catItem.value)}
                 className={`mr-2.5 px-4 py-2.5 rounded-2xl border flex-row items-center shadow-sm active:opacity-80 ${
                   isSelected
                     ? "bg-emerald-800 border-emerald-800"
@@ -188,7 +213,7 @@ const Market = () => {
                     isSelected ? "text-white" : "text-gray-700"
                   }`}
                 >
-                  {cat}
+                  {t(catItem.key)}
                 </Text>
               </TouchableOpacity>
             );
@@ -200,14 +225,20 @@ const Market = () => {
           <View className="mb-6">
             <View className="flex-row items-center justify-between mb-3">
               <Text className="text-gray-900 font-black text-base">
-                Verified Shop Offers
+                {t("verifiedShopOffers")}
               </Text>
               <View className="bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                <Text className="text-emerald-800 text-[10px] font-bold">Admin Verified</Text>
+                <Text className="text-emerald-800 text-[10px] font-bold">
+                  {t("adminVerified")}
+                </Text>
               </View>
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-5 px-5">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="-mx-5 px-5"
+            >
               {shopAds.map((ad) => {
                 const tags = parseTags(ad.disease_tags);
                 return (
@@ -224,24 +255,37 @@ const Market = () => {
                       <View className="flex-row items-center justify-between">
                         <View className="flex-row items-center space-x-1.5">
                           <Store size={14} color="#059669" />
-                          <Text className="text-xs font-bold text-emerald-800">{ad.shop_name}</Text>
+                          <Text className="text-xs font-bold text-emerald-800">
+                            {ad.shop_name}
+                          </Text>
                         </View>
                         {ad.price_unit ? (
-                          <Text className="text-xs font-black text-gray-900">{ad.price_unit}</Text>
+                          <Text className="text-xs font-black text-gray-900">
+                            {ad.price_unit}
+                          </Text>
                         ) : null}
                       </View>
 
-                      <Text className="text-sm font-bold text-gray-900" numberOfLines={1}>
+                      <Text
+                        className="text-sm font-bold text-gray-900"
+                        numberOfLines={1}
+                      >
                         {ad.title}
                       </Text>
-                      <Text className="text-xs text-gray-500 leading-relaxed" numberOfLines={2}>
+                      <Text
+                        className="text-xs text-gray-500 leading-relaxed"
+                        numberOfLines={2}
+                      >
                         {ad.description}
                       </Text>
 
                       {tags.length > 0 && (
                         <View className="flex-row flex-wrap gap-1 pt-1">
                           {tags.slice(0, 2).map((tg, idx) => (
-                            <View key={idx} className="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">
+                            <View
+                              key={idx}
+                              className="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg"
+                            >
                               <Text className="text-[10px] text-emerald-800 font-bold">
                                 {tg.replace(/_/g, " ")}
                               </Text>
@@ -255,7 +299,9 @@ const Market = () => {
                         className="bg-emerald-800 py-2.5 rounded-xl flex-row items-center justify-center space-x-1.5 mt-2 active:opacity-90 shadow-sm"
                       >
                         <Phone size={14} color="#FFFFFF" />
-                        <Text className="text-white text-xs font-bold">Contact Store</Text>
+                        <Text className="text-white text-xs font-bold ml-1.5">
+                          {t("contactStore")}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -266,40 +312,63 @@ const Market = () => {
         )}
 
         {/* Products Grid */}
-        <View>
-          <Text className="text-gray-900 font-black text-base mb-3">All Products</Text>
+        <View className="mb-8">
+          <Text className="text-gray-900 font-black text-base mb-3">
+            {t("allProducts")}
+          </Text>
           <View className="flex-row flex-wrap justify-between">
             {filteredProducts.length > 0 ? (
-              filteredProducts.map((item) => (
-                <View
-                  key={item.id}
-                  className="bg-white rounded-2xl border border-gray-200/80 shadow-sm mb-4 w-[48%] overflow-hidden"
-                >
-                  <Image
-                    source={{ uri: item.image }}
-                    className="w-full h-36"
-                    resizeMode="cover"
-                  />
+              filteredProducts.map((item) => {
+                const displayTitle =
+                  language === "si" && item.sinhalaName
+                    ? item.sinhalaName
+                    : item.name;
+                const displayCategory = item.categoryKey
+                  ? t(item.categoryKey)
+                  : item.category;
 
-                  <View className="p-3.5">
-                    {/* Category badge */}
-                    <View className="bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg mb-2 self-start">
-                      <Text className="text-[10px] font-bold text-emerald-800">{item.category}</Text>
+                return (
+                  <View
+                    key={item.id}
+                    className="bg-white rounded-2xl border border-gray-200/80 shadow-sm mb-4 w-[48%] overflow-hidden"
+                  >
+                    <Image
+                      source={{ uri: item.image }}
+                      className="w-full h-36"
+                      resizeMode="cover"
+                    />
+
+                    <View className="p-3.5">
+                      {/* Category badge */}
+                      <View className="bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg mb-2 self-start">
+                        <Text className="text-[10px] font-bold text-emerald-800">
+                          {displayCategory}
+                        </Text>
+                      </View>
+
+                      <Text
+                        className="text-sm font-bold text-gray-900 mb-1"
+                        numberOfLines={1}
+                      >
+                        {displayTitle}
+                      </Text>
+                      <Text className="text-xs font-black text-emerald-800 mb-3">
+                        {item.price}
+                      </Text>
+                      <TouchableOpacity className="bg-emerald-800 py-2.5 rounded-xl items-center active:opacity-90 shadow-sm">
+                        <Text className="text-white text-xs font-bold">
+                          {t("buyNow")}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
-
-                    <Text className="text-sm font-bold text-gray-900 mb-1" numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text className="text-xs font-black text-emerald-800 mb-3">{item.price}</Text>
-                    <TouchableOpacity className="bg-emerald-800 py-2.5 rounded-xl items-center active:opacity-90 shadow-sm">
-                      <Text className="text-white text-xs font-bold">Buy Now</Text>
-                    </TouchableOpacity>
                   </View>
-                </View>
-              ))
+                );
+              })
             ) : (
               <View className="w-full items-center py-10 bg-white rounded-2xl border border-gray-200/80">
-                <Text className="text-gray-500 font-bold text-sm">No products found</Text>
+                <Text className="text-gray-500 font-bold text-sm">
+                  {t("noProductsFound")}
+                </Text>
               </View>
             )}
           </View>
