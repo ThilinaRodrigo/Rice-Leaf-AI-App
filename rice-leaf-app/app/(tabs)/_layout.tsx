@@ -3,9 +3,11 @@ import { Tabs } from "expo-router";
 import { Home, ShoppingBag, User, MessageCircle, Scan, Users } from "lucide-react-native";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   const bottomMargin = Math.max(insets.bottom, 12) + 8;
 
   return (
@@ -41,7 +43,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           headerShown: false,
-          title: "Home",
+          title: t("home"),
           tabBarIcon: ({ color }) => <Home size={20} color={color} />,
         }}
       />
@@ -50,7 +52,7 @@ export default function TabsLayout() {
         name="scan"
         options={{
           headerShown: false,
-          title: "AI Scan",
+          title: t("scan"),
           tabBarIcon: ({ color, focused }) => (
             <View
               className={`w-9 h-9 rounded-full items-center justify-center ${
@@ -67,7 +69,7 @@ export default function TabsLayout() {
         name="community"
         options={{
           headerShown: false,
-          title: "Community",
+          title: t("community"),
           tabBarIcon: ({ color }) => <Users size={20} color={color} />,
         }}
       />
@@ -76,7 +78,7 @@ export default function TabsLayout() {
         name="market"
         options={{
           headerShown: false,
-          title: "Market",
+          title: t("market"),
           tabBarIcon: ({ color }) => <ShoppingBag size={20} color={color} />,
         }}
       />
@@ -85,7 +87,7 @@ export default function TabsLayout() {
         name="chat"
         options={{
           headerShown: false,
-          title: "AI Chat",
+          title: t("chat"),
           tabBarIcon: ({ color }) => <MessageCircle size={20} color={color} />,
         }}
       />
@@ -94,7 +96,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           headerShown: false,
-          title: "Profile",
+          title: t("profile"),
           tabBarIcon: ({ color }) => <User size={20} color={color} />,
         }}
       />

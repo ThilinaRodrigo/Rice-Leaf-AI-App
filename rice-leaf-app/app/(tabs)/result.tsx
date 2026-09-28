@@ -25,6 +25,7 @@ import Factor from "@/components/Factor";
 import Action from "@/components/Action";
 import { HelpModal } from "@/components/HelpModal";
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import { predictImage } from "@/service/mlService";
 import { DISEASE_DATA } from "@/constant/data";
 import { fetchApprovedMarketplaceAds, fetchSuggestedPosts } from "@/service/apiClient";
@@ -60,6 +61,7 @@ const renderFactorIcon = (iconProp: any, color: string) => {
 
 const Result = () => {
   const { imageUri } = useLocalSearchParams();
+  const { language, t } = useLanguage();
 
   const [showModal, setShowModal] = useState(true);
   const [result, setResult] = useState<ResultType | null>(null);
@@ -148,6 +150,12 @@ const Result = () => {
     Linking.openURL(`tel:${phone.replace(/\s+/g, "")}`);
   };
 
+  const activeName = (language === "si" && disease?.translations?.si?.name) || disease?.name;
+  const activeCategory = (language === "si" && disease?.translations?.si?.category) || disease?.category;
+  const activeDescription = (language === "si" && disease?.translations?.si?.description) || disease?.description;
+  const activeFactors = (language === "si" && disease?.translations?.si?.factors) || disease?.factors;
+  const activeActions = (language === "si" && disease?.translations?.si?.actions) || disease?.actions;
+
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <View className="flex-1">
@@ -169,7 +177,7 @@ const Result = () => {
 
           <View className="ml-3">
             <Text className="text-xl font-bold text-gray-900">
-              Diagnosis Result
+              {t("diagnosisResult")}
             </Text>
             <Text className="text-sm text-gray-500">
               Analysis completed
@@ -191,7 +199,7 @@ const Result = () => {
           <View className="items-center justify-center mt-10">
             <ActivityIndicator size="large" color="#16a34a" />
             <Text className="mt-4 text-gray-500">
-              Analyzing leaf image...
+              {t("analyzing")}
             </Text>
           </View>
         )}
@@ -202,8 +210,8 @@ const Result = () => {
             {/* Diagnosis Card */}
             <View className="bg-white mx-4 mt-4 p-5 rounded-2xl shadow-sm">
               <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-xl font-bold text-gray-900">
-                  {disease.name}
+                <Text className="text-xl font-bold text-gray-900 flex-1 mr-2">
+                  {activeName}
                 </Text>
 
                 {result.confidence !== undefined && (
@@ -216,22 +224,22 @@ const Result = () => {
               </View>
 
               <Text className="text-sm text-gray-500 mb-3">
-                {disease.category}
+                {activeCategory}
               </Text>
 
               <Text className="text-base text-gray-700 leading-relaxed">
-                {disease.description}
+                {activeDescription}
               </Text>
             </View>
 
             {/* Environmental Factors */}
             <View className="bg-white mx-4 mt-4 p-5 rounded-2xl shadow-sm">
-              <Text className="text-lg font-semibold mb-4">
-                Environmental Factors
+              <Text className="text-lg font-semibold mb-4 text-gray-900">
+                {t("riskFactors")}
               </Text>
 
               <View className="flex-row flex-wrap justify-between">
-                {disease.factors?.map((factor: any, index: number) => (
+                {activeFactors?.map((factor: any, index: number) => (
                   <Factor
                     key={index}
                     icon={renderFactorIcon(factor.icon, factor.color || "#3B82F6")}
@@ -244,11 +252,11 @@ const Result = () => {
 
             {/* Actions */}
             <View className="bg-white mx-4 mt-4 p-5 rounded-2xl shadow-sm">
-              <Text className="text-lg font-semibold mb-4">
-                Recommended Actions
+              <Text className="text-lg font-semibold mb-4 text-gray-900">
+                {t("recommendedActions")}
               </Text>
 
-              {disease.actions?.map((action: any, index: number) => (
+              {activeActions?.map((action: any, index: number) => (
                 <Action
                   key={index}
                   title={action.title}

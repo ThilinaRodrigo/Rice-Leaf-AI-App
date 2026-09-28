@@ -18,6 +18,7 @@ import {
 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useImagePicker as useGalleryPicker } from "@/hooks/useImagePicker";
 
 const COMMON_DISEASES = [
@@ -55,6 +56,7 @@ const COMMON_DISEASES = [
 
 export default function Index() {
   const { user } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const { pickImageFromGallery } = useGalleryPicker();
 
   const handleOpenGallery = async () => {
@@ -84,23 +86,26 @@ export default function Index() {
               <View className="flex-row items-center space-x-2 mb-0.5">
                 <View className="w-2 h-2 rounded-full bg-emerald-300" />
                 <Text className="text-emerald-200 text-xs font-bold uppercase tracking-wider">
-                  Rice Leaf AI
+                  {t("appName")}
                 </Text>
               </View>
               <Text className="text-xl font-black text-white" numberOfLines={1}>
-                Ayubowan, {user ? user.full_name.split(" ")[0] : "Farmer"}! 👋
+                {language === "si" ? "ආයුබෝවන්" : "Ayubowan"}, {user ? user.full_name.split(" ")[0] : (language === "si" ? "ගොවි මහතා" : "Farmer")}! 👋
               </Text>
               <Text className="text-emerald-100 text-[11px]">
-                AI Disease Detection & Agro Market
+                {t("welcomeSub")}
               </Text>
             </View>
           </View>
 
+          {/* Language Switcher Pill */}
           <TouchableOpacity
-            onPress={() => router.push("/profile")}
-            className="w-11 h-11 rounded-2xl bg-emerald-700 border border-emerald-600 items-center justify-center shadow-sm active:opacity-80 ml-2"
+            onPress={() => setLanguage(language === "en" ? "si" : "en")}
+            className="bg-emerald-700/90 border border-emerald-500 px-3 py-1.5 rounded-xl flex-row items-center space-x-1 ml-2 active:opacity-80"
           >
-            <User size={22} color="#FFFFFF" />
+            <Text className="text-white font-black text-xs">
+              {language === "en" ? "🇱🇰 SI" : "🇬🇧 EN"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
