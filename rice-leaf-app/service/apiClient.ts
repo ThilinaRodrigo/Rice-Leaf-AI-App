@@ -486,6 +486,29 @@ export const fetchApprovedMarketplaceAds = async (diseaseTag?: string) => {
   return data;
 };
 
+export const fetchPaginatedMarketplaceAds = async (params: {
+  diseaseTag?: string;
+  category?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.diseaseTag && params.diseaseTag !== "All") queryParams.append("disease_tag", params.diseaseTag);
+  if (params.category && params.category !== "All") queryParams.append("category", params.category);
+  if (params.search) queryParams.append("search", params.search);
+  if (params.page) queryParams.append("page", params.page.toString());
+  if (params.limit) queryParams.append("limit", params.limit.toString());
+
+  const url = `${API_BASE_URL}/marketplace/ads?${queryParams.toString()}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to fetch marketplace ads");
+  }
+  return data;
+};
+
 // --- Community Posts & Knowledge Base API ---
 export const uploadPostImage = async (imageUri: string, userToken: string) => {
   const targetUrl = `${API_BASE_URL}/posts/upload`;
@@ -549,11 +572,24 @@ export const createCommunityPost = async (
   return data;
 };
 
-export const fetchCommunityPosts = async (diseaseTag?: string, userToken?: string) => {
-  let url = `${API_BASE_URL}/posts`;
+export const fetchCommunityPosts = async (
+  diseaseTag?: string,
+  userToken?: string,
+  limit?: number,
+  offset?: number
+) => {
+  const queryParams = new URLSearchParams();
   if (diseaseTag && diseaseTag !== "All") {
-    url += `?disease_tag=${encodeURIComponent(diseaseTag)}`;
+    queryParams.append("disease_tag", diseaseTag);
   }
+  if (limit !== undefined) {
+    queryParams.append("limit", limit.toString());
+  }
+  if (offset !== undefined) {
+    queryParams.append("offset", offset.toString());
+  }
+
+  const url = `${API_BASE_URL}/posts?${queryParams.toString()}`;
   const headers: Record<string, string> = {};
   if (userToken) {
     headers["Authorization"] = `Bearer ${userToken}`;

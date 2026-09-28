@@ -79,12 +79,25 @@ export const si: Record<TranslationKeys, string> = {
   catFertilizers: "පොරෝර",
   catTools: "උපකරණ",
   catSprayers: "ස්ප්‍රේ යන්ත්‍ර",
-  verifiedShopOffers: "තහවුරු කළ වෙළඳසැල් දීමනා",
+  catRemedies: "දිලීර නාශක සහ ප්‍රතිකාර",
+  verifiedShopOffers: "රෝග සඳහා ඖෂධ සහ ප්‍රතිකාර",
   adminVerified: "පරිපාලක තහවුරු කළ",
   contactStore: "වෙළඳසැල අමතන්න",
   allProducts: "සියලුම නිෂ්පාදන",
   buyNow: "මිලදී ගන්න",
   noProductsFound: "නිෂ්පාදන කිසිවක් හමු නොවීය",
+
+  // Dedicated Medicines & Remedies Page Keys
+  medForDiseasesTitle: "ගොයම් රෝග සඳහා ඖෂධ සහ ප්‍රතිකාර",
+  exploreRemediesBtn: "සියලුම රෝග ප්‍රතිකාර බලන්න →",
+  searchRemedyPlaceholder: "ඖෂධ නම, වෙළඳසැල, හෝ රෝගය සොයන්න...",
+  filterByDisease: "ගොයම් රෝග අනුව පෙරන්න",
+  filterByCategory: "නිෂ්පාදන වර්ගය අනුව පෙරන්න",
+  pageIndicator: "පිටුව {current} / {total}",
+  prevPage: "පෙර පිටුව",
+  nextPage: "ඊළඟ පිටුව",
+  remediesHeaderSub: "කෘෂිකර්ම දෙපාර්තමේන්තුව අනුමත කළ ගොයම් රෝග සඳහා දිලීර නාශක සහ ප්‍රතිකාර",
+
 
   // Auth (Login & Register) Screen Keys
   welcomeBack: "නැවත සාදරයෙන් පිළිගනිමු",
@@ -150,6 +163,9 @@ export const si: Record<TranslationKeys, string> = {
   loadingPosts: "ප්‍රජා සටහන් එක්රැස් කරමින් පවතී...",
   noPostsYet: "ප්‍රජා සටහන් කිසිවක් හමු නොවීය",
   noPostsSub: "මෙම කාණ්ඩය සඳහා ප්‍රතිකාරයක් හෝ අදහසක් පළ කරන පළමු ගොවි මහතා වන්න!",
+  loadMorePosts: "තවත් සටහන් 6 ක් බලන්න",
+  loadingMorePosts: "තවත් සටහන් පූරණය වෙමින් පවතී...",
+  noMorePosts: "ඔබ සියලුම සමූහ සටහන් නරඹා ඇත",
   noCommentsYet: "අදහස් කිසිවක් නොමැත. පළමු අදහස දක්වන්න!",
 
   // Profile Screen

@@ -8,7 +8,7 @@ import {
   TextInput,
   Linking,
 } from "react-native";
-import { ArrowLeft, Search, X, Store, Phone } from "lucide-react-native";
+import { ArrowLeft, Search, X, Store, Phone, ShieldCheck, ChevronLeft, ChevronRight, Sparkles } from "lucide-react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useLanguage } from "@/context/LanguageContext";
 import { fetchMarketProducts, fetchApprovedMarketplaceAds } from "@/service/apiClient";
@@ -72,7 +72,12 @@ const Market = () => {
   const [products, setProducts] = useState<any[]>(allProducts);
   const [shopAds, setShopAds] = useState<any[]>([]);
 
+  // Pagination state (6 products per page)
+  const [page, setPage] = useState<number>(1);
+  const pageSize = 6;
+
   useEffect(() => {
+    setPage(1);
     fetchMarketProducts(selectedCategory, search)
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -142,7 +147,8 @@ const Market = () => {
     }
   };
 
-  const filteredProducts = products;
+  const totalPages = Math.ceil(products.length / pageSize) || 1;
+  const paginatedProducts = products.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <View className="flex-1 bg-slate-50">
@@ -189,6 +195,38 @@ const Market = () => {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Dedicated Disease Remedies Banner Card */}
+        <TouchableOpacity
+          onPress={() => router.push("/disease-remedies-market")}
+          className="bg-emerald-900 rounded-3xl p-5 border border-emerald-950/30 shadow-md mb-5 overflow-hidden active:opacity-95"
+        >
+          <View className="flex-row items-center justify-between mb-2">
+            <View className="flex-row items-center space-x-1.5 bg-emerald-800/80 px-3 py-1 rounded-full border border-emerald-700/60">
+              <ShieldCheck size={14} color="#6EE7B7" />
+              <Text className="text-emerald-200 text-[11px] font-black uppercase tracking-wider ml-1">
+                {t("adminVerified")}
+              </Text>
+            </View>
+            <View className="bg-emerald-800 p-1.5 rounded-full">
+              <ChevronRight size={16} color="#6EE7B7" />
+            </View>
+          </View>
+
+          <Text className="text-white font-black text-lg mb-1 leading-snug">
+            {t("medForDiseasesTitle")}
+          </Text>
+          <Text className="text-emerald-200/90 text-xs mb-3.5 leading-relaxed">
+            {t("remediesHeaderSub")}
+          </Text>
+
+          <View className="bg-emerald-800 py-2.5 px-4 rounded-xl flex-row items-center justify-between border border-emerald-700">
+            <Text className="text-white text-xs font-bold">
+              {t("exploreRemediesBtn")}
+            </Text>
+            <Sparkles size={14} color="#FDE047" />
+          </View>
+        </TouchableOpacity>
 
         {/* Category Filter Pills */}
         <ScrollView
@@ -313,12 +351,20 @@ const Market = () => {
 
         {/* Products Grid */}
         <View className="mb-8">
-          <Text className="text-gray-900 font-black text-base mb-3">
-            {t("allProducts")}
-          </Text>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-gray-900 font-black text-base">
+              {t("allProducts")}
+            </Text>
+            {products.length > 0 && (
+              <Text className="text-xs font-bold text-emerald-800">
+                {products.length} {products.length === 1 ? "product" : "products"}
+              </Text>
+            )}
+          </View>
+
           <View className="flex-row flex-wrap justify-between">
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((item) => {
+            {paginatedProducts.length > 0 ? (
+              paginatedProducts.map((item) => {
                 const displayTitle =
                   language === "si" && item.sinhalaName
                     ? item.sinhalaName
@@ -372,6 +418,53 @@ const Market = () => {
               </View>
             )}
           </View>
+
+          {/* Pagination Controls */}
+          {products.length > 0 && (
+            <View className="flex-row items-center justify-between bg-white border border-gray-200/80 rounded-2xl p-3 mt-2 shadow-sm">
+              <TouchableOpacity
+                onPress={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className={`px-3.5 py-2 rounded-xl flex-row items-center ${
+                  page <= 1 ? "bg-gray-100 opacity-50" : "bg-emerald-50 border border-emerald-200"
+                }`}
+              >
+                <ChevronLeft size={16} color={page <= 1 ? "#94A3B8" : "#059669"} />
+                <Text
+                  className={`text-xs font-bold ml-1 ${
+                    page <= 1 ? "text-gray-400" : "text-emerald-800"
+                  }`}
+                >
+                  {t("prevPage")}
+                </Text>
+              </TouchableOpacity>
+
+              <Text className="text-xs font-black text-emerald-900">
+                {t("pageIndicator")
+                  .replace("{current}", page.toString())
+                  .replace("{total}", totalPages.toString())}
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className={`px-3.5 py-2 rounded-xl flex-row items-center ${
+                  page >= totalPages
+                    ? "bg-gray-100 opacity-50"
+                    : "bg-emerald-50 border border-emerald-200"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-bold mr-1 ${
+                    page >= totalPages ? "text-gray-400" : "text-emerald-800"
+                  }`}
+                >
+                  {t("nextPage")}
+                </Text>
+                <ChevronRight size={16} color={page >= totalPages ? "#94A3B8" : "#059669"} />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>

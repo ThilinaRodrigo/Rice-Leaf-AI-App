@@ -10,7 +10,7 @@ type AdService interface {
 	CreateAd(ctx context.Context, ad *Ad) error
 	GetByID(ctx context.Context, id string) (*Ad, error)
 	GetByShopOwner(ctx context.Context, shopOwnerID string) ([]Ad, error)
-	GetApprovedAds(ctx context.Context, diseaseTag string) ([]Ad, error)
+	GetApprovedAds(ctx context.Context, diseaseTag, category, search string, page, limit int) ([]Ad, int, error)
 	GetAllAdsForAdmin(ctx context.Context, status string) ([]Ad, error)
 	UpdateAd(ctx context.Context, ad *Ad) error
 	UpdateAdStatus(ctx context.Context, id string, status AdStatus, reason string) error
@@ -42,8 +42,8 @@ func (s *adService) GetByShopOwner(ctx context.Context, shopOwnerID string) ([]A
 	return s.adRepo.GetByShopOwner(ctx, shopOwnerID)
 }
 
-func (s *adService) GetApprovedAds(ctx context.Context, diseaseTag string) ([]Ad, error) {
-	return s.adRepo.GetApprovedAds(ctx, diseaseTag)
+func (s *adService) GetApprovedAds(ctx context.Context, diseaseTag, category, search string, page, limit int) ([]Ad, int, error) {
+	return s.adRepo.GetApprovedAds(ctx, diseaseTag, category, search, page, limit)
 }
 
 func (s *adService) GetAllAdsForAdmin(ctx context.Context, status string) ([]Ad, error) {

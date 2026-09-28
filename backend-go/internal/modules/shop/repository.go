@@ -17,7 +17,7 @@ type AdRepository interface {
 	CreateAd(ctx context.Context, ad *Ad) error
 	GetByID(ctx context.Context, id string) (*Ad, error)
 	GetByShopOwner(ctx context.Context, shopOwnerID string) ([]Ad, error)
-	GetApprovedAds(ctx context.Context, diseaseTag string) ([]Ad, error)
+	GetApprovedAds(ctx context.Context, diseaseTag, category, search string, page, limit int) ([]Ad, int, error)
 	GetAllAdsForAdmin(ctx context.Context, status string) ([]Ad, error)
 	UpdateAd(ctx context.Context, ad *Ad) error
 	UpdateAdStatus(ctx context.Context, id string, status AdStatus, reason string) error
@@ -141,18 +141,53 @@ func (r *adRepository) GetByShopOwner(ctx context.Context, shopOwnerID string) (
 	return result, nil
 }
 
-func (r *adRepository) GetApprovedAds(ctx context.Context, diseaseTag string) ([]Ad, error) {
+func (r *adRepository) GetApprovedAds(ctx context.Context, diseaseTag, category, search string, page, limit int) ([]Ad, int, error) {
 	if r.db != nil {
 		query := `
 			SELECT id, shop_owner_id, shop_name, contact_phone, title, COALESCE(category, 'Fungicides & Remedies'), description, price_unit, image_url, disease_tags, status, COALESCE(rejection_reason, ''), created_at, updated_at
 			FROM shop_ads WHERE status = 'approved'
 		`
-		args := []interface{}{}
-		if diseaseTag != "" {
-			query += ` AND disease_tags::text LIKE $1`
+		countQuery := `SELECT COUNT(*) FROM shop_ads WHERE status = 'approved'`
+
+		var conditions []string
+		var args []interface{}
+		paramIdx := 1
+
+		if diseaseTag != "" && diseaseTag != "All" {
+			conditions = append(conditions, fmt.Sprintf("disease_tags::text LIKE $%d", paramIdx))
 			args = append(args, "%"+diseaseTag+"%")
+			paramIdx++
 		}
-		query += ` ORDER BY created_at DESC`
+
+		if category != "" && category != "All" {
+			conditions = append(conditions, fmt.Sprintf("category = $%d", paramIdx))
+			args = append(args, category)
+			paramIdx++
+		}
+
+		if search != "" {
+			conditions = append(conditions, fmt.Sprintf("(title ILIKE $%d OR description ILIKE $%d OR shop_name ILIKE $%d)", paramIdx, paramIdx, paramIdx))
+			args = append(args, "%"+search+"%")
+			paramIdx++
+		}
+
+		if len(conditions) > 0 {
+			condStr := " AND " + strings.Join(conditions, " AND ")
+			query += condStr
+			countQuery += condStr
+		}
+
+		var total int
+		if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+			total = 0
+		}
+
+		query += " ORDER BY created_at DESC"
+
+		if limit > 0 {
+			offset := (page - 1) * limit
+			query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+		}
 
 		rows, err := r.db.QueryContext(ctx, query, args...)
 		if err == nil {
@@ -167,26 +202,54 @@ func (r *adRepository) GetApprovedAds(ctx context.Context, diseaseTag string) ([
 					ads = append(ads, a)
 				}
 			}
-			return ads, nil
+			return ads, total, nil
 		}
 	}
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	var result []Ad
+	var filtered []Ad
 	for _, a := range r.memAds {
 		if a.Status != AdStatusApproved {
 			continue
 		}
-		if diseaseTag != "" {
+		if diseaseTag != "" && diseaseTag != "All" {
 			tagsStr := string(a.DiseaseTags)
 			if !strings.Contains(tagsStr, diseaseTag) {
 				continue
 			}
 		}
-		result = append(result, a)
+		if category != "" && category != "All" {
+			if a.Category != category {
+				continue
+			}
+		}
+		if search != "" {
+			s := strings.ToLower(search)
+			if !strings.Contains(strings.ToLower(a.Title), s) &&
+				!strings.Contains(strings.ToLower(a.Description), s) &&
+				!strings.Contains(strings.ToLower(a.ShopName), s) {
+				continue
+			}
+		}
+		filtered = append(filtered, a)
 	}
-	return result, nil
+
+	total := len(filtered)
+	if limit <= 0 {
+		return filtered, total, nil
+	}
+
+	offset := (page - 1) * limit
+	if offset >= total {
+		return []Ad{}, total, nil
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+
+	return filtered[offset:end], total, nil
 }
 
 func (r *adRepository) GetAllAdsForAdmin(ctx context.Context, status string) ([]Ad, error) {

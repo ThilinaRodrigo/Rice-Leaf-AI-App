@@ -77,12 +77,24 @@ export const en = {
   catFertilizers: "Fertilizers",
   catTools: "Tools",
   catSprayers: "Sprayers",
-  verifiedShopOffers: "Verified Shop Offers",
+  catRemedies: "Fungicides & Remedies",
+  verifiedShopOffers: "Medicines & Remedies for Diseases",
   adminVerified: "Admin Verified",
   contactStore: "Contact Store",
   allProducts: "All Products",
   buyNow: "Buy Now",
   noProductsFound: "No products found",
+
+  // Dedicated Medicines & Remedies Page Keys
+  medForDiseasesTitle: "Medicines & Remedies for Diseases",
+  exploreRemediesBtn: "Explore All Disease Remedies →",
+  searchRemedyPlaceholder: "Search medicine name, shop, or disease...",
+  filterByDisease: "Filter by Paddy Disease",
+  filterByCategory: "Filter by Product Category",
+  pageIndicator: "Page {current} of {total}",
+  prevPage: "Previous",
+  nextPage: "Next",
+  remediesHeaderSub: "DOA-verified fungicides, bactericides & remedies for rice leaf infections",
 
   // Auth (Login & Register) Screen Keys
   welcomeBack: "Welcome Back",
@@ -149,6 +161,9 @@ export const en = {
   noPostsYet: "No community posts yet",
   noPostsSub: "Be the first farmer or expert to share a crop remedy or post for this category!",
   noCommentsYet: "No comments yet. Start the conversation!",
+  loadMorePosts: "Load 6 More Posts",
+  loadingMorePosts: "Loading more community posts...",
+  noMorePosts: "You've reached the end of the community feed",
 
   // Profile Screen
   accountInfo: "Account Information",

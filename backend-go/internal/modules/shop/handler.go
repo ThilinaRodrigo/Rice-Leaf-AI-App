@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -212,7 +213,37 @@ func (h *AdHandler) DeleteAd(c *gin.Context) {
 
 func (h *AdHandler) GetApprovedMarketplaceAds(c *gin.Context) {
 	diseaseTag := c.Query("disease_tag")
-	ads, err := h.adService.GetApprovedAds(c.Request.Context(), diseaseTag)
+	category := c.Query("category")
+	search := c.Query("search")
+
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
+
+	page, _ := strconv.Atoi(pageStr)
+	limit, _ := strconv.Atoi(limitStr)
+
+	// If no page/limit is provided, default to fetching all matching items (for legacy callers)
+	if pageStr == "" && limitStr == "" {
+		ads, _, err := h.adService.GetApprovedAds(c.Request.Context(), diseaseTag, category, search, 0, 0)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if ads == nil {
+			ads = []Ad{}
+		}
+		c.JSON(http.StatusOK, ads)
+		return
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+
+	ads, total, err := h.adService.GetApprovedAds(c.Request.Context(), diseaseTag, category, search, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -220,7 +251,19 @@ func (h *AdHandler) GetApprovedMarketplaceAds(c *gin.Context) {
 	if ads == nil {
 		ads = []Ad{}
 	}
-	c.JSON(http.StatusOK, ads)
+
+	totalPages := 0
+	if total > 0 {
+		totalPages = (total + limit - 1) / limit
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":        ads,
+		"page":        page,
+		"limit":       limit,
+		"total":       total,
+		"total_pages": totalPages,
+	})
 }
 
 func (h *AdHandler) GetAdminAds(c *gin.Context) {
