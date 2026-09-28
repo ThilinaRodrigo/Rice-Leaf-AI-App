@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import {
   ArrowLeft,
@@ -27,7 +28,6 @@ import {
   EyeOff,
   Megaphone,
   ChevronRight,
-  ShieldAlert,
 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -80,69 +80,88 @@ const Profile = () => {
     }
   };
 
+  const handleLogoutConfirm = () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out of your account?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: () => {
+            logout();
+          },
+        },
+      ]
+    );
+  };
+
   return (
-    <ScrollView className="flex-1 bg-slate-50" showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Top Banner & Header */}
       <View
-        style={{ paddingTop: Math.max(insets.top, 16) + 12 }}
-        className="bg-emerald-800 pb-16 px-5 rounded-b-3xl border-b border-emerald-900/20 relative shadow-sm"
+        style={[
+          styles.topBanner,
+          { paddingTop: Math.max(insets.top, 16) + 12 },
+        ]}
       >
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-10 h-10 rounded-2xl bg-emerald-700/80 border border-emerald-600 items-center justify-center"
+          style={styles.backButton}
+          activeOpacity={0.8}
         >
           <ArrowLeft size={20} color="#FFFFFF" />
         </TouchableOpacity>
 
         {/* User Avatar Badge */}
-        <View className="absolute -bottom-12 left-1/2 -translate-x-1/2 items-center">
-          <View className="w-24 h-24 rounded-3xl bg-white border-4 border-emerald-600 items-center justify-center shadow-md relative overflow-hidden">
+        <View style={styles.avatarWrapper}>
+          <View style={styles.avatarContainer}>
             <UserIcon size={48} color="#059669" />
           </View>
         </View>
       </View>
 
       {/* Main Content Area */}
-      <View className="mt-16 px-5 mb-32 space-y-6">
+      <View style={styles.contentArea}>
         {user ? (
           <>
             {/* Identity Header */}
-            <View className="items-center mb-2">
-              <Text className="text-2xl font-black text-gray-900 text-center">
-                {user.full_name}
-              </Text>
-              <Text className="text-gray-500 text-xs mt-0.5 mb-3">
+            <View style={styles.identityHeader}>
+              <Text style={styles.userName}>{user.full_name}</Text>
+              <Text style={styles.userSubText}>
                 {user.email || user.nic || ""}
               </Text>
 
               {/* Role Badge */}
               <View
-                className={`px-4 py-1.5 rounded-full flex-row items-center shadow-sm border ${
+                style={[
+                  styles.roleBadge,
                   user.role === "shop_owner"
-                    ? "bg-amber-100 border-amber-300 text-amber-900"
+                    ? styles.roleShopOwner
                     : user.role === "sys_admin"
-                    ? "bg-purple-100 border-purple-300 text-purple-900"
-                    : "bg-emerald-100 border-emerald-300 text-emerald-900"
-                }`}
+                    ? styles.roleSysAdmin
+                    : styles.roleFarmer,
+                ]}
               >
                 {user.role === "shop_owner" ? (
                   <>
                     <Store size={15} color="#D97706" />
-                    <Text className="ml-2 font-bold text-amber-900 text-xs uppercase tracking-wide">
+                    <Text style={[styles.roleBadgeText, { color: "#78350F" }]}>
                       Agro Shop Owner
                     </Text>
                   </>
                 ) : user.role === "sys_admin" ? (
                   <>
                     <ShieldCheck size={15} color="#7E22CE" />
-                    <Text className="ml-2 font-bold text-purple-900 text-xs uppercase tracking-wide">
+                    <Text style={[styles.roleBadgeText, { color: "#581C87" }]}>
                       System Administrator
                     </Text>
                   </>
                 ) : (
                   <>
                     <ShieldCheck size={15} color="#059669" />
-                    <Text className="ml-2 font-bold text-emerald-900 text-xs uppercase tracking-wide">
+                    <Text style={[styles.roleBadgeText, { color: "#064E3B" }]}>
                       Registered Farmer
                     </Text>
                   </>
@@ -154,17 +173,16 @@ const Profile = () => {
             {user.role === "shop_owner" && (
               <TouchableOpacity
                 onPress={() => router.push("/shop-ads")}
-                className="bg-amber-50 border border-amber-200/90 p-4 rounded-2xl shadow-sm flex-row items-center justify-between active:opacity-90"
+                style={styles.shopOwnerCard}
+                activeOpacity={0.85}
               >
-                <View className="flex-row items-center space-x-3">
-                  <View className="w-10 h-10 rounded-xl bg-amber-100 items-center justify-center">
+                <View style={styles.rowAlign}>
+                  <View style={styles.megaphoneIconBox}>
                     <Megaphone size={22} color="#D97706" />
                   </View>
-                  <View>
-                    <Text className="text-amber-900 font-black text-sm">
-                      Manage My Shop Ads
-                    </Text>
-                    <Text className="text-amber-700/80 text-[11px]">
+                  <View style={{ marginLeft: 12 }}>
+                    <Text style={styles.shopCardTitle}>Manage My Shop Ads</Text>
+                    <Text style={styles.shopCardSub}>
                       Post & update your agro product listings
                     </Text>
                   </View>
@@ -174,43 +192,41 @@ const Profile = () => {
             )}
 
             {/* Account Information Card */}
-            <View className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-sm space-y-3">
-              <Text className="font-bold text-gray-500 text-xs uppercase tracking-wider mb-1">
-                Account Information
-              </Text>
+            <View style={styles.infoCard}>
+              <Text style={styles.cardHeaderTitle}>Account Information</Text>
 
               {user.nic ? (
-                <View className="flex-row items-center py-1">
-                  <View className="w-8 h-8 rounded-lg bg-gray-100 items-center justify-center mr-3">
+                <View style={styles.infoRow}>
+                  <View style={styles.infoIconBox}>
                     <UserIcon size={16} color="#64748B" />
                   </View>
                   <View>
-                    <Text className="text-[10px] text-gray-400 font-medium">NIC Number</Text>
-                    <Text className="text-gray-900 text-xs font-semibold">{user.nic}</Text>
+                    <Text style={styles.infoLabel}>NIC Number</Text>
+                    <Text style={styles.infoValue}>{user.nic}</Text>
                   </View>
                 </View>
               ) : null}
 
               {user.phone ? (
-                <View className="flex-row items-center py-1">
-                  <View className="w-8 h-8 rounded-lg bg-gray-100 items-center justify-center mr-3">
+                <View style={styles.infoRow}>
+                  <View style={styles.infoIconBox}>
                     <Phone size={16} color="#64748B" />
                   </View>
                   <View>
-                    <Text className="text-[10px] text-gray-400 font-medium">Phone Number</Text>
-                    <Text className="text-gray-900 text-xs font-semibold">{user.phone}</Text>
+                    <Text style={styles.infoLabel}>Phone Number</Text>
+                    <Text style={styles.infoValue}>{user.phone}</Text>
                   </View>
                 </View>
               ) : null}
 
               {user.district ? (
-                <View className="flex-row items-center py-1">
-                  <View className="w-8 h-8 rounded-lg bg-gray-100 items-center justify-center mr-3">
+                <View style={styles.infoRow}>
+                  <View style={styles.infoIconBox}>
                     <MapPin size={16} color="#64748B" />
                   </View>
                   <View>
-                    <Text className="text-[10px] text-gray-400 font-medium">Location</Text>
-                    <Text className="text-gray-900 text-xs font-semibold">
+                    <Text style={styles.infoLabel}>Location</Text>
+                    <Text style={styles.infoValue}>
                       {user.district} {user.city ? `, ${user.city}` : ""}
                     </Text>
                   </View>
@@ -219,28 +235,46 @@ const Profile = () => {
 
               {user.role === "shop_owner" && (
                 <>
-                  <View className="flex-row items-center py-1">
-                    <View className="w-8 h-8 rounded-lg bg-amber-50 items-center justify-center mr-3">
+                  <View style={styles.infoRow}>
+                    <View
+                      style={[
+                        styles.infoIconBox,
+                        { backgroundColor: "#FEF3C7" },
+                      ]}
+                    >
                       <Store size={16} color="#D97706" />
                     </View>
                     <View>
-                      <Text className="text-[10px] text-gray-400 font-medium">Agro Shop Name</Text>
-                      <Text className="text-amber-800 text-xs font-bold">
+                      <Text style={styles.infoLabel}>Agro Shop Name</Text>
+                      <Text
+                        style={[
+                          styles.infoValue,
+                          { color: "#92400E", fontWeight: "700" },
+                        ]}
+                      >
                         {user.shop_name || "N/A"}
                       </Text>
                     </View>
                   </View>
 
                   {user.whatsapp_number ? (
-                    <View className="flex-row items-center py-1">
-                      <View className="w-8 h-8 rounded-lg bg-emerald-50 items-center justify-center mr-3">
+                    <View style={styles.infoRow}>
+                      <View
+                        style={[
+                          styles.infoIconBox,
+                          { backgroundColor: "#D1FAE5" },
+                        ]}
+                      >
                         <MessageSquare size={16} color="#059669" />
                       </View>
                       <View>
-                        <Text className="text-[10px] text-gray-400 font-medium">
-                          WhatsApp Contact
-                        </Text>
-                        <Text className="text-emerald-800 text-xs font-semibold">
+                        <Text style={styles.infoLabel}>WhatsApp Contact</Text>
+                        <Text
+                          style={[
+                            styles.infoValue,
+                            { color: "#065F46", fontWeight: "600" },
+                          ]}
+                        >
                           {user.whatsapp_number}
                         </Text>
                       </View>
@@ -251,20 +285,19 @@ const Profile = () => {
             </View>
 
             {/* Account Settings & Security Options */}
-            <View className="bg-white border border-gray-200/80 rounded-2xl p-4 shadow-sm space-y-2">
-              <Text className="font-bold text-gray-500 text-xs uppercase tracking-wider mb-2">
-                Security & Preferences
-              </Text>
+            <View style={styles.infoCard}>
+              <Text style={styles.cardHeaderTitle}>Security & Preferences</Text>
 
               <TouchableOpacity
                 onPress={() => setShowPasswordModal(true)}
-                className="bg-gray-50 border border-gray-200/80 p-3.5 rounded-xl flex-row items-center justify-between active:opacity-80"
+                style={styles.settingRow}
+                activeOpacity={0.8}
               >
-                <View className="flex-row items-center space-x-3">
-                  <View className="w-8 h-8 rounded-lg bg-emerald-50 items-center justify-center">
+                <View style={styles.rowAlign}>
+                  <View style={styles.settingIconBox}>
                     <Key size={16} color="#059669" />
                   </View>
-                  <Text className="text-gray-900 font-bold text-xs">Change Password</Text>
+                  <Text style={styles.settingText}>Change Password</Text>
                 </View>
                 <ChevronRight size={16} color="#94A3B8" />
               </TouchableOpacity>
@@ -272,37 +305,39 @@ const Profile = () => {
 
             {/* Sign Out Action */}
             <TouchableOpacity
-              onPress={logout}
-              className="bg-white border border-red-200 p-4 rounded-2xl flex-row items-center justify-center shadow-sm active:opacity-80"
+              onPress={handleLogoutConfirm}
+              style={styles.signOutButton}
+              activeOpacity={0.8}
             >
               <LogOut size={18} color="#EF4444" />
-              <Text className="text-red-600 font-bold text-sm ml-2">Sign Out</Text>
+              <Text style={styles.signOutText}>Sign Out</Text>
             </TouchableOpacity>
           </>
         ) : (
           /* Guest State Prompt */
-          <View className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm items-center">
-            <Text className="text-xl font-black text-gray-900 mb-2 text-center">
-              Sign In to Your Account
-            </Text>
-            <Text className="text-gray-500 text-xs mb-6 text-center leading-relaxed">
-              Connect with local agro stores, post product listings, and save your rice leaf scan history.
+          <View style={styles.guestCard}>
+            <Text style={styles.guestTitle}>Sign In to Your Account</Text>
+            <Text style={styles.guestSubText}>
+              Connect with local agro stores, post product listings, and save
+              your rice leaf scan history.
             </Text>
 
             <TouchableOpacity
               onPress={() => router.push("/login")}
-              className="bg-emerald-800 py-3.5 px-6 rounded-2xl flex-row items-center justify-center w-full shadow-md active:opacity-90 mb-3"
+              style={styles.signInButton}
+              activeOpacity={0.9}
             >
-              <LogIn size={18} color="#fff" />
-              <Text className="text-white font-bold text-sm ml-2">Sign In</Text>
+              <LogIn size={18} color="#FFFFFF" />
+              <Text style={styles.signInButtonText}>Sign In</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => router.push("/register")}
-              className="bg-emerald-50 border border-emerald-200 py-3.5 px-6 rounded-2xl flex-row items-center justify-center w-full active:opacity-90"
+              style={styles.createAccountButton}
+              activeOpacity={0.9}
             >
               <UserPlus size={18} color="#059669" />
-              <Text className="text-emerald-800 font-bold text-sm ml-2">
+              <Text style={styles.createAccountButtonText}>
                 Create Account (Farmer / Shop Owner)
               </Text>
             </TouchableOpacity>
@@ -317,37 +352,33 @@ const Profile = () => {
         animationType="slide"
         onRequestClose={() => setShowPasswordModal(false)}
       >
-        <View className="flex-1 bg-black/60 items-center justify-center p-4">
-          <View className="bg-white border border-gray-200 w-full max-w-md p-6 rounded-3xl shadow-xl relative">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
             <TouchableOpacity
               onPress={() => setShowPasswordModal(false)}
-              className="absolute top-4 right-4 p-1 text-gray-400"
+              style={styles.modalCloseButton}
             >
               <X size={20} color="#64748B" />
             </TouchableOpacity>
 
-            <View className="flex-row items-center mb-1">
+            <View style={styles.modalHeaderRow}>
               <Key size={20} color="#059669" />
-              <Text className="text-lg font-bold text-gray-900 ml-2">Change Password</Text>
+              <Text style={styles.modalTitle}>Change Password</Text>
             </View>
-            <Text className="text-xs text-gray-500 mb-5">
+            <Text style={styles.modalSubTitle}>
               Enter your current password and a new secure password.
             </Text>
 
             {errorMsg ? (
-              <View className="bg-red-50 border border-red-200 p-3 rounded-xl mb-4">
-                <Text className="text-red-600 text-xs font-semibold text-center">
-                  {errorMsg}
-                </Text>
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{errorMsg}</Text>
               </View>
             ) : null}
 
             {/* Current Password Input */}
-            <View className="mb-4">
-              <Text className="text-xs font-bold text-gray-600 uppercase mb-1">
-                Current Password
-              </Text>
-              <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Current Password</Text>
+              <View style={styles.inputWrapper}>
                 <Lock size={16} color="#94A3B8" />
                 <TextInput
                   secureTextEntry={!showCurrent}
@@ -355,20 +386,25 @@ const Profile = () => {
                   onChangeText={setCurrentPassword}
                   placeholder="••••••••"
                   placeholderTextColor="#94A3B8"
-                  className="flex-1 ml-2 text-gray-900 text-sm"
+                  style={styles.textInput}
                 />
-                <TouchableOpacity onPress={() => setShowCurrent(!showCurrent)} className="p-1">
-                  {showCurrent ? <EyeOff size={16} color="#64748B" /> : <Eye size={16} color="#64748B" />}
+                <TouchableOpacity
+                  onPress={() => setShowCurrent(!showCurrent)}
+                  style={{ padding: 4 }}
+                >
+                  {showCurrent ? (
+                    <EyeOff size={16} color="#64748B" />
+                  ) : (
+                    <Eye size={16} color="#64748B" />
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* New Password Input */}
-            <View className="mb-4">
-              <Text className="text-xs font-bold text-gray-600 uppercase mb-1">
-                New Password (min 6 chars)
-              </Text>
-              <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>New Password (min 6 chars)</Text>
+              <View style={styles.inputWrapper}>
                 <Lock size={16} color="#94A3B8" />
                 <TextInput
                   secureTextEntry={!showNew}
@@ -376,20 +412,25 @@ const Profile = () => {
                   onChangeText={setNewPassword}
                   placeholder="••••••••"
                   placeholderTextColor="#94A3B8"
-                  className="flex-1 ml-2 text-gray-900 text-sm"
+                  style={styles.textInput}
                 />
-                <TouchableOpacity onPress={() => setShowNew(!showNew)} className="p-1">
-                  {showNew ? <EyeOff size={16} color="#64748B" /> : <Eye size={16} color="#64748B" />}
+                <TouchableOpacity
+                  onPress={() => setShowNew(!showNew)}
+                  style={{ padding: 4 }}
+                >
+                  {showNew ? (
+                    <EyeOff size={16} color="#64748B" />
+                  ) : (
+                    <Eye size={16} color="#64748B" />
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Confirm New Password Input */}
-            <View className="mb-6">
-              <Text className="text-xs font-bold text-gray-600 uppercase mb-1">
-                Confirm New Password
-              </Text>
-              <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
+            <View style={[styles.inputGroup, { marginBottom: 24 }]}>
+              <Text style={styles.inputLabel}>Confirm New Password</Text>
+              <View style={styles.inputWrapper}>
                 <Lock size={16} color="#94A3B8" />
                 <TextInput
                   secureTextEntry={!showConfirm}
@@ -397,32 +438,40 @@ const Profile = () => {
                   onChangeText={setConfirmPassword}
                   placeholder="••••••••"
                   placeholderTextColor="#94A3B8"
-                  className="flex-1 ml-2 text-gray-900 text-sm"
+                  style={styles.textInput}
                 />
-                <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} className="p-1">
-                  {showConfirm ? <EyeOff size={16} color="#64748B" /> : <Eye size={16} color="#64748B" />}
+                <TouchableOpacity
+                  onPress={() => setShowConfirm(!showConfirm)}
+                  style={{ padding: 4 }}
+                >
+                  {showConfirm ? (
+                    <EyeOff size={16} color="#64748B" />
+                  ) : (
+                    <Eye size={16} color="#64748B" />
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Actions */}
-            <View className="flex-row space-x-3">
+            <View style={styles.modalActionRow}>
               <TouchableOpacity
                 onPress={() => setShowPasswordModal(false)}
-                className="flex-1 bg-gray-100 py-3 rounded-xl items-center"
+                style={styles.modalCancelBtn}
               >
-                <Text className="font-bold text-gray-700 text-xs">Cancel</Text>
+                <Text style={styles.modalCancelBtnText}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleChangePassword}
                 disabled={loading}
-                className="flex-1 bg-emerald-600 py-3 rounded-xl items-center shadow-md active:opacity-90"
+                style={styles.modalSaveBtn}
+                activeOpacity={0.9}
               >
                 {loading ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text className="font-bold text-white text-xs">Save Password</Text>
+                  <Text style={styles.modalSaveBtnText}>Save Password</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -435,3 +484,377 @@ const Profile = () => {
 
 export default Profile;
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
+  topBanner: {
+    backgroundColor: "#065F46",
+    paddingBottom: 64,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(6, 78, 59, 0.2)",
+    position: "relative",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 16,
+    backgroundColor: "rgba(4, 120, 87, 0.8)",
+    borderWidth: 1,
+    borderColor: "#059669",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarWrapper: {
+    position: "absolute",
+    bottom: -48,
+    alignSelf: "center",
+    alignItems: "center",
+  },
+  avatarContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 28,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 4,
+    borderColor: "#059669",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    overflow: "hidden",
+  },
+  contentArea: {
+    marginTop: 64,
+    paddingHorizontal: 20,
+    marginBottom: 128,
+  },
+  identityHeader: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#0F172A",
+    textAlign: "center",
+  },
+  userSubText: {
+    color: "#64748B",
+    fontSize: 12,
+    marginTop: 2,
+    marginBottom: 12,
+  },
+  roleBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  roleShopOwner: {
+    backgroundColor: "#FEF3C7",
+    borderColor: "#FCD34D",
+  },
+  roleSysAdmin: {
+    backgroundColor: "#F3E8FF",
+    borderColor: "#D8B4FE",
+  },
+  roleFarmer: {
+    backgroundColor: "#D1FAE5",
+    borderColor: "#6EE7B7",
+  },
+  roleBadgeText: {
+    marginLeft: 8,
+    fontWeight: "700",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  shopOwnerCard: {
+    backgroundColor: "#FFFBEB",
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+    padding: 16,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  rowAlign: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  megaphoneIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#FEF3C7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shopCardTitle: {
+    color: "#78350F",
+    fontWeight: "900",
+    fontSize: 14,
+  },
+  shopCardSub: {
+    color: "rgba(180, 83, 9, 0.8)",
+    fontSize: 11,
+  },
+  infoCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+  },
+  cardHeaderTitle: {
+    fontWeight: "700",
+    color: "#64748B",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+  },
+  infoIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  infoLabel: {
+    fontSize: 10,
+    color: "#94A3B8",
+    fontWeight: "500",
+  },
+  infoValue: {
+    color: "#0F172A",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  settingRow: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    padding: 14,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  settingIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#D1FAE5",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  settingText: {
+    marginLeft: 12,
+    color: "#0F172A",
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  signOutButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    padding: 16,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  signOutText: {
+    color: "#DC2626",
+    fontWeight: "700",
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  guestCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+  },
+  guestTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#0F172A",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  guestSubText: {
+    color: "#64748B",
+    fontSize: 12,
+    marginBottom: 24,
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  signInButton: {
+    backgroundColor: "#065F46",
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    marginBottom: 12,
+  },
+  signInButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  createAccountButton: {
+    backgroundColor: "#ECFDF5",
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  createAccountButtonText: {
+    color: "#065F46",
+    fontWeight: "700",
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    width: "100%",
+    maxWidth: 400,
+    padding: 24,
+    borderRadius: 24,
+    position: "relative",
+  },
+  modalCloseButton: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    padding: 4,
+  },
+  modalHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginLeft: 8,
+  },
+  modalSubTitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginBottom: 20,
+  },
+  errorBox: {
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: "#DC2626",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#475569",
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  textInput: {
+    flex: 1,
+    marginLeft: 8,
+    color: "#0F172A",
+    fontSize: 14,
+  },
+  modalActionRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    backgroundColor: "#F1F5F9",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalCancelBtnText: {
+    fontWeight: "700",
+    color: "#334155",
+    fontSize: 12,
+  },
+  modalSaveBtn: {
+    flex: 1,
+    backgroundColor: "#059669",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalSaveBtnText: {
+    fontWeight: "700",
+    color: "#FFFFFF",
+    fontSize: 12,
+  },
+});
