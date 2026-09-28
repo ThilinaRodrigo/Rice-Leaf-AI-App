@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import {
   User as UserIcon,
   Mail,
@@ -25,9 +26,11 @@ import {
   CreditCard,
   Eye,
   EyeOff,
+  Camera,
 } from "lucide-react-native";
 import { useAuth, UserRole } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { uploadUserAvatar } from "@/service/apiClient";
 
 export default function RegisterScreen() {
   const { register, isLoading } = useAuth();
@@ -41,6 +44,9 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
 
+  // Avatar state
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+
   // Shop Owner fields
   const [shopName, setShopName] = useState("");
   const [district, setDistrict] = useState("");
@@ -48,6 +54,26 @@ export default function RegisterScreen() {
   const [whatsAppNumber, setWhatsAppNumber] = useState("");
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const pickAvatarImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      if (asset.base64) {
+        setAvatarUri(`data:image/jpeg;base64,${asset.base64}`);
+      } else {
+        setAvatarUri(asset.uri);
+      }
+    }
+  };
 
   const handleRegister = async () => {
     if (!fullName || !password) {
@@ -72,7 +98,13 @@ export default function RegisterScreen() {
     }
 
     setErrorMessage("");
+    setUploadingAvatar(true);
     try {
+      let uploadedAvatarUrl: string | undefined = undefined;
+      if (avatarUri) {
+        uploadedAvatarUrl = await uploadUserAvatar(avatarUri);
+      }
+
       await register({
         full_name: fullName,
         email: email || undefined,
@@ -84,10 +116,13 @@ export default function RegisterScreen() {
         district,
         city,
         whatsapp_number: whatsAppNumber,
+        avatar_url: uploadedAvatarUrl,
       });
       router.replace("/(tabs)");
     } catch (err: any) {
       setErrorMessage(err.message || "Registration failed. Please try again.");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -132,6 +167,30 @@ export default function RegisterScreen() {
 
           {/* Form Container Card */}
           <View className="bg-white rounded-3xl p-6 mb-8">
+            {/* Profile Avatar Upload (Optional) */}
+            <View className="items-center mb-6">
+              <TouchableOpacity
+                onPress={pickAvatarImage}
+                className="w-24 h-24 rounded-full bg-emerald-50 border-2 border-dashed border-emerald-500 items-center justify-center relative shadow-xs active:opacity-80"
+              >
+                {avatarUri ? (
+                  <Image
+                    source={{ uri: avatarUri }}
+                    className="w-full h-full rounded-full"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <UserIcon size={36} color="#059669" />
+                )}
+                <View className="bg-emerald-700 w-8 h-8 rounded-full items-center justify-center absolute bottom-0 right-0 border-2 border-white shadow-sm">
+                  <Camera size={14} color="#FFFFFF" />
+                </View>
+              </TouchableOpacity>
+              <Text className="text-gray-500 text-xs font-bold mt-2">
+                {t("uploadPhoto")}
+              </Text>
+            </View>
+
             {/* Role Selection Segment */}
             <Text className="text-gray-700 text-xs font-semibold uppercase mb-3">
               {t("selectRole")}
@@ -336,10 +395,10 @@ export default function RegisterScreen() {
             {/* Submit Button */}
             <TouchableOpacity
               onPress={handleRegister}
-              disabled={isLoading}
+              disabled={isLoading || uploadingAvatar}
               className="bg-emerald-600 py-4 rounded-2xl items-center active:opacity-90 mt-2 mb-4"
             >
-              {isLoading ? (
+              {isLoading || uploadingAvatar ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text className="text-white font-bold text-lg">{t("createAccount")}</Text>

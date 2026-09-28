@@ -11,6 +11,17 @@ type RegisterRequest struct {
 	District       string   `json:"district"`
 	City           string   `json:"city"`
 	WhatsAppNumber string   `json:"whatsapp_number"`
+	AvatarURL      string   `json:"avatar_url"`
+}
+
+type UpdateProfileRequest struct {
+	FullName       string `json:"full_name"`
+	Phone          string `json:"phone"`
+	District       string `json:"district"`
+	City           string `json:"city"`
+	ShopName       string `json:"shop_name"`
+	WhatsAppNumber string `json:"whatsapp_number"`
+	AvatarURL      string `json:"avatar_url"`
 }
 
 type LoginRequest struct {

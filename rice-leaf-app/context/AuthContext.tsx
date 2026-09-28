@@ -33,7 +33,9 @@ interface AuthContextType {
     district?: string;
     city?: string;
     whatsapp_number?: string;
+    avatar_url?: string;
   }) => Promise<void>;
+  updateUser: (updatedUser: User) => void;
   logout: () => void;
 }
 
@@ -43,6 +45,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: false,
   login: async () => {},
   register: async () => {},
+  updateUser: () => {},
   logout: () => {},
 });
 
@@ -73,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     district?: string;
     city?: string;
     whatsapp_number?: string;
+    avatar_url?: string;
   }) => {
     setIsLoading(true);
     try {
@@ -82,6 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
   };
 
   const logout = () => {
@@ -97,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         register,
+        updateUser,
         logout,
       }}
     >

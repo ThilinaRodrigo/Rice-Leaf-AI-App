@@ -184,6 +184,11 @@ export const en = {
   cancel: "Cancel",
   sysAdminRole: "System Administrator",
   whatsAppContact: "WhatsApp Contact",
+  editProfile: "Edit Profile",
+  changePhoto: "Change Photo",
+  saveChanges: "Save Changes",
+  profileUpdatedSuccess: "Profile updated successfully!",
+  updateProfileError: "Failed to update profile",
 };
 
 export type TranslationKeys = keyof typeof en;

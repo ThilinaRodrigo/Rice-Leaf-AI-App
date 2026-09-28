@@ -332,6 +332,7 @@ export default function Community() {
               const isOwner = user && user.id === post.user_id;
               const isAdmin = user && user.role === "sys_admin";
               const imageUrl = getFullImageUrl(post.image_url);
+              const authorAvatarUrl = getFullImageUrl(post.author_avatar_url || post.avatar_url);
 
               return (
                 <View
@@ -341,8 +342,12 @@ export default function Community() {
                   {/* Author Info & Tag */}
                   <View className="flex-row items-center justify-between mb-3">
                     <View className="flex-row items-center space-x-2.5 flex-1">
-                      <View className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 items-center justify-center">
-                        <UserIcon size={18} color="#059669" />
+                      <View className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 items-center justify-center overflow-hidden">
+                        {authorAvatarUrl ? (
+                          <Image source={{ uri: authorAvatarUrl }} className="w-full h-full" resizeMode="cover" />
+                        ) : (
+                          <UserIcon size={18} color="#059669" />
+                        )}
                       </View>
                       <View className="flex-1">
                         <View className="flex-row items-center space-x-1.5">

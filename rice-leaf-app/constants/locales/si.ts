@@ -187,4 +187,9 @@ export const si: Record<TranslationKeys, string> = {
   cancel: "අවලංගු කරන්න",
   sysAdminRole: "පද්ධති පරිපාලක",
   whatsAppContact: "වට්ස්ඇප් අංකය",
+  editProfile: "තොරතුරු සංස්කරණය",
+  changePhoto: "ඡායාරූපය වෙනස් කරන්න",
+  saveChanges: "තොරතුරු සුරකින්න",
+  profileUpdatedSuccess: "ගිණුම් තොරතුරු සාර්ථකව යාවත්කාලීන විය!",
+  updateProfileError: "තොරතුරු යාවත්කාලීන කිරීම අසාර්ථක විය",
 };

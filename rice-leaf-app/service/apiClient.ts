@@ -223,6 +223,36 @@ export const fetchDiseasesList = async (lang?: string) => {
 };
 
 // 5. Auth API Functions
+export const uploadUserAvatar = async (imageUri: string) => {
+  const targetUrl = `${API_BASE_URL}/auth/avatar`;
+
+  try {
+    let base64Data = imageUri;
+    if (imageUri.startsWith("data:")) {
+      const parts = imageUri.split(",");
+      base64Data = parts[1] || imageUri;
+    } else if (imageUri.startsWith("file://") || imageUri.startsWith("content://")) {
+      base64Data = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    }
+
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ avatar_base64: base64Data }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to upload avatar image");
+    return data.url;
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to upload avatar image");
+  }
+};
+
 export const registerUser = async (payload: {
   full_name: string;
   email?: string;
@@ -234,6 +264,7 @@ export const registerUser = async (payload: {
   district?: string;
   city?: string;
   whatsapp_number?: string;
+  avatar_url?: string;
 }) => {
   const res = await fetch(`${API_BASE_URL}/auth/register`, {
     method: "POST",
@@ -244,6 +275,34 @@ export const registerUser = async (payload: {
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error || "Registration failed");
+  }
+  return data;
+};
+
+export const updateUserProfile = async (
+  payload: {
+    full_name?: string;
+    phone?: string;
+    district?: string;
+    city?: string;
+    shop_name?: string;
+    whatsapp_number?: string;
+    avatar_url?: string;
+  },
+  userToken: string
+) => {
+  const res = await fetch(`${API_BASE_URL}/auth/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed updating user profile");
   }
   return data;
 };

@@ -16,6 +16,7 @@ type Service interface {
 	Register(ctx context.Context, req RegisterRequest) (*AuthResponse, error)
 	Login(ctx context.Context, req LoginRequest) (*AuthResponse, error)
 	GetProfile(ctx context.Context, userID uuid.UUID) (*User, error)
+	UpdateProfile(ctx context.Context, userID uuid.UUID, req UpdateProfileRequest) (*User, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, req ChangePasswordRequest) error
 }
 
@@ -82,6 +83,7 @@ func (s *service) Register(ctx context.Context, req RegisterRequest) (*AuthRespo
 		District:       req.District,
 		City:           req.City,
 		WhatsAppNumber: req.WhatsAppNumber,
+		AvatarURL:      req.AvatarURL,
 	}
 
 	if err := s.repo.CreateUser(ctx, user); err != nil {
@@ -141,6 +143,13 @@ func (s *service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 
 func (s *service) GetProfile(ctx context.Context, userID uuid.UUID) (*User, error) {
 	return s.repo.GetByID(ctx, userID)
+}
+
+func (s *service) UpdateProfile(ctx context.Context, userID uuid.UUID, req UpdateProfileRequest) (*User, error) {
+	if userID == uuid.Nil {
+		return nil, errors.New("invalid user ID")
+	}
+	return s.repo.UpdateProfile(ctx, userID, req)
 }
 
 func (s *service) ChangePassword(ctx context.Context, userID uuid.UUID, req ChangePasswordRequest) error {

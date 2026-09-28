@@ -18,6 +18,7 @@ type Repository interface {
 	GetByNIC(ctx context.Context, nic string) (*User, error)
 	GetByIdentifier(ctx context.Context, identifier string) (*User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
+	UpdateProfile(ctx context.Context, id uuid.UUID, req UpdateProfileRequest) (*User, error)
 	UpdatePassword(ctx context.Context, id uuid.UUID, newPasswordHash string) error
 	GetAllUsers(ctx context.Context) ([]User, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
@@ -198,6 +199,63 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	}
 
 	return nil, errors.New("user not found")
+}
+
+func (r *repository) UpdateProfile(ctx context.Context, id uuid.UUID, req UpdateProfileRequest) (*User, error) {
+	if r.db != nil {
+		query := `
+			UPDATE users
+			SET full_name = COALESCE(NULLIF($1, ''), full_name),
+			    phone = COALESCE(NULLIF($2, ''), phone),
+			    district = COALESCE(NULLIF($3, ''), district),
+			    city = COALESCE(NULLIF($4, ''), city),
+			    shop_name = COALESCE(NULLIF($5, ''), shop_name),
+			    whatsapp_number = COALESCE(NULLIF($6, ''), whatsapp_number),
+			    avatar_url = COALESCE(NULLIF($7, ''), avatar_url),
+			    updated_at = NOW()
+			WHERE id = $8
+			RETURNING id, full_name, COALESCE(email, ''), COALESCE(nic, ''), password_hash, COALESCE(role, 'farmer'), COALESCE(phone, ''), COALESCE(shop_name, ''), COALESCE(district, ''), COALESCE(city, ''), COALESCE(whatsapp_number, ''), COALESCE(avatar_url, ''), created_at, updated_at
+		`
+		var u User
+		err := r.db.QueryRowContext(ctx, query, req.FullName, req.Phone, req.District, req.City, req.ShopName, req.WhatsAppNumber, req.AvatarURL, id).
+			Scan(&u.ID, &u.FullName, &u.Email, &u.NIC, &u.PasswordHash, &u.Role, &u.Phone, &u.ShopName, &u.District, &u.City, &u.WhatsAppNumber, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed updating user profile in DB: %w", err)
+		}
+
+		r.saveMemUser(&u)
+		return &u, nil
+	}
+
+	u, err := r.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if req.FullName != "" {
+		u.FullName = req.FullName
+	}
+	if req.Phone != "" {
+		u.Phone = req.Phone
+	}
+	if req.District != "" {
+		u.District = req.District
+	}
+	if req.City != "" {
+		u.City = req.City
+	}
+	if req.ShopName != "" {
+		u.ShopName = req.ShopName
+	}
+	if req.WhatsAppNumber != "" {
+		u.WhatsAppNumber = req.WhatsAppNumber
+	}
+	if req.AvatarURL != "" {
+		u.AvatarURL = req.AvatarURL
+	}
+	u.UpdatedAt = time.Now()
+
+	r.saveMemUser(u)
+	return u, nil
 }
 
 func (r *repository) UpdatePassword(ctx context.Context, id uuid.UUID, newPasswordHash string) error {

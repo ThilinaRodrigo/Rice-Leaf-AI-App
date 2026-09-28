@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
+  Image,
 } from "react-native";
 import {
   ArrowLeft,
@@ -28,17 +29,30 @@ import {
   EyeOff,
   Megaphone,
   ChevronRight,
+  Camera,
+  Edit2,
 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { changePassword } from "@/service/apiClient";
+import { changePassword, uploadUserAvatar, updateUserProfile } from "@/service/apiClient";
+import { API_BASE_URL } from "@/constant/api";
 
 const Profile = () => {
-  const { user, token, logout } = useAuth();
+  const { user, token, updateUser, logout } = useAuth();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
+
+  const getAvatarUrl = (url?: string) => {
+    if (!url) return null;
+    if (url.startsWith("/uploads")) {
+      const domain = API_BASE_URL.replace("/api/v1", "");
+      return `${domain}${url}`;
+    }
+    return url;
+  };
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -49,6 +63,96 @@ const Profile = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Edit Profile Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFullName, setEditFullName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editDistrict, setEditDistrict] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editShopName, setEditShopName] = useState("");
+  const [editWhatsAppNumber, setEditWhatsAppNumber] = useState("");
+  const [editAvatarUri, setEditAvatarUri] = useState<string | null>(null);
+  const [submittingProfile, setSubmittingProfile] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  const handleOpenEditModal = () => {
+    if (!user) return;
+    setEditFullName(user.full_name || "");
+    setEditPhone(user.phone || "");
+    setEditDistrict(user.district || "");
+    setEditCity(user.city || "");
+    setEditShopName(user.shop_name || "");
+    setEditWhatsAppNumber(user.whatsapp_number || "");
+    setEditAvatarUri(user.avatar_url ? getAvatarUrl(user.avatar_url) : null);
+    setEditError("");
+    setShowEditModal(true);
+  };
+
+  const handlePickEditAvatar = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      if (asset.base64) {
+        setEditAvatarUri(`data:image/jpeg;base64,${asset.base64}`);
+      } else {
+        setEditAvatarUri(asset.uri);
+      }
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editFullName.trim()) {
+      setEditError("Full Name is required.");
+      return;
+    }
+    if (!token) return;
+
+    setEditError("");
+    setSubmittingProfile(true);
+    try {
+      let finalAvatarUrl = user?.avatar_url || "";
+      if (
+        editAvatarUri &&
+        (editAvatarUri.startsWith("data:") ||
+          editAvatarUri.startsWith("file://") ||
+          editAvatarUri.startsWith("content://"))
+      ) {
+        finalAvatarUrl = await uploadUserAvatar(editAvatarUri);
+      } else if (editAvatarUri && editAvatarUri.includes("/uploads/avatars/")) {
+        const idx = editAvatarUri.indexOf("/uploads/avatars/");
+        finalAvatarUrl = editAvatarUri.substring(idx);
+      }
+
+      const updated = await updateUserProfile(
+        {
+          full_name: editFullName.trim(),
+          phone: editPhone.trim(),
+          district: editDistrict.trim(),
+          city: editCity.trim(),
+          shop_name: editShopName.trim(),
+          whatsapp_number: editWhatsAppNumber.trim(),
+          avatar_url: finalAvatarUrl,
+        },
+        token
+      );
+
+      updateUser(updated);
+      setShowEditModal(false);
+      Alert.alert("Success", t("profileUpdatedSuccess"));
+    } catch (err: any) {
+      setEditError(err.message || t("updateProfileError"));
+    } finally {
+      setSubmittingProfile(false);
+    }
+  };
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -117,11 +221,42 @@ const Profile = () => {
         </TouchableOpacity>
 
         {/* User Avatar Badge */}
-        <View style={styles.avatarWrapper}>
+        <TouchableOpacity
+          onPress={user ? handleOpenEditModal : undefined}
+          activeOpacity={0.8}
+          style={styles.avatarWrapper}
+        >
           <View style={styles.avatarContainer}>
-            <UserIcon size={48} color="#059669" />
+            {user?.avatar_url ? (
+              <Image
+                source={{ uri: getAvatarUrl(user.avatar_url)! }}
+                style={{ width: "100%", height: "100%", borderRadius: 50 }}
+                resizeMode="cover"
+              />
+            ) : (
+              <UserIcon size={48} color="#059669" />
+            )}
+            {user && (
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  right: 0,
+                  backgroundColor: "#059669",
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 2,
+                  borderColor: "#FFFFFF",
+                }}
+              >
+                <Camera size={14} color="#FFFFFF" />
+              </View>
+            )}
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Main Content Area */}
@@ -195,7 +330,42 @@ const Profile = () => {
 
             {/* Account Information Card */}
             <View style={styles.infoCard}>
-              <Text style={styles.cardHeaderTitle}>{t("accountInfo")}</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Text style={styles.cardHeaderTitle}>{t("accountInfo")}</Text>
+                <TouchableOpacity
+                  onPress={handleOpenEditModal}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: "#ECFDF5",
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: "#A7F3D0",
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Edit2 size={14} color="#059669" />
+                  <Text
+                    style={{
+                      marginLeft: 6,
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: "#047857",
+                    }}
+                  >
+                    {t("editProfile")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               {user.nic ? (
                 <View style={styles.infoRow}>
@@ -473,6 +643,191 @@ const Profile = () => {
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <Text style={styles.modalSaveBtnText}>{t("savePassword")}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={showEditModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: "90%" }]}>
+            <TouchableOpacity
+              onPress={() => setShowEditModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <X size={20} color="#64748B" />
+            </TouchableOpacity>
+
+            <View style={styles.modalHeaderRow}>
+              <Edit2 size={20} color="#059669" />
+              <Text style={styles.modalTitle}>{t("editProfile")}</Text>
+            </View>
+
+            {editError ? (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{editError}</Text>
+              </View>
+            ) : null}
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ marginVertical: 10 }}>
+              {/* Profile Photo Picker */}
+              <View style={{ alignItems: "center", marginBottom: 20 }}>
+                <TouchableOpacity
+                  onPress={handlePickEditAvatar}
+                  activeOpacity={0.8}
+                  style={{
+                    width: 96,
+                    height: 96,
+                    borderRadius: 48,
+                    backgroundColor: "#ECFDF5",
+                    borderWidth: 2,
+                    borderColor: "#059669",
+                    borderStyle: "dashed",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                  }}
+                >
+                  {editAvatarUri ? (
+                    <Image
+                      source={{ uri: editAvatarUri }}
+                      style={{ width: "100%", height: "100%", borderRadius: 48 }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <UserIcon size={40} color="#059669" />
+                  )}
+                  <View
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      right: 0,
+                      backgroundColor: "#059669",
+                      width: 30,
+                      height: 30,
+                      borderRadius: 15,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 2,
+                      borderColor: "#FFFFFF",
+                    }}
+                  >
+                    <Camera size={14} color="#FFFFFF" />
+                  </View>
+                </TouchableOpacity>
+                <Text style={{ fontSize: 12, fontWeight: "700", color: "#475569", marginTop: 8 }}>
+                  {t("changePhoto")}
+                </Text>
+              </View>
+
+              {/* Full Name */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t("fullNameLabel")}</Text>
+                <View style={styles.inputWrapper}>
+                  <UserIcon size={16} color="#94A3B8" />
+                  <TextInput
+                    value={editFullName}
+                    onChangeText={setEditFullName}
+                    placeholder="Full Name"
+                    placeholderTextColor="#94A3B8"
+                    style={styles.textInput}
+                  />
+                </View>
+              </View>
+
+              {/* Phone Number */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t("phoneNumber")}</Text>
+                <View style={styles.inputWrapper}>
+                  <Phone size={16} color="#94A3B8" />
+                  <TextInput
+                    value={editPhone}
+                    onChangeText={setEditPhone}
+                    placeholder="077 123 4567"
+                    keyboardType="phone-pad"
+                    placeholderTextColor="#94A3B8"
+                    style={styles.textInput}
+                  />
+                </View>
+              </View>
+
+              {/* District */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>{t("location")}</Text>
+                <View style={styles.inputWrapper}>
+                  <MapPin size={16} color="#94A3B8" />
+                  <TextInput
+                    value={editDistrict}
+                    onChangeText={setEditDistrict}
+                    placeholder="District (e.g. Anuradhapura)"
+                    placeholderTextColor="#94A3B8"
+                    style={styles.textInput}
+                  />
+                </View>
+              </View>
+
+              {/* Shop Owner Specific Fields */}
+              {user?.role === "shop_owner" && (
+                <>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>{t("agroShopName")}</Text>
+                    <View style={styles.inputWrapper}>
+                      <Store size={16} color="#94A3B8" />
+                      <TextInput
+                        value={editShopName}
+                        onChangeText={setEditShopName}
+                        placeholder="Agro Shop Name"
+                        placeholderTextColor="#94A3B8"
+                        style={styles.textInput}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>{t("whatsAppContact")}</Text>
+                    <View style={styles.inputWrapper}>
+                      <MessageSquare size={16} color="#94A3B8" />
+                      <TextInput
+                        value={editWhatsAppNumber}
+                        onChangeText={setEditWhatsAppNumber}
+                        placeholder="077 987 6543"
+                        keyboardType="phone-pad"
+                        placeholderTextColor="#94A3B8"
+                        style={styles.textInput}
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
+            </ScrollView>
+
+            {/* Actions */}
+            <View style={styles.modalActionRow}>
+              <TouchableOpacity
+                onPress={() => setShowEditModal(false)}
+                style={styles.modalCancelBtn}
+              >
+                <Text style={styles.modalCancelBtnText}>{t("cancel")}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleSaveProfile}
+                disabled={submittingProfile}
+                style={styles.modalSaveBtn}
+                activeOpacity={0.9}
+              >
+                {submittingProfile ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.modalSaveBtnText}>{t("saveChanges")}</Text>
                 )}
               </TouchableOpacity>
             </View>

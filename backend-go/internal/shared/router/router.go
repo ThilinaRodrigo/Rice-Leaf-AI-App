@@ -52,7 +52,9 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 		{
 			authGroup.POST("/register", rc.AuthHandler.Register)
 			authGroup.POST("/login", rc.AuthHandler.Login)
+			authGroup.POST("/avatar", rc.AuthHandler.UploadAvatar)
 			authGroup.GET("/me", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.AuthHandler.GetProfile)
+			authGroup.PUT("/profile", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.AuthHandler.UpdateProfile)
 			authGroup.PUT("/change-password", middleware.AuthMiddleware(rc.Cfg.JWTSecret), rc.AuthHandler.ChangePassword)
 		}
 
