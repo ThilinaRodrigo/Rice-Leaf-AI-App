@@ -1,0 +1,726 @@
+import { API_BASE_URL } from "@/constant/api";
+import { Platform } from "react-native";
+import * as FileSystem from "expo-file-system/legacy";
+
+// Helper to convert scoped Expo Go ExperienceData URIs or base64 strings into readable root cache files
+async function getReadableNativeFileUri(rawUri: string): Promise<{ uri: string; isTemp: boolean }> {
+  if (!FileSystem.cacheDirectory || !rawUri) {
+    return { uri: rawUri, isTemp: false };
+  }
+
+  const tempPath = `${FileSystem.cacheDirectory}upload_file_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
+
+  // 1. If input is base64 data URI or raw base64 string
+  if (rawUri.startsWith("data:image/") || (!rawUri.startsWith("file://") && !rawUri.startsWith("/") && !rawUri.startsWith("content://"))) {
+    try {
+      const base64Data = rawUri.includes(",") ? rawUri.split(",")[1] : rawUri;
+      await FileSystem.writeAsStringAsync(tempPath, base64Data, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      console.log("=== DEBUG: Written base64 data to cache file =", tempPath);
+      return { uri: tempPath, isTemp: true };
+    } catch (err) {
+      console.warn("=== DEBUG: Base64 direct write failed:", err);
+    }
+  }
+
+  // 2. Decode URI string to eliminate double encoding issues (%2540 -> %40)
+  let cleanUri = rawUri;
+  try {
+    cleanUri = decodeURIComponent(rawUri);
+  } catch (e) {
+    cleanUri = rawUri;
+  }
+  if (!cleanUri.startsWith("file://") && !cleanUri.startsWith("content://")) {
+    cleanUri = `file://${cleanUri}`;
+  }
+
+  // 3. Try copyAsync
+  try {
+    await FileSystem.copyAsync({
+      from: cleanUri,
+      to: tempPath,
+    });
+    console.log("=== DEBUG: Successfully copied file to root cache =", tempPath);
+    return { uri: tempPath, isTemp: true };
+  } catch (copyErr) {
+    console.warn("=== DEBUG: FileSystem.copyAsync failed, trying base64 fallback:", copyErr);
+  }
+
+  // 4. Try reading as base64 and writing to temp file
+  try {
+    const base64Data = await FileSystem.readAsStringAsync(cleanUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    await FileSystem.writeAsStringAsync(tempPath, base64Data, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    console.log("=== DEBUG: Successfully copied file via base64 write =", tempPath);
+    return { uri: tempPath, isTemp: true };
+  } catch (err) {
+    console.warn("=== DEBUG: Base64 cache copy failed for cleanUri:", err);
+  }
+
+  return { uri: cleanUri, isTemp: false };
+}
+
+// 1. Scan / Analyze Leaf Image
+export const analyzeLeafImage = async (imageUri: string, userToken?: string): Promise<any> => {
+  const targetUrl = `${API_BASE_URL}/scans/analyze`;
+  console.log("=== DEBUG: API_BASE_URL =", API_BASE_URL);
+  console.log("=== DEBUG: Full upload URL =", targetUrl);
+  console.log("=== DEBUG: Raw imageUri =", imageUri);
+
+  const headers: Record<string, string> = {};
+  if (userToken) {
+    headers["Authorization"] = `Bearer ${userToken}`;
+  }
+
+  if (Platform.OS === "web") {
+    // Web: fetch image blob first
+    const formData = new FormData();
+    const imageResponse = await fetch(imageUri);
+    if (!imageResponse.ok) {
+      throw new Error("Unable to read the selected image file");
+    }
+    const blob = await imageResponse.blob();
+    formData.append("file", blob, "rice_leaf.jpg");
+
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    const responseText = await res.text();
+    console.log("=== DEBUG: Web Upload status =", res.status);
+    console.log("=== DEBUG: Web Upload response =", responseText);
+
+    if (!res.ok) {
+      throw new Error(`Analysis failed (${res.status}): ${responseText}`);
+    }
+
+    return JSON.parse(responseText);
+  } else {
+    // Native (Android / iOS)
+    const { uri: uploadUri, isTemp } = await getReadableNativeFileUri(imageUri);
+    console.log("=== DEBUG: Uploading native URI =", uploadUri);
+
+    try {
+      const uploadResult = await FileSystem.uploadAsync(targetUrl, uploadUri, {
+        httpMethod: "POST",
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: "file",
+        mimeType: "image/jpeg",
+        headers,
+      });
+
+      console.log("=== DEBUG: Upload status =", uploadResult.status);
+      console.log("=== DEBUG: Upload response =", uploadResult.body);
+
+      if (uploadResult.status >= 200 && uploadResult.status < 300) {
+        return JSON.parse(uploadResult.body);
+      }
+      throw new Error(`Analysis failed (${uploadResult.status}): ${uploadResult.body}`);
+    } catch (uploadErr) {
+      console.warn("FileSystem.uploadAsync failed, attempting XMLHttpRequest fallback:", uploadErr);
+
+      // Fallback: XMLHttpRequest with FormData
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", targetUrl);
+
+        if (userToken) {
+          xhr.setRequestHeader("Authorization", `Bearer ${userToken}`);
+        }
+
+        xhr.onload = () => {
+          console.log("=== DEBUG: XHR Upload status =", xhr.status);
+          console.log("=== DEBUG: XHR Upload response =", xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (e) {
+              resolve(xhr.responseText);
+            }
+          } else {
+            reject(new Error(`Analysis failed (${xhr.status}): ${xhr.responseText}`));
+          }
+        };
+
+        xhr.onerror = (err) => {
+          console.error("=== DEBUG: XHR Upload error =", err);
+          reject(new Error("Network error occurred during image upload"));
+        };
+
+        const formData = new FormData();
+        formData.append("file", {
+          uri: uploadUri,
+          name: "rice_leaf.jpg",
+          type: "image/jpeg",
+        } as any);
+
+        xhr.send(formData);
+      });
+    } finally {
+      if (isTemp) {
+        try {
+          await FileSystem.deleteAsync(uploadUri, { idempotent: true });
+        } catch (e) {
+          // Ignore cleanup error
+        }
+      }
+    }
+  }
+};
+
+// 2. Marketplace Products
+export const fetchMarketProducts = async (category?: string, search?: string) => {
+  const params = new URLSearchParams();
+  if (category && category !== "All") params.append("category", category);
+  if (search) params.append("search", search);
+
+  const url = `${API_BASE_URL}/products?${params.toString()}`;
+  const res = await fetch(url);
+  
+  if (!res.ok) {
+    throw new Error(`Failed to fetch products: ${res.status}`);
+  }
+
+  return await res.json();
+};
+
+// 3. AI Agronomy Chat Assistant
+export const sendChatMessage = async (message: string, userToken?: string) => {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (userToken) {
+    headers["Authorization"] = `Bearer ${userToken}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}/chat/message`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ message }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed sending chat message (${res.status})`);
+  }
+
+  return await res.json();
+};
+
+// 4. Disease Remedies Knowledge Base
+export const fetchDiseasesList = async (lang?: string) => {
+  const url = lang ? `${API_BASE_URL}/diseases?lang=${encodeURIComponent(lang)}` : `${API_BASE_URL}/diseases`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch diseases list`);
+  }
+  return await res.json();
+};
+
+// 5. Auth API Functions
+export const uploadUserAvatar = async (imageUri: string) => {
+  const targetUrl = `${API_BASE_URL}/auth/avatar`;
+
+  try {
+    let base64Data = imageUri;
+    if (imageUri.startsWith("data:")) {
+      const parts = imageUri.split(",");
+      base64Data = parts[1] || imageUri;
+    } else if (imageUri.startsWith("file://") || imageUri.startsWith("content://")) {
+      base64Data = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    }
+
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ avatar_base64: base64Data }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to upload avatar image");
+    return data.url;
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to upload avatar image");
+  }
+};
+
+export const registerUser = async (payload: {
+  full_name: string;
+  email?: string;
+  nic?: string;
+  password: string;
+  role: "farmer" | "shop_owner" | "sys_admin";
+  phone?: string;
+  shop_name?: string;
+  district?: string;
+  city?: string;
+  whatsapp_number?: string;
+  avatar_url?: string;
+}) => {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Registration failed");
+  }
+  return data;
+};
+
+export const updateUserProfile = async (
+  payload: {
+    full_name?: string;
+    phone?: string;
+    district?: string;
+    city?: string;
+    shop_name?: string;
+    whatsapp_number?: string;
+    avatar_url?: string;
+  },
+  userToken: string
+) => {
+  const res = await fetch(`${API_BASE_URL}/auth/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed updating user profile");
+  }
+  return data;
+};
+
+export const loginUser = async (payload: {
+  identifier?: string;
+  email?: string;
+  password: string;
+}) => {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Login failed");
+  }
+  return data;
+};
+
+export const fetchUserProfile = async (userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to fetch user profile");
+  }
+  return data;
+};
+
+export const changePassword = async (currentPassword: string, newPassword: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to change password");
+  }
+  return data;
+};
+
+// 6. Shop Owner Ads API Functions
+export const uploadAdImage = async (imageUri: string, userToken: string): Promise<string> => {
+  const targetUrl = `${API_BASE_URL}/shop/ads/upload`;
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${userToken}`,
+  };
+
+  if (Platform.OS === "web") {
+    const formData = new FormData();
+    const imageResponse = await fetch(imageUri);
+    const blob = await imageResponse.blob();
+    formData.append("image", blob, "ad_image.jpg");
+
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed uploading ad image");
+    return data.image_url;
+  } else {
+    const { uri: uploadUri, isTemp } = await getReadableNativeFileUri(imageUri);
+    console.log("=== DEBUG: Uploading ad image native URI =", uploadUri);
+
+    try {
+      // 1. Try standard fetch with FormData
+      try {
+        const formData = new FormData();
+        formData.append("image", {
+          uri: uploadUri,
+          name: "ad_image.jpg",
+          type: "image/jpeg",
+        } as any);
+
+        const res = await fetch(targetUrl, {
+          method: "POST",
+          headers,
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          console.log("=== DEBUG: Fetch FormData Ad upload success =", data);
+          return data.image_url;
+        }
+      } catch (formDataErr) {
+        console.warn("=== DEBUG: Fetch FormData upload failed, attempting Base64 JSON fallback:", formDataErr);
+      }
+
+      // 2. Fallback: Base64 JSON POST request
+      let base64String = imageUri;
+      if (imageUri.startsWith("file://") || imageUri.startsWith("content://") || uploadUri.startsWith("file://")) {
+        const readPath = uploadUri.startsWith("file://") ? uploadUri : imageUri;
+        try {
+          base64String = await FileSystem.readAsStringAsync(readPath, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+        } catch (readErr) {
+          console.warn("=== DEBUG: Failed reading base64 for fallback:", readErr);
+        }
+      }
+
+      const jsonRes = await fetch(targetUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userToken}`,
+        },
+        body: JSON.stringify({
+          image_base64: base64String,
+          filename: "ad_image.jpg",
+        }),
+      });
+
+      const jsonText = await jsonRes.text();
+      console.log("=== DEBUG: Base64 JSON upload status =", jsonRes.status, jsonText);
+
+      if (!jsonRes.ok) {
+        throw new Error(`Ad image upload failed (${jsonRes.status}): ${jsonText}`);
+      }
+
+      const parsed = JSON.parse(jsonText);
+      return parsed.image_url;
+    } finally {
+      if (isTemp) {
+        try {
+          await FileSystem.deleteAsync(uploadUri, { idempotent: true });
+        } catch (e) {}
+      }
+    }
+  }
+};
+
+export const createShopAd = async (
+  payload: {
+    shop_name: string;
+    contact_phone: string;
+    title: string;
+    category?: string;
+    description: string;
+    price_unit: string;
+    image_url: string;
+    disease_tags: string[];
+  },
+  userToken: string
+) => {
+  const res = await fetch(`${API_BASE_URL}/shop/ads`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed creating shop advertisement");
+  }
+  return data;
+};
+
+export const updateShopAd = async (
+  adId: string,
+  payload: {
+    shop_name: string;
+    contact_phone: string;
+    title: string;
+    category?: string;
+    description: string;
+    price_unit: string;
+    image_url: string;
+    disease_tags: string[];
+  },
+  userToken: string
+) => {
+  const res = await fetch(`${API_BASE_URL}/shop/ads/${adId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed updating advertisement");
+  }
+  return data;
+};
+
+export const fetchMyShopAds = async (userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/shop/ads/my-ads`, {
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to fetch shop ads");
+  }
+  return data;
+};
+
+export const deleteShopAd = async (adId: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/shop/ads/${adId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to delete ad");
+  }
+  return data;
+};
+
+export const fetchApprovedMarketplaceAds = async (diseaseTag?: string) => {
+  const url = diseaseTag
+    ? `${API_BASE_URL}/marketplace/ads?disease_tag=${encodeURIComponent(diseaseTag)}`
+    : `${API_BASE_URL}/marketplace/ads`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error("Failed to fetch marketplace ads");
+  }
+  return data;
+};
+
+export const fetchPaginatedMarketplaceAds = async (params: {
+  diseaseTag?: string;
+  category?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const queryParams = new URLSearchParams();
+  if (params.diseaseTag && params.diseaseTag !== "All") queryParams.append("disease_tag", params.diseaseTag);
+  if (params.category && params.category !== "All") queryParams.append("category", params.category);
+  if (params.search) queryParams.append("search", params.search);
+  if (params.page) queryParams.append("page", params.page.toString());
+  if (params.limit) queryParams.append("limit", params.limit.toString());
+
+  const url = `${API_BASE_URL}/marketplace/ads?${queryParams.toString()}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to fetch marketplace ads");
+  }
+  return data;
+};
+
+// --- Community Posts & Knowledge Base API ---
+export const uploadPostImage = async (imageUri: string, userToken: string) => {
+  const targetUrl = `${API_BASE_URL}/posts/upload`;
+
+  // Strategy: read as base64 via FileSystem, then POST as JSON { image_base64 }.
+  // The backend's UploadPostImage handler accepts this at the /posts/upload endpoint.
+  // We avoid Blob/ArrayBuffer entirely — Hermes (React Native JS engine) does NOT
+  // support creating Blobs from ArrayBuffer/Uint8Array.
+  try {
+    let base64Data: string;
+    try {
+      base64Data = await FileSystem.readAsStringAsync(imageUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    } catch {
+      // If direct read fails (e.g. double-encoded Expo Go scoped path), decode URI and retry
+      const decoded = decodeURIComponent(imageUri);
+      const withScheme = decoded.startsWith("file://") ? decoded : `file://${decoded}`;
+      base64Data = await FileSystem.readAsStringAsync(withScheme, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    }
+
+    // POST as JSON base64 — backend decodes and saves the file
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ image_base64: base64Data }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to upload post image");
+    return data;
+  } catch (err: any) {
+    throw new Error(err.message || "Failed to upload post image");
+  }
+};
+
+export const createCommunityPost = async (
+  payload: {
+    title: string;
+    content: string;
+    disease_tag: string;
+    image_url?: string;
+  },
+  userToken: string
+) => {
+  const res = await fetch(`${API_BASE_URL}/posts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed creating community post");
+  return data;
+};
+
+export const fetchCommunityPosts = async (
+  diseaseTag?: string,
+  userToken?: string,
+  limit?: number,
+  offset?: number
+) => {
+  const queryParams = new URLSearchParams();
+  if (diseaseTag && diseaseTag !== "All") {
+    queryParams.append("disease_tag", diseaseTag);
+  }
+  if (limit !== undefined) {
+    queryParams.append("limit", limit.toString());
+  }
+  if (offset !== undefined) {
+    queryParams.append("offset", offset.toString());
+  }
+
+  const url = `${API_BASE_URL}/posts?${queryParams.toString()}`;
+  const headers: Record<string, string> = {};
+  if (userToken) {
+    headers["Authorization"] = `Bearer ${userToken}`;
+  }
+  const res = await fetch(url, { headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch community posts");
+  return data;
+};
+
+export const fetchSuggestedPosts = async (diseaseTag?: string) => {
+  let url = `${API_BASE_URL}/posts/suggested`;
+  if (diseaseTag) {
+    url += `?disease_tag=${encodeURIComponent(diseaseTag)}`;
+  }
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch suggested posts");
+  return data;
+};
+
+export const voteCommunityPost = async (postId: string, voteType: "like" | "dislike", userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/${postId}/vote`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify({ vote_type: voteType }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to vote on post");
+  return data;
+};
+
+export const fetchPostComments = async (postId: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/${postId}/comments`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch post comments");
+  return data;
+};
+
+export const addPostComment = async (postId: string, comment: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${userToken}`,
+    },
+    body: JSON.stringify({ comment }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to add comment");
+  return data;
+};
+
+export const deleteCommunityPost = async (postId: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to delete post");
+  return data;
+};
+
+export const deletePostComment = async (commentId: string, userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/posts/comments/${commentId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to delete comment");
+  return data;
+};

@@ -1,159 +1,208 @@
-# Rice Leaf AI
+# Rice Leaf AI 🌾🤖
 
-Rice Leaf AI is a mobile and web application for identifying common rice-leaf diseases from an uploaded or captured image. The Expo frontend sends the image to a FastAPI service, which runs the included TensorFlow model and returns a predicted class and confidence score.
+Rice Leaf AI is an end-to-end intelligent agricultural management, disease detection, and social marketplace ecosystem. The system features a **React Native (Expo) mobile client**, a **Vite + React System Admin Dashboard**, a high-performance **Go Modular Monolith REST API backend**, and a **Python (FastAPI + TensorFlow) AI machine learning inference service**.
 
-## Features
+---
 
-- Capture or choose a rice-leaf image.
-- Detect bacterial leaf blight, brown spot, healthy leaves, leaf scald, and narrow brown spot.
-- Display the predicted disease, confidence score, contributing factors, and recommended actions.
-- Run the frontend in Expo for web, Android, or iOS.
+## 🏗️ System Architecture
 
-## Project structure
+```text
+┌──────────────────────────────────────┐       ┌──────────────────────────────────────┐
+│       React Native (Expo App)        │       │    Sys Admin Web Dashboard (Vite)   │
+│     (iOS, Android & Mobile Web)      │       │          (Management Client)         │
+└──────────────────┬───────────────────┘       └──────────────────┬───────────────────┘
+                   │                                              │
+                   │ REST API / HTTP JSON                         │ REST API / HTTP JSON
+                   └───────────────────────┬──────────────────────┘
+                                           │
+                                           ▼
+                       ┌──────────────────────────────────────┐
+                       │     Go Backend Service (Gin API)     │
+                       │         [Modular Monolith]           │
+                       │                                      │
+                       │  ├── auth        ├── community       │
+                       │  ├── scan        ├── shop            │
+                       │  ├── disease     ├── chat            │
+                       │  └── admin       └── shared          │
+                       └───────────┬──────────────────┬───────┘
+                                   │                  │
+                PostgreSQL SQL /   │                  │ HTTP Proxy / Multipart
+                Data Persistence   ▼                  ▼
+                       ┌───────────────┐      ┌─────────────────────────┐
+                       │  PostgreSQL   │      │   ML Service (FastAPI)  │
+                       │   Database    │      │ (TensorFlow Inference)  │
+                       └───────────────┘      └─────────────────────────┘
+```
+
+---
+
+## 📂 Repository Layout
 
 ```text
 Rice-Leaf-AI-App/
-|- rice-leaf-app/        # Expo, React Native, and TypeScript frontend
-|- ml-service/           # FastAPI and TensorFlow prediction API
-|  `- models/model1.keras
-`- README.md
+├── rice-leaf-app/        # React Native / Expo cross-platform mobile & web client app
+├── sysadmin-web/         # Vite + React + Tailwind System Administration Portal
+├── backend-go/           # Go (Gin) Modular Monolith REST API backend & PostgreSQL persistence
+│   ├── cmd/api/          # Application entry point
+│   ├── internal/
+│   │   ├── modules/      # Domain-isolated modules (auth, community, shop, scan, disease, chat, admin)
+│   │   └── shared/       # Cross-cutting infrastructure (database, middleware, router)
+│   └── pkg/              # Standard utility packages (hasher, storage, token, mlclient)
+├── ml-service/           # FastAPI service with TensorFlow model for rice disease classification
+└── README.md             # Ecosystem documentation
 ```
 
-## Prerequisites
+---
 
-Install the following before starting:
+## 🚀 Ecosystem Components Overview
 
-- Node.js 20 or later
-- Python 3.10-3.12
-- npm (included with Node.js)
+### 1. 📱 Mobile Application (`rice-leaf-app`)
+- **Tech Stack**: Expo SDK 54, TypeScript, Expo Router (file-based navigation), NativeWind / React Native CSS.
+- **Key Features**:
+  - 📸 Camera & photo picker for instant rice leaf disease analysis.
+  - 💬 Interactive AI Agronomy Assistant chatbot for crop disease advice.
+  - 🛒 Agricultural Marketplace (seeds, fertilizers, sprayers, tools, and verified shop ads).
+  - 👥 Farmer Community Forum (ask questions, post field photos, vote, comment).
+  - 📖 Disease Knowledge Base with symptom guides and remedies (multilingual support).
 
-For testing on a physical phone, the phone and computer must use the same Wi-Fi network.
+### 2. ⚙️ Go Modular Monolith Backend (`backend-go`)
+- **Tech Stack**: Go 1.22+, Gin Web Framework, PostgreSQL (`lib/pq`), JWT Authentication, Bcrypt.
+- **Architecture**: **Modular Monolith** organized by domain boundaries:
+  - `auth`: User registration, login, profile, role management (`farmer`, `shop_owner`, `sys_admin`).
+  - `community`: Forum posts, image uploads, voting (likes/dislikes), comments.
+  - `shop`: Marketplace products catalog and shop owner advertisement approval flow.
+  - `scan`: Rice leaf disease image upload, ML service integration, diagnostic history.
+  - `disease`: Disease database with treatment actions, environmental factors, and translations.
+  - `chat`: AI chatbot history and contextual agronomy response builder.
+  - `admin`: System stats, moderation, user management, and shop ad approvals.
 
-## 1. Start the ML prediction service
+### 3. 🖥️ System Admin Portal (`sysadmin-web`)
+- **Tech Stack**: Vite, React, TypeScript, TailwindCSS, Lucide Icons.
+- **Key Features**:
+  - Real-time platform analytics (users breakdown, total scans, disease distribution).
+  - User management (view farmers/shop owners, create sys admins, ban users).
+  - Shop Advertisement approval workflow (approve/reject shop ads with reasons).
+  - Disease knowledge base editor and scan history auditor.
 
-Open a PowerShell terminal from the project root and run:
+### 4. 🧠 ML Disease Classifier (`ml-service`)
+- **Tech Stack**: Python 3.10+, FastAPI, Uvicorn, TensorFlow 2.x Keras.
+- **Classifies rice leaves into 5 classes**:
+  - `0`: Bacterial Leaf Blight
+  - `1`: Brown Spot
+  - `2`: Healthy Leaf
+  - `3`: Leaf Scald
+  - `4`: Narrow Brown Spot
 
-```powershell
-cd ml-service
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m uvicorn app:app --host 0.0.0.0 --port 8001 --reload
-```
+---
 
-The first startup can take a little longer because TensorFlow loads and warms up `models/model1.keras`.
+## 📋 System Requirements & Prerequisites
 
-When the API is ready, it prints:
+- **Node.js**: v20 or later
+- **Go**: v1.22 or later
+- **Python**: 3.10 – 3.12
+- **PostgreSQL**: Local PostgreSQL server or Docker container
 
-```text
-Application startup complete.
-```
+---
 
-Open the interactive API documentation at <http://127.0.0.1:8001/docs>.
+## 🛠️ Installation & Setup Guide
 
-## 2. Configure the frontend API URL
+### Step 1: Initialize Database & Go Backend
 
-Edit `rice-leaf-app/constant/api.ts` before running the frontend.
+1. Navigate to `backend-go`:
+   ```bash
+   cd backend-go
+   ```
 
-For the web application running on the same computer:
+2. Configure environment variables (copy `.env.example` to `.env`):
+   ```bash
+   cp .env.example .env
+   ```
 
-```ts
-export const API_BASE_URL = "http://127.0.0.1:8001";
-```
+3. Build and run the Go Modular Monolith API server:
+   ```bash
+   go run ./cmd/api
+   ```
+   *The Go backend runs on `http://localhost:8080`.*
 
-For Expo Go or a development build on a phone, use the computer's Wi-Fi IPv4 address instead:
+---
 
-```ts
-export const API_BASE_URL = "http://192.168.x.x:8001";
-```
+### Step 2: Start Python ML Inference Service
 
-Find that address with:
+1. Open a new terminal and navigate to `ml-service`:
+   ```bash
+   cd ml-service
+   ```
 
-```powershell
-ipconfig
-```
+2. Setup virtual environment & dependencies:
+   ```powershell
+   # Windows PowerShell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   ```
 
-Use the `IPv4 Address` listed under `Wireless LAN adapter Wi-Fi`. Keep port `8001` unchanged unless you also start the API on a different port.
+3. Start FastAPI server:
+   ```bash
+   uvicorn app:app --host 0.0.0.0 --port 8001 --reload
+   ```
+   *Interactive API docs available at `http://localhost:8001/docs`.*
 
-## 3. Start the Expo frontend
+---
 
-Open a second PowerShell terminal from the project root:
+### Step 3: Start Mobile App (`rice-leaf-app`)
 
-```powershell
-cd rice-leaf-app
-npm.cmd install
-npx.cmd expo start --clear
-```
+1. Open a terminal and navigate to `rice-leaf-app`:
+   ```bash
+   cd rice-leaf-app
+   ```
 
-Choose one of the displayed options:
+2. Install dependencies & start Expo:
+   ```bash
+   npm install
+   npx expo start --clear
+   ```
+   *Press `w` for Web or scan the QR Code using Expo Go on your mobile phone.*
 
-```text
-w  Open in a web browser
-a  Open on an Android emulator
-QR Scan with Expo Go on a supported Android or iOS device
-```
+---
 
-To run only the web version:
+### Step 4: Start Sys Admin Web Portal (`sysadmin-web`)
 
-```powershell
-npm.cmd run web
-```
+1. Open a terminal and navigate to `sysadmin-web`:
+   ```bash
+   cd sysadmin-web
+   ```
 
-## Test the prediction API with Postman
+2. Install dependencies & start Vite dev server:
+   ```bash
+   npm install
+   npm run dev
+   ```
+   *Access dashboard at `http://localhost:5173`.*
 
-Create a request with the following settings:
+---
 
-```text
-Method: POST
-URL:    http://127.0.0.1:8001/predict
-Body:   form-data
-Key:    file
-Type:   File
-Value:  select a rice-leaf image
-```
+## 📡 API Endpoints Matrix
 
-Do not manually set the `Content-Type` header; Postman adds the required multipart boundary automatically.
+| Domain Module | Method | Endpoint | Authorization | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **Auth** | `POST` | `/api/v1/auth/register` | Public | Register new user (`farmer` / `shop_owner`) |
+| **Auth** | `POST` | `/api/v1/auth/login` | Public | User authentication & JWT issuance |
+| **Auth** | `GET` | `/api/v1/auth/me` | Bearer Token | Get current user profile |
+| **Scan** | `POST` | `/api/v1/scans/analyze` | Optional Token | Analyze leaf image & store result |
+| **Scan** | `GET` | `/api/v1/scans/history` | Bearer Token | User scan diagnostic history |
+| **Community** | `GET` | `/api/v1/posts` | Public | Browse community posts & questions |
+| **Community** | `POST` | `/api/v1/posts` | Bearer Token | Create new community post |
+| **Community** | `POST` | `/api/v1/posts/:id/vote` | Bearer Token | Like / Dislike post |
+| **Shop** | `GET` | `/api/v1/products` | Public | Browse marketplace products |
+| **Shop** | `GET` | `/api/v1/marketplace/ads` | Public | View approved shop advertisements |
+| **Shop** | `POST` | `/api/v1/shop/ads` | Shop Owner | Post shop advertisement |
+| **Chat** | `POST` | `/api/v1/chat/message` | Optional Token | Send message to AI Agronomist |
+| **Disease** | `GET` | `/api/v1/diseases` | Public | List disease database & remedies |
+| **Admin** | `GET` | `/api/v1/admin/stats` | Sys Admin | Platform telemetry & statistics |
+| **Admin** | `PUT` | `/api/v1/admin/ads/:id/status`| Sys Admin | Approve/Reject shop owner ad |
 
-A successful response resembles:
+---
 
-```json
-{
-  "class_id": 0,
-  "label": "bacterial_leaf_blight",
-  "confidence": 0.9876
-}
-```
+## 📄 License
 
-## Troubleshooting
-
-### `400 Bad Request` when uploading an image
-
-Confirm the request uses a `file` form-data field and that the ML service is running. The frontend upload service must not manually set `Content-Type: multipart/form-data`, because the browser or React Native runtime must create its multipart boundary.
-
-### Expo Go reports that the project is incompatible
-
-This project uses Expo SDK 54. Update Expo Go from the Play Store or App Store, then restart the development server:
-
-```powershell
-npx.cmd expo start --clear
-```
-
-If the device cannot install an Expo Go version that supports SDK 54, run the web application or use an Android emulator/development build.
-
-### The phone cannot reach the API
-
-- Verify the API is running with `--host 0.0.0.0`.
-- Verify both devices are on the same Wi-Fi network.
-- Use the computer's Wi-Fi IPv4 address, not `127.0.0.1`, in `api.ts`.
-- Allow Python through Windows Firewall on private networks when prompted.
-
-## Available prediction labels
-
-| ID | Label |
-| -- | ----- |
-| 0 | `bacterial_leaf_blight` |
-| 1 | `brown_spot` |
-| 2 | `healthy` |
-| 3 | `leaf_scald` |
-| 4 | `narrow_brown_spot` |
+This repository is developed for AI & Smart Agriculture Research. All rights reserved.

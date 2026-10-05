@@ -1,34 +1,20 @@
-import { API_BASE_URL } from "@/constant/api";
-import { Platform } from "react-native";
+import { analyzeLeafImage } from "./apiClient";
 
 export const predictImage = async (uri: string): Promise<any> => {
-  const formData = new FormData();
-
-  if (Platform.OS === "web") {
-    const imageResponse = await fetch(uri);
-    if (!imageResponse.ok) {
-      throw new Error("Unable to read the selected image");
+  try {
+    const data = await analyzeLeafImage(uri);
+    // If returned from Go Backend with { scan, disease }
+    if (data.scan) {
+      return {
+        class_id: data.scan.class_id,
+        label: data.scan.label,
+        confidence: data.scan.confidence,
+        disease: data.disease,
+      };
     }
-
-    formData.append("file", await imageResponse.blob(), "leaf.jpg");
-  } else {
-    formData.append("file", {
-      uri,
-      name: "leaf.jpg",
-      type: "image/jpeg",
-    } as any);
+    return data;
+  } catch (err) {
+    console.error("Go Backend diagnosis error:", err);
+    throw err;
   }
-
-  const res = await fetch(`${API_BASE_URL}/predict`, {
-    method: "POST",
-    body: formData,
-  });
-
-  const responseText = await res.text();
-
-  if (!res.ok) {
-    throw new Error(`Prediction failed (${res.status}): ${responseText}`);
-  }
-
-  return JSON.parse(responseText);
 };

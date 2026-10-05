@@ -6,8 +6,8 @@ from PIL import Image
 import io
 import os
 
-#VGG19 preprocess
-from tensorflow.keras.applications.vgg19 import preprocess_input
+# VGG19 preprocess
+preprocess_input = tf.keras.applications.vgg19.preprocess_input
 
 app = FastAPI(title="Rice Leaf Disease Detection API")
 
@@ -49,7 +49,7 @@ def preprocess_image(image: Image.Image) -> np.ndarray:
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
 
-    if not file.content_type.startswith("image/"):
+    if file.content_type and not file.content_type.startswith("image/") and file.content_type != "application/octet-stream":
         raise HTTPException(status_code=400, detail="Invalid image file")
 
     try:
