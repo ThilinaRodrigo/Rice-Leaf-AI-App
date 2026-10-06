@@ -10,10 +10,11 @@ import {
   ActivityIndicator,
   Keyboard,
 } from "react-native";
-import { ArrowLeft, Send } from "lucide-react-native";
-import { router } from "expo-router";
+import { ArrowLeft, Send, Sparkles } from "lucide-react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { sendChatMessage } from "@/service/apiClient";
+import { sendChatMessage, fetchChatHistory } from "@/service/apiClient";
+import { useAuth } from "@/context/AuthContext";
 
 type Message = {
   id: string;
@@ -31,7 +32,7 @@ type QuickReply = {
 
 const INITIAL_MESSAGE: Message = {
   id: "1",
-  text: "Hello! I've analyzed your plant and detected Bacterial Blight. How can I help you treat this condition?",
+  text: "Hello! I am RiceDoc AI, your AI Agronomist powered by Gemini Pro. Ask me anything about rice diseases, fertilizer schedules, or field remedies!",
   sender: "bot",
   timestamp: new Date(),
 };
@@ -43,9 +44,13 @@ const QUICK_REPLIES: QuickReply[] = [
 ];
 
 const Chat = () => {
+  const { token } = useAuth();
+  const params = useLocalSearchParams<{ diseaseTag?: string; initialMessage?: string }>();
+  
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -66,17 +71,62 @@ const Chat = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Load chat history if authenticated
+  useEffect(() => {
+    let isMounted = true;
+    if (token) {
+      setIsLoadingHistory(true);
+      fetchChatHistory(token)
+        .then((historyData) => {
+          if (!isMounted) return;
+          if (Array.isArray(historyData) && historyData.length > 0) {
+            const formatted: Message[] = historyData.map((m: any) => ({
+              id: m.id || `msg-${Math.random()}`,
+              text: m.text || m.message || "",
+              sender: m.sender === "bot" ? "bot" : "user",
+              timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+            }));
+            setMessages(formatted);
+          }
+        })
+        .catch((err) => {
+          console.log("Chat history fetch error:", err);
+        })
+        .finally(() => {
+          if (isMounted) setIsLoadingHistory(false);
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
+
+  // Handle diseaseTag param from scan result
+  useEffect(() => {
+    if (params.diseaseTag) {
+      const greeting: Message = {
+        id: `disease-prompt-${Date.now()}`,
+        text: `I noticed your scan detected **${params.diseaseTag}**. How can I help you treat or manage this disease today?`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, greeting]);
+    } else if (params.initialMessage) {
+      setInput(params.initialMessage);
+    }
+  }, [params.diseaseTag, params.initialMessage]);
+
   // Keyboard listeners
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       () => {
         scrollToBottom();
       }
     );
-    
+
     const keyboardWillHide = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
         scrollToBottom();
       }
@@ -88,23 +138,23 @@ const Chat = () => {
     };
   }, [scrollToBottom]);
 
-  // Generate bot response based on user input
+  // Fallback response generator if network fails
   const generateBotResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
-    
+
     if (lowerMessage.includes("product") || lowerMessage.includes("recommend")) {
-      return "For Bacterial Blight, I recommend:\n\n1. Copper-based bactericides (e.g., Kocide 3000)\n2. Streptomycin sulfate for severe cases\n3. Biological control agents like Bacillus subtilis\n\nWould you like detailed application instructions for any of these?";
+      return "For Rice Disease management:\n\n1. Copper-based bactericides (e.g., Kocide 3000) for Bacterial Blight\n2. Propiconazole / Mancozeb for fungal spots\n3. Neem oil or biological agents for organic control\n\nCheck our Agri Market for genuine products!";
     }
-    
+
     if (lowerMessage.includes("schedule") || lowerMessage.includes("when")) {
-      return "Application Schedule:\n\n• Week 1-2: Apply copper bactericide every 7 days\n• Week 3-4: Reduce to every 10 days if symptoms improve\n• Preventive: Monthly applications during wet season\n\nBest time: Early morning or late afternoon. Avoid application before rain.";
+      return "Application Schedule:\n\n• Early stage: Apply Copper bactericides or systemic fungicides\n• Preventive: Spray early morning (6:30-9:00 AM)\n• Do not apply directly before rain.";
     }
-    
+
     if (lowerMessage.includes("prevention") || lowerMessage.includes("prevent")) {
-      return "Prevention Tips:\n\n✓ Use disease-free seeds\n✓ Practice crop rotation (3-year cycle)\n✓ Ensure proper plant spacing for air circulation\n✓ Avoid overhead irrigation\n✓ Remove and destroy infected plant debris\n✓ Disinfect tools between plants\n\nWould you like more specific guidance?";
+      return "Prevention Tips:\n\n✓ Drain excess water if bacterial blight is detected\n✓ Avoid excessive Nitrogen / Urea fertilizer\n✓ Maintain 20cm x 20cm plant spacing\n✓ Remove infected plant debris after harvest.";
     }
-    
-    return "I understand you're asking about treating Bacterial Blight. I can help with product recommendations, application schedules, or prevention strategies. What would you like to know more about?";
+
+    return "I am your Rice Crop AI Assistant! I can help with disease treatment, fertilizer advice, and pest control. What would you like to know?";
   };
 
   // Send message handler
@@ -124,16 +174,16 @@ const Chat = () => {
     setIsTyping(true);
 
     try {
-      const res = await sendChatMessage(userText);
+      const res = await sendChatMessage(userText, token || undefined);
       const botMessage: Message = {
         id: res.id || `bot-${Date.now()}`,
-        text: res.text || generateBotResponse(userText),
+        text: res.text || res.message || generateBotResponse(userText),
         sender: "bot",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
-      console.log("Using offline bot response:", err);
+      console.log("Using fallback bot response:", err);
       const botMessage: Message = {
         id: `bot-${Date.now()}`,
         text: generateBotResponse(userText),
@@ -144,7 +194,7 @@ const Chat = () => {
     } finally {
       setIsTyping(false);
     }
-  }, [input, isTyping]);
+  }, [input, isTyping, token]);
 
 
   // Handle quick reply

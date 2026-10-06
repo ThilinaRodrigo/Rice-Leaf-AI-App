@@ -13,6 +13,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useLanguage } from "@/context/LanguageContext";
 import { fetchMarketProducts, fetchApprovedMarketplaceAds } from "@/service/apiClient";
 import { API_BASE_URL } from "@/constant/api";
+import { FloatingChatButton } from "@/components/FloatingChatButton";
 
 const categories = [
   { key: "diseaseTagAll" as const, value: "All" },
@@ -467,6 +468,7 @@ const Market = () => {
           )}
         </View>
       </ScrollView>
+      <FloatingChatButton />
     </View>
   );
 };

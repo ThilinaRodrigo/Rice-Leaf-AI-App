@@ -48,13 +48,14 @@ func main() {
 	// 4. Initialize Local Storage & External Clients
 	localStorage := storage.NewLocalStorage(cfg.UploadsDir, cfg.BaseURL)
 	mlClient := mlclient.NewMLClient(cfg.MLServiceURL)
+	geminiClient := chat.NewGeminiClient(cfg.GeminiAPIKey, cfg.GeminiModel)
 
 	// 5. Initialize Services (Business Logic)
 	authService := auth.NewService(userRepo, cfg.JWTSecret)
 	diseaseService := disease.NewService(diseaseRepo)
 	scanService := scan.NewService(scanRepo, diseaseRepo, mlClient, localStorage)
 	productService := shop.NewProductService(productRepo)
-	chatService := chat.NewService(chatRepo)
+	chatService := chat.NewService(chatRepo, geminiClient)
 	adminService := admin.NewService(adminRepo)
 	adService := shop.NewAdService(adRepo)
 	postService := community.NewService(postRepo)

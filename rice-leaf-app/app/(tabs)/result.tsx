@@ -19,6 +19,8 @@ import {
   HelpCircle,
   Store,
   Phone,
+  Sparkles,
+  MessageSquare,
 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Factor from "@/components/Factor";
@@ -227,9 +229,35 @@ const Result = () => {
                 {activeCategory}
               </Text>
 
-              <Text className="text-base text-gray-700 leading-relaxed">
+              <Text className="text-base text-gray-700 leading-relaxed mb-4">
                 {activeDescription}
               </Text>
+
+              {/* Gemini AI Agronomist Consultation Button */}
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/chat" as any,
+                    params: { diseaseTag: activeName },
+                  })
+                }
+                className="bg-emerald-800 rounded-xl p-3.5 flex-row items-center justify-between shadow-sm active:opacity-90"
+              >
+                <View className="flex-row items-center space-x-2.5">
+                  <View className="w-8 h-8 rounded-lg bg-emerald-700 items-center justify-center">
+                    <Sparkles size={18} color="#A7F3D0" />
+                  </View>
+                  <View>
+                    <Text className="text-white font-bold text-sm">
+                      Ask Gemini AI Doctor
+                    </Text>
+                    <Text className="text-emerald-200 text-xs font-medium">
+                      Get custom treatments for {activeName}
+                    </Text>
+                  </View>
+                </View>
+                <MessageSquare size={18} color="#A7F3D0" />
+              </TouchableOpacity>
             </View>
 
             {/* Environmental Factors */}

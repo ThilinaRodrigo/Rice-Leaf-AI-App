@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"log"
 	"strings"
 	"time"
 
@@ -14,11 +15,15 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	repo         Repository
+	geminiClient GeminiClient
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewService(repo Repository, geminiClient GeminiClient) Service {
+	return &service{
+		repo:         repo,
+		geminiClient: geminiClient,
+	}
 }
 
 func (s *service) SendMessage(ctx context.Context, userID *uuid.UUID, userMsg string) (*ChatMessage, error) {
@@ -32,7 +37,33 @@ func (s *service) SendMessage(ctx context.Context, userID *uuid.UUID, userMsg st
 		_ = s.repo.SaveMessage(ctx, userChatMessage)
 	}
 
-	botReplyText := generateRiceAgronomyResponse(userMsg)
+	// Fetch history for Gemini context window
+	var history []ChatMessage
+	if userID != nil {
+		h, err := s.repo.GetHistoryByUserID(ctx, *userID)
+		if err == nil {
+			// Limit history context to last 10 messages
+			if len(h) > 10 {
+				history = h[len(h)-10:]
+			} else {
+				history = h
+			}
+		}
+	}
+
+	var botReplyText string
+	var geminiErr error
+
+	if s.geminiClient != nil {
+		botReplyText, geminiErr = s.geminiClient.GenerateAgronomyResponse(ctx, history, userMsg)
+	}
+
+	if geminiErr != nil || botReplyText == "" {
+		if geminiErr != nil {
+			log.Printf("[ChatService] Gemini API call fallback: %v", geminiErr)
+		}
+		botReplyText = generateRiceAgronomyResponse(userMsg)
+	}
 
 	botChatMessage := &ChatMessage{
 		UserID:    userID,

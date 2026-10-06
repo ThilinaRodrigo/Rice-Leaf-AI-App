@@ -39,6 +39,7 @@ export default function TabsLayout() {
         },
       }}
     >
+      {/* 1. Home */}
       <Tabs.Screen
         name="index"
         options={{
@@ -48,23 +49,7 @@ export default function TabsLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="scan"
-        options={{
-          headerShown: false,
-          title: t("scan"),
-          tabBarIcon: ({ color, focused }) => (
-            <View
-              className={`w-9 h-9 rounded-full items-center justify-center ${
-                focused ? "bg-emerald-600 border border-emerald-400" : "bg-slate-100 border border-slate-200"
-              }`}
-            >
-              <Scan size={18} color={focused ? "#FFFFFF" : color} />
-            </View>
-          ),
-        }}
-      />
-
+      {/* 2. Community */}
       <Tabs.Screen
         name="community"
         options={{
@@ -74,6 +59,27 @@ export default function TabsLayout() {
         }}
       />
 
+      {/* 3. Scan - Center Hero Action */}
+      <Tabs.Screen
+        name="scan"
+        options={{
+          headerShown: false,
+          title: t("scan"),
+          tabBarIcon: ({ color, focused }) => (
+            <View
+              className={`w-11 h-11 rounded-full items-center justify-center -mt-3 shadow-md ${
+                focused
+                  ? "bg-emerald-800 border-2 border-emerald-400 shadow-emerald-900/40"
+                  : "bg-emerald-700 border border-emerald-500/60"
+              }`}
+            >
+              <Scan size={22} color="#FFFFFF" />
+            </View>
+          ),
+        }}
+      />
+
+      {/* 4. Market */}
       <Tabs.Screen
         name="market"
         options={{
@@ -83,21 +89,22 @@ export default function TabsLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="chat"
-        options={{
-          headerShown: false,
-          title: t("chat"),
-          tabBarIcon: ({ color }) => <MessageCircle size={20} color={color} />,
-        }}
-      />
-
+      {/* 5. Profile */}
       <Tabs.Screen
         name="profile"
         options={{
           headerShown: false,
           title: t("profile"),
           tabBarIcon: ({ color }) => <User size={20} color={color} />,
+        }}
+      />
+
+      {/* Hidden Screens (accessible via router) */}
+      <Tabs.Screen
+        name="chat"
+        options={{
+          headerShown: false,
+          href: null,
         }}
       />
 

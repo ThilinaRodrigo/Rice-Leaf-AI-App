@@ -20,6 +20,7 @@ import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useImagePicker as useGalleryPicker } from "@/hooks/useImagePicker";
+import { FloatingChatButton } from "@/components/FloatingChatButton";
 
 const COMMON_DISEASES = [
   {
@@ -70,8 +71,9 @@ export default function Index() {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-slate-50"
+    <View className="flex-1 bg-slate-50 relative">
+      <ScrollView
+        className="flex-1 bg-slate-50"
       showsVerticalScrollIndicator={false}
     >
       {/* Header Banner */}
@@ -281,5 +283,7 @@ export default function Index() {
         </View>
       </View>
     </ScrollView>
+    <FloatingChatButton />
+  </View>
   );
 }
