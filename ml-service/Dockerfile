@@ -17,19 +17,24 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Create models directory
 RUN mkdir -p models
 
-# Build argument for S3 model URL (passed from GitHub Actions secrets / build-args)
+# Copy application files (including models directory if present)
+COPY . .
+
+# Build argument for S3 model URL
 ARG MODEL_S3_URL=""
 
-# Download model from S3 during image build if URL is provided
-RUN if [ -n "$MODEL_S3_URL" ]; then \
-      echo "Downloading model1.keras from S3..." && \
-      curl -fSL "$MODEL_S3_URL" -o models/model1.keras && \
-      echo "Model download complete."; \
+# Download model from S3 if not already present in context
+RUN if [ ! -f models/model1.keras ]; then \
+      if [ -n "$MODEL_S3_URL" ]; then \
+        echo "Downloading model1.keras from S3..." && \
+        curl -fSL "$MODEL_S3_URL" -o models/model1.keras && \
+        echo "Model download complete."; \
+      else \
+        echo "Warning: model1.keras missing and MODEL_S3_URL not provided."; \
+      fi; \
     else \
-      echo "Warning: MODEL_S3_URL not provided during build."; \
+      echo "model1.keras already present in build context."; \
     fi
-
-COPY . .
 
 EXPOSE 8000
 
