@@ -53,6 +53,8 @@ jobs:
           context: ./ml-service
           file: ./ml-service/Dockerfile
           push: true
+          build-args: |
+            MODEL_S3_URL=${{ secrets.MODEL_S3_URL }}
           tags: |
             ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-ml-service:latest
             ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-ml-service:${{ github.sha }}
