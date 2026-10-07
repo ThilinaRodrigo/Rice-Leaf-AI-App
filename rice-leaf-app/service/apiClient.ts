@@ -212,6 +212,20 @@ export const sendChatMessage = async (message: string, userToken?: string) => {
   return await res.json();
 };
 
+export const fetchChatHistory = async (userToken: string) => {
+  const res = await fetch(`${API_BASE_URL}/chat/history`, {
+    headers: {
+      Authorization: `Bearer ${userToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch chat history (${res.status})`);
+  }
+
+  return await res.json();
+};
+
 // 4. Disease Remedies Knowledge Base
 export const fetchDiseasesList = async (lang?: string) => {
   const url = lang ? `${API_BASE_URL}/diseases?lang=${encodeURIComponent(lang)}` : `${API_BASE_URL}/diseases`;

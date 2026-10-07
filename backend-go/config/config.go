@@ -15,6 +15,8 @@ type Config struct {
 	MLServiceURL string
 	UploadsDir   string
 	BaseURL      string
+	GeminiAPIKey string
+	GeminiModel  string
 }
 
 func LoadConfig() *Config {
@@ -28,6 +30,8 @@ func LoadConfig() *Config {
 		MLServiceURL: getEnv("ML_SERVICE_URL", "http://localhost:8001"),
 		UploadsDir:   getEnv("UPLOADS_DIR", "./uploads"),
 		BaseURL:      getEnv("BASE_URL", "http://localhost:8080"),
+		GeminiAPIKey: getEnv("GEMINI_API_KEY", ""),
+		GeminiModel:  getEnv("GEMINI_MODEL", "gemini-1.5-flash"),
 	}
 
 	if cfg.Port == "" {

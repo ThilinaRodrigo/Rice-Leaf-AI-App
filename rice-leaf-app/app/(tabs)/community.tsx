@@ -26,6 +26,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { FloatingChatButton } from "@/components/FloatingChatButton";
 import {
   fetchCommunityPosts,
   voteCommunityPost,
@@ -568,6 +569,7 @@ export default function Community() {
           </View>
         </View>
       </Modal>
+      <FloatingChatButton />
     </View>
   );
 }

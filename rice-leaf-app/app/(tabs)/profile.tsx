@@ -39,6 +39,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { changePassword, uploadUserAvatar, updateUserProfile } from "@/service/apiClient";
 import { API_BASE_URL } from "@/constant/api";
+import { FloatingChatButton } from "@/components/FloatingChatButton";
 
 const Profile = () => {
   const { user, token, updateUser, logout } = useAuth();
@@ -204,7 +205,8 @@ const Profile = () => {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: "#F8FAFC", position: "relative" }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Top Banner & Header */}
       <View
         style={[
@@ -834,7 +836,9 @@ const Profile = () => {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+      <FloatingChatButton />
+    </View>
   );
 };
 

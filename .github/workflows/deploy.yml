@@ -1,0 +1,208 @@
+name: Production CI/CD Pipeline - AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # =========================================================================
+  # JOB 1: CODE LINT & VALIDATION STAGE
+  # =========================================================================
+  validate-code:
+    name:  Validate & Lint Codebase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: backend-go/go.sum
+
+      - name: Validate Go Dependencies
+        run: |
+          cd backend-go
+          go vet ./...
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Validate Python Syntax
+        run: |
+          cd ml-service
+          python -m py_compile app.py
+
+  # =========================================================================
+  # JOB 2A: PARALLEL BUILD - GO BACKEND
+  # =========================================================================
+  build-backend:
+    name:  Build Go Backend Container
+    needs: validate-code
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lower case owner name
+        run: echo "OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend-go
+          file: ./backend-go/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-backend:latest
+            ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =========================================================================
+  # JOB 2B: PARALLEL BUILD - PYTHON ML SERVICE
+  # =========================================================================
+  build-ml-service:
+    name:  Build ML Service Container
+    needs: validate-code
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lower case owner name
+        run: echo "OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push ML Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ml-service
+          file: ./ml-service/Dockerfile
+          push: true
+          build-args: |
+            MODEL_S3_URL=${{ secrets.MODEL_S3_URL }}
+          tags: |
+            ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-ml-service:latest
+            ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-ml-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =========================================================================
+  # JOB 2C: PARALLEL BUILD - ADMIN WEB PORTAL
+  # =========================================================================
+  build-admin-web:
+    name:  Build Admin Web Container
+    needs: validate-code
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lower case owner name
+        run: echo "OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Admin Web Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./sysadmin-web
+          file: ./sysadmin-web/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-admin-web:latest
+            ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-admin-web:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =========================================================================
+  # JOB 3: DEPLOYMENT STAGE (AWS EC2)
+  # =========================================================================
+  deploy-to-ec2:
+    name:  Deploy Microservices to AWS EC2
+    needs: [build-backend, build-ml-service, build-admin-web]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose.prod.yml to EC2 Host
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "~/app/"
+
+      - name: Execute Deployment Script via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/app
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            export GITHUB_REPOSITORY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+            export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
+            export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+            export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
+
+            echo "Pulling latest docker images from GHCR..."
+            docker compose -f docker-compose.prod.yml pull
+
+            echo "Rolling deployment of microservices..."
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            echo "Cleaning up dangling images..."
+            docker image prune -f
