@@ -14,7 +14,7 @@ jobs:
   # JOB 1: CODE LINT & VALIDATION STAGE
   # =========================================================================
   validate-code:
-    name: 🔍 Validate & Lint Codebase
+    name:  Validate & Lint Codebase
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -45,7 +45,7 @@ jobs:
   # JOB 2A: PARALLEL BUILD - GO BACKEND
   # =========================================================================
   build-backend:
-    name: 📦 Build Go Backend Container
+    name:  Build Go Backend Container
     needs: validate-code
     runs-on: ubuntu-latest
     permissions:
