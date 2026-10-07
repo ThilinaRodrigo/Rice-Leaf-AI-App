@@ -1,0 +1,62 @@
+name: Build Mobile App APK (Android)
+
+on:
+  push:
+    branches:
+      - main
+      - feature/ec2-docker-deployment
+    paths:
+      - 'rice-leaf-app/**'
+      - '.github/workflows/android-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Standalone Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: rice-leaf-app/package-lock.json
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Expo CLI
+        run: npm install -g expo-cli
+
+      - name: Install Mobile App Dependencies
+        run: |
+          cd rice-leaf-app
+          npm ci
+
+      - name: Generate Android Native Project Files
+        run: |
+          cd rice-leaf-app
+          npx expo prebuild --platform android --clean
+
+      - name: Build Android Release APK via Gradle
+        run: |
+          cd rice-leaf-app/android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Upload Completed APK as GitHub Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rice-Leaf-AI-App-v1.0.apk
+          path: rice-leaf-app/android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
