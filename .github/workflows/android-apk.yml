@@ -12,7 +12,7 @@ on:
 
 jobs:
   build-android:
-    name: Build Standalone Android APK
+    name: 📱 Build Standalone Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -32,11 +32,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Expo CLI
-        run: npm install -g expo-cli
+      - name: Accept Android SDK Licenses
+        run: |
+          mkdir -p "$ANDROID_HOME/licenses"
+          echo -e "\n89330d2226042789ed15d5f50130f13a3f97214a\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a6371fac36379c728a5f89a1fdb85787b" > "$ANDROID_HOME/licenses/android-sdk-license"
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Install Mobile App Dependencies
         run: |
@@ -57,6 +58,6 @@ jobs:
       - name: Upload Completed APK as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Rice-Leaf-AI-App-v1.0.apk
+          name: Rice-Leaf-AI-App-Release.apk
           path: rice-leaf-app/android/app/build/outputs/apk/release/*.apk
           retention-days: 30
