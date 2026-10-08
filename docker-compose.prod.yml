@@ -15,7 +15,7 @@ services:
       - app-network
 
   backend-go:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/rice-leaf-backend:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-thilinarodrigo}/rice-leaf-backend:latest
     container_name: riceleaf_backend
     restart: always
     ports:
@@ -34,7 +34,7 @@ services:
       - app-network
 
   ml-service:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/rice-leaf-ml-service:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-thilinarodrigo}/rice-leaf-ml-service:latest
     container_name: riceleaf_ml_service
     restart: always
     ports:
@@ -43,7 +43,7 @@ services:
       - app-network
 
   sysadmin-web:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/rice-leaf-admin-web:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-thilinarodrigo}/rice-leaf-admin-web:latest
     container_name: riceleaf_admin_web
     restart: always
     ports:
