@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { RefreshCw, Image as ImageIcon, X } from "lucide-react-native";
 import { router } from "expo-router";
@@ -14,6 +14,7 @@ interface CameraScreenProps {
 export default function CameraScreen({ isTabScreen = false }: CameraScreenProps) {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
+  const [isProcessing, setIsProcessing] = useState(false);
   const insets = useSafeAreaInsets();
   const { pickImageFromGallery } = useImagePicker();
   const { cameraRef, capturePhoto } = useCapturePhoto({ navigateTo: "/result" });
@@ -23,9 +24,28 @@ export default function CameraScreen({ isTabScreen = false }: CameraScreenProps)
     : Math.max(insets.bottom, 20) + 20;
 
   const handleOpenGallery = async () => {
-    const uri = await pickImageFromGallery();
-    if (uri) {
-      router.push({ pathname: "/result", params: { imageUri: uri } });
+    try {
+      setIsProcessing(true);
+      const uri = await pickImageFromGallery();
+      if (uri) {
+        router.push({ pathname: "/result", params: { imageUri: uri } });
+      } else {
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCapturePhoto = async () => {
+    try {
+      setIsProcessing(true);
+      const uri = await capturePhoto();
+      if (!uri) {
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      setIsProcessing(false);
     }
   };
 
@@ -48,6 +68,17 @@ export default function CameraScreen({ isTabScreen = false }: CameraScreenProps)
     <View style={{ flex: 1, backgroundColor: "#000" }}>
       <CameraView style={{ flex: 1 }} facing={facing} ref={cameraRef} />
 
+      {/* Processing Loader Overlay */}
+      {isProcessing && (
+        <View style={styles.processingOverlay}>
+          <View style={styles.processingCard}>
+            <ActivityIndicator size="large" color="#10B981" />
+            <Text style={styles.processingTitle}>Processing Image...</Text>
+            <Text style={styles.processingSubtitle}>Preparing rice leaf for AI diagnosis</Text>
+          </View>
+        </View>
+      )}
+
       {/* Close Button if navigated from Stack */}
       {router.canGoBack() && !isTabScreen && (
         <TouchableOpacity
@@ -60,26 +91,28 @@ export default function CameraScreen({ isTabScreen = false }: CameraScreenProps)
       )}
 
       {/* Bottom Controls */}
-      <View style={[styles.bottomControls, { bottom: bottomOffset }]}>
-        {/* Gallery */}
-        <TouchableOpacity onPress={handleOpenGallery} style={styles.controlButton} activeOpacity={0.8}>
-          <ImageIcon size={28} color="#ffffff" />
-        </TouchableOpacity>
+      {!isProcessing && (
+        <View style={[styles.bottomControls, { bottom: bottomOffset }]}>
+          {/* Gallery */}
+          <TouchableOpacity onPress={handleOpenGallery} style={styles.controlButton} activeOpacity={0.8}>
+            <ImageIcon size={28} color="#ffffff" />
+          </TouchableOpacity>
 
-        {/* Shutter */}
-        <TouchableOpacity onPress={capturePhoto} style={styles.shutterButton} activeOpacity={0.8}>
-          <View style={styles.innerShutter} />
-        </TouchableOpacity>
+          {/* Shutter */}
+          <TouchableOpacity onPress={handleCapturePhoto} style={styles.shutterButton} activeOpacity={0.8}>
+            <View style={styles.innerShutter} />
+          </TouchableOpacity>
 
-        {/* Flip Camera */}
-        <TouchableOpacity
-          onPress={() => setFacing((prev) => (prev === "back" ? "front" : "back"))}
-          style={styles.controlButton}
-          activeOpacity={0.8}
-        >
-          <RefreshCw size={26} color="#ffffff" />
-        </TouchableOpacity>
-      </View>
+          {/* Flip Camera */}
+          <TouchableOpacity
+            onPress={() => setFacing((prev) => (prev === "back" ? "front" : "back"))}
+            style={styles.controlButton}
+            activeOpacity={0.8}
+          >
+            <RefreshCw size={26} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -151,5 +184,40 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: "white",
+  },
+  processingOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(15, 23, 42, 0.95)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 100,
+    paddingHorizontal: 24,
+  },
+  processingCard: {
+    backgroundColor: "rgba(30, 41, 59, 0.9)",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.3)",
+    borderRadius: 24,
+    paddingHorizontal: 28,
+    paddingVertical: 32,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  processingTitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "800",
+    marginTop: 16,
+  },
+  processingSubtitle: {
+    color: "#A7F3D0",
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 6,
+    textAlign: "center",
   },
 });

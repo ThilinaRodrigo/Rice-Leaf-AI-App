@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState } from "react";
-import { loginUser, registerUser, fetchUserProfile } from "@/service/apiClient";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { loginUser, registerUser } from "@/service/apiClient";
 
 export type UserRole = "farmer" | "shop_owner" | "sys_admin";
 
@@ -49,10 +50,32 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 });
 
+const TOKEN_KEY = "rice_leaf_auth_token";
+const USER_KEY = "rice_leaf_auth_user";
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Restore session from AsyncStorage on app launch
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
+        const storedUser = await AsyncStorage.getItem(USER_KEY);
+        if (storedToken && storedUser) {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (err) {
+        console.warn("Failed restoring auth session:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    restoreSession();
+  }, []);
 
   const login = async (identifier: string, pass: string) => {
     setIsLoading(true);
@@ -60,6 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await loginUser({ identifier, password: pass });
       setToken(res.token);
       setUser(res.user);
+      await AsyncStorage.setItem(TOKEN_KEY, res.token);
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(res.user));
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +108,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await registerUser(payload);
       setToken(res.token);
       setUser(res.user);
+      await AsyncStorage.setItem(TOKEN_KEY, res.token);
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(res.user));
     } finally {
       setIsLoading(false);
     }
@@ -90,11 +117,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);
+    AsyncStorage.setItem(USER_KEY, JSON.stringify(updatedUser)).catch((err) =>
+      console.warn("Failed updating stored user:", err)
+    );
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
+    AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]).catch((err) =>
+      console.warn("Failed removing stored auth session:", err)
+    );
   };
 
   return (

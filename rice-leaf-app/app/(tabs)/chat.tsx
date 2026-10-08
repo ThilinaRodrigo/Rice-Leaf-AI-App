@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { ArrowLeft, Send, Sparkles } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { sendChatMessage, fetchChatHistory } from "@/service/apiClient";
 import { useAuth } from "@/context/AuthContext";
 
@@ -32,7 +32,7 @@ type QuickReply = {
 
 const INITIAL_MESSAGE: Message = {
   id: "1",
-  text: "Hello! I am RiceDoc AI, your AI Agronomist powered by Gemini Pro. Ask me anything about rice diseases, fertilizer schedules, or field remedies!",
+  text: "Hello! I am Agronomist AI, your AI Agronomist. Ask me anything about rice diseases, fertilizer schedules, or field remedies!",
   sender: "bot",
   timestamp: new Date(),
 };
@@ -45,7 +45,9 @@ const QUICK_REPLIES: QuickReply[] = [
 
 const Chat = () => {
   const { token } = useAuth();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ diseaseTag?: string; initialMessage?: string }>();
+  const bottomTabOffset = Math.max(insets.bottom, 16) + 96;
   
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
@@ -327,7 +329,7 @@ const Chat = () => {
           )}
 
           {/* Input Box */}
-          <View className="border-t border-gray-200/80 bg-white px-4 py-3 mb-20">
+          <View style={{ paddingBottom: bottomTabOffset }} className="border-t border-gray-200/80 bg-white px-4 pt-3">
             <View className="flex-row items-center bg-slate-100 border border-slate-200/80 rounded-2xl px-4 py-1.5">
               <TextInput
                 ref={inputRef}
