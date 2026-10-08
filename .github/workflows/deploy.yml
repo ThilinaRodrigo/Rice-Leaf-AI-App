@@ -203,6 +203,11 @@ jobs:
             mkdir -p ~/app
             cd ~/app
 
+            # Pre-deployment disk cleanup to prevent "no space left on device"
+            echo "Performing pre-deployment disk & Docker cleanup..."
+            docker system prune -af --volumes || true
+            sudo journalctl --vacuum-size=50M || true
+
             echo "Fetching docker-compose.prod.yml for commit ${{ github.sha }}..."
             curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -sSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/docker-compose.prod.yml" -o docker-compose.prod.yml
 
@@ -217,8 +222,8 @@ jobs:
             echo "Pulling latest docker images from GHCR..."
             $COMPOSE_CMD -f docker-compose.prod.yml pull
 
-            echo "Rolling deployment of microservices..."
-            $COMPOSE_CMD -f docker-compose.prod.yml up -d --remove-orphans
+            echo "Force recreating containers with updated images..."
+            $COMPOSE_CMD -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
 
-            echo "Cleaning up dangling images..."
-            docker image prune -f
+            echo "Cleaning up unused images post-deployment..."
+            docker system prune -f || true
