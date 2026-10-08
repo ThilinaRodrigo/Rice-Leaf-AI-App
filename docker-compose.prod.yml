@@ -9,6 +9,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-riceleafdb}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-riceleafdb}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -28,8 +33,10 @@ services:
       - JWT_SECRET=${JWT_SECRET:-super-secret-rice-leaf-key-2026}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
-      - postgres
-      - ml-service
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
     networks:
       - app-network
 
