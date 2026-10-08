@@ -183,7 +183,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.prod.yml"
-          target: "~/app/"
+          target: "app"
 
       - name: Execute Deployment Script via SSH
         uses: appleboy/ssh-action@v1.0.3
