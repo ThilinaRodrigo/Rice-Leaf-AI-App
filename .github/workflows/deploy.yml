@@ -176,6 +176,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Prepare EC2 Target Directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: mkdir -p ~/app
+
       - name: Copy docker-compose.prod.yml to EC2 Host
         uses: appleboy/scp-action@v0.1.7
         with:
