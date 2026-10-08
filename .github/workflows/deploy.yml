@@ -176,24 +176,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Prepare EC2 Target Directory
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: mkdir -p ~/app
-
-      - name: Copy docker-compose.prod.yml to EC2 Host
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.prod.yml"
-          target: "app"
-
-      - name: Execute Deployment Script via SSH
+      - name: Deploy and Restart Microservices via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -219,6 +202,10 @@ jobs:
 
             mkdir -p ~/app
             cd ~/app
+
+            echo "Fetching docker-compose.prod.yml for commit ${{ github.sha }}..."
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -sSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/docker-compose.prod.yml" -o docker-compose.prod.yml
+
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             export GITHUB_REPOSITORY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
             export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
