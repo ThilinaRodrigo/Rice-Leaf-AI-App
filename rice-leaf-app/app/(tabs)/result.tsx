@@ -69,6 +69,7 @@ const Result = () => {
   const [result, setResult] = useState<ResultType | null>(null);
   const [disease, setDisease] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [targetedAds, setTargetedAds] = useState<any[]>([]);
   const [suggestedPosts, setSuggestedPosts] = useState<any[]>([]);
 
@@ -79,6 +80,7 @@ const Result = () => {
     if (!imageSource) return;
 
     setIsLoading(true);
+    setErrorMessage(null);
 
     predictImage(imageSource)
       .then((res) => {
@@ -131,9 +133,12 @@ const Result = () => {
 
         setDisease(fetchedDisease);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error("Prediction error:", err);
         setDisease(null);
+        setErrorMessage(
+          err?.message || "Unable to analyze the image. Please make sure to upload a clear close-up photo of a rice leaf."
+        );
       })
       .finally(() => setIsLoading(false));
   }, [imageSource]);
@@ -379,11 +384,45 @@ const Result = () => {
 
         {/* Error State */}
         {!isLoading && !disease && (
-          <View className="items-center mt-10">
-            <Text className="text-red-500">
-              Unable to analyze the image.
-            </Text>
-          </View>
+          <ScrollView showsVerticalScrollIndicator={false} className="flex-1 px-4 mt-6">
+            <View className="bg-amber-50 border border-amber-200 rounded-3xl p-6 shadow-sm mb-12">
+              <View className="items-center mb-4">
+                <View className="w-16 h-16 rounded-full bg-amber-100 items-center justify-center mb-3">
+                  <AlertTriangle size={36} color="#D97706" />
+                </View>
+                <Text className="text-xl font-bold text-gray-900 text-center">
+                  Analysis Unsuccessful
+                </Text>
+                <Text className="text-sm text-gray-700 text-center mt-2 leading-relaxed px-2 font-medium">
+                  {errorMessage || "Unable to analyze the image. Please make sure to upload a clear close-up photo of a rice leaf."}
+                </Text>
+              </View>
+
+              {/* Helpful Tips Box */}
+              <View className="bg-white/90 rounded-2xl p-4 my-3 border border-amber-200/60 space-y-2">
+                <Text className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-1">
+                  Tips for accurate leaf diagnosis:
+                </Text>
+                <Text className="text-xs text-gray-600">
+                  🌿 Take a close-up photo directly facing the rice leaf
+                </Text>
+                <Text className="text-xs text-gray-600">
+                  ☀️ Ensure good, clear natural lighting without heavy shadows
+                </Text>
+                <Text className="text-xs text-gray-600">
+                  📷 Avoid photos of non-plant objects (cars, faces, buildings)
+                </Text>
+              </View>
+
+              {/* Action Buttons */}
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="bg-emerald-700 py-3.5 px-6 rounded-2xl items-center mt-3 active:opacity-90 flex-row justify-center space-x-2 shadow-sm"
+              >
+                <Text className="text-white font-bold text-base">Try Another Photo</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         )}
       </View>
     </SafeAreaView>

@@ -64,6 +64,50 @@ async function getReadableNativeFileUri(rawUri: string): Promise<{ uri: string; 
   return { uri: cleanUri, isTemp: false };
 }
 
+// Helper to parse clean error messages from backend or ML API response bodies
+export function parseErrorMessage(rawResponse: any, fallbackMessage: string = "An error occurred"): string {
+  if (!rawResponse) return fallbackMessage;
+
+  let str = typeof rawResponse === "string" ? rawResponse : JSON.stringify(rawResponse);
+
+  // Attempt parsing JSON string
+  if (typeof rawResponse === "string") {
+    try {
+      const parsed = JSON.parse(rawResponse);
+      if (parsed.detail) {
+        str = typeof parsed.detail === "string" ? parsed.detail : JSON.stringify(parsed.detail);
+      } else if (parsed.error) {
+        str = typeof parsed.error === "string" ? parsed.error : JSON.stringify(parsed.error);
+      } else if (parsed.message) {
+        str = typeof parsed.message === "string" ? parsed.message : JSON.stringify(parsed.message);
+      }
+    } catch (e) {
+      // not direct JSON
+    }
+  }
+
+  // Look for nested {"detail": "..."} or {"error": "..."}
+  const nestedDetail = str.match(/"detail"\s*:\s*"([^"]+)"/);
+  if (nestedDetail && nestedDetail[1]) {
+    str = nestedDetail[1];
+  } else {
+    const nestedError = str.match(/"error"\s*:\s*"([^"]+)"/);
+    if (nestedError && nestedError[1]) {
+      str = nestedError[1];
+    }
+  }
+
+  // Strip internal backend / proxy wrapper prefixes
+  str = str
+    .replace(/^failed calling ML prediction:\s*/i, "")
+    .replace(/^ML service returned status \d+:\s*/i, "")
+    .replace(/^Analysis failed \(\d+\):\s*/i, "")
+    .replace(/\\"/g, '"')
+    .trim();
+
+  return str || fallbackMessage;
+}
+
 // 1. Scan / Analyze Leaf Image
 export const analyzeLeafImage = async (imageUri: string, userToken?: string): Promise<any> => {
   const targetUrl = `${API_BASE_URL}/scans/analyze`;
@@ -97,7 +141,8 @@ export const analyzeLeafImage = async (imageUri: string, userToken?: string): Pr
     console.log("=== DEBUG: Web Upload response =", responseText);
 
     if (!res.ok) {
-      throw new Error(`Analysis failed (${res.status}): ${responseText}`);
+      const msg = parseErrorMessage(responseText, `Analysis failed with status ${res.status}`);
+      throw new Error(msg);
     }
 
     return JSON.parse(responseText);
@@ -121,8 +166,13 @@ export const analyzeLeafImage = async (imageUri: string, userToken?: string): Pr
       if (uploadResult.status >= 200 && uploadResult.status < 300) {
         return JSON.parse(uploadResult.body);
       }
-      throw new Error(`Analysis failed (${uploadResult.status}): ${uploadResult.body}`);
-    } catch (uploadErr) {
+      const msg = parseErrorMessage(uploadResult.body, `Analysis failed with status ${uploadResult.status}`);
+      throw new Error(msg);
+    } catch (uploadErr: any) {
+      if (uploadErr?.message && !uploadErr.message.includes("uploadAsync failed")) {
+        throw uploadErr;
+      }
+
       console.warn("FileSystem.uploadAsync failed, attempting XMLHttpRequest fallback:", uploadErr);
 
       // Fallback: XMLHttpRequest with FormData
@@ -144,7 +194,8 @@ export const analyzeLeafImage = async (imageUri: string, userToken?: string): Pr
               resolve(xhr.responseText);
             }
           } else {
-            reject(new Error(`Analysis failed (${xhr.status}): ${xhr.responseText}`));
+            const msg = parseErrorMessage(xhr.responseText, `Analysis failed with status ${xhr.status}`);
+            reject(new Error(msg));
           }
         };
 

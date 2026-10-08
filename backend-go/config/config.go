@@ -27,7 +27,7 @@ func LoadConfig() *Config {
 		GinMode:      getEnv("GIN_MODE", "debug"),
 		DatabaseURL:  getEnv("DATABASE_URL", "postgres://postgres:root@localhost:5432/riceleafdb?sslmode=disable"),
 		JWTSecret:    getEnv("JWT_SECRET", "super-secret-rice-leaf-key-2026"),
-		MLServiceURL: getEnv("ML_SERVICE_URL", "http://localhost:8001"),
+		MLServiceURL: getEnv("ML_SERVICE_URL", "http://localhost:8000"),
 		UploadsDir:   getEnv("UPLOADS_DIR", "./uploads"),
 		BaseURL:      getEnv("BASE_URL", "http://localhost:8080"),
 		GeminiAPIKey: getEnv("GEMINI_API_KEY", ""),
