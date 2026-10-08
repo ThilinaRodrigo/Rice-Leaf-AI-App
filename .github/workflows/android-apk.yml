@@ -14,6 +14,10 @@ jobs:
   build-android:
     name: 📱 Build Standalone Android APK
     runs-on: ubuntu-latest
+    env:
+      # .env is gitignored, so these must be provided here to be baked into the JS bundle
+      EXPO_PUBLIC_API_BASE_URL: ${{ vars.EXPO_PUBLIC_API_BASE_URL || 'http://rice.ai.thilinarodrigo.me/api/v1' }}
+      EXPO_PUBLIC_SERVER_BASE_URL: ${{ vars.EXPO_PUBLIC_SERVER_BASE_URL || 'http://rice.ai.thilinarodrigo.me' }}
 
     steps:
       - name: Checkout Repository
