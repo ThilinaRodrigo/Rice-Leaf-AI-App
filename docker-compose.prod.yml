@@ -21,12 +21,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER:-postgres}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DB_NAME=${POSTGRES_DB:-riceleafdb}
+      - GIN_MODE=release
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-riceleafdb}?sslmode=disable
       - ML_SERVICE_URL=http://ml-service:8000
+      - BASE_URL=${BASE_URL:-http://rice.ai.thilinarodrigo.me}
+      - JWT_SECRET=${JWT_SECRET:-super-secret-rice-leaf-key-2026}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
       - postgres
       - ml-service

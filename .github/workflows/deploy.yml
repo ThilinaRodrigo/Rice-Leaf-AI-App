@@ -216,6 +216,8 @@ jobs:
             export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
             export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
             export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
 
             echo "Pulling latest docker images from GHCR..."
             $COMPOSE_CMD -f docker-compose.prod.yml pull

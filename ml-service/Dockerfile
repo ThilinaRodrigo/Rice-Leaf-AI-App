@@ -22,17 +22,20 @@ COPY . .
 # Build argument for S3 model URL
 ARG MODEL_S3_URL=""
 
-# Download model from S3 if not already present in context
+# Download model from S3 if not already present in context.
+# Fail the build loudly: an image without the model is useless and crash-loops at runtime.
 RUN if [ ! -f models/model1.keras ]; then \
-      if [ -n "$MODEL_S3_URL" ]; then \
-        echo "Downloading model1.keras from S3..." && \
-        curl -SL "$MODEL_S3_URL" -o models/model1.keras || echo "Warning: S3 model download encountered an issue (HTTP response code). Ensure S3 object is public or URL is valid."; \
-      else \
-        echo "Notice: MODEL_S3_URL not provided, skipping build-time download."; \
+      if [ -z "$MODEL_S3_URL" ]; then \
+        echo "ERROR: models/model1.keras missing and MODEL_S3_URL build arg is empty." && exit 1; \
       fi; \
+      echo "Downloading model1.keras from S3..." && \
+      curl -fSL --retry 3 "$MODEL_S3_URL" -o models/model1.keras; \
     else \
       echo "model1.keras already present in build context."; \
-    fi
+    fi && \
+    ls -lh models/model1.keras && \
+    python -c "import zipfile,sys; sys.exit(0 if zipfile.is_zipfile('models/model1.keras') else 1)" \
+      || (echo "ERROR: models/model1.keras is not a valid .keras file (check S3 URL / permissions)." && exit 1)
 
 EXPOSE 8000
 
