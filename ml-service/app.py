@@ -21,8 +21,44 @@ app.add_middleware(
 
 MODEL_PATH = os.getenv("MODEL_PATH", "models/model1.keras")
 VALIDATOR_MODEL_PATH = os.getenv("VALIDATOR_MODEL_PATH", "models/rice_leaf_validator.keras")
-RICE_VALIDATOR_THRESHOLD = float(os.getenv("RICE_VALIDATOR_THRESHOLD", "0.78"))
+RICE_VALIDATOR_THRESHOLD = float(os.getenv("RICE_VALIDATOR_THRESHOLD", "0.50"))
 IMG_SIZE = 224
+
+def download_model_from_s3_if_needed(local_path: str, url_env_key: str):
+    s3_url = os.getenv(url_env_key, "").strip()
+    if not s3_url:
+        return
+    if os.path.exists(local_path):
+        print(f"Model file already exists locally at {local_path}")
+        return
+
+    print(f"Downloading model file from {url_env_key} ({s3_url}) -> {local_path}...")
+    os.makedirs(os.path.dirname(local_path) or ".", exist_ok=True)
+
+    if s3_url.startswith("s3://"):
+        try:
+            import boto3
+            parts = s3_url.replace("s3://", "").split("/", 1)
+            bucket, key = parts[0], parts[1]
+            s3 = boto3.client("s3")
+            s3.download_file(bucket, key, local_path)
+            print(f"Successfully downloaded model from S3 ({s3_url}) -> {local_path}")
+            return
+        except Exception as err:
+            print(f"Warning: Failed downloading S3 model via boto3 ({s3_url}): {err}")
+
+    if s3_url.startswith("http://") or s3_url.startswith("https://"):
+        try:
+            import urllib.request
+            urllib.request.urlretrieve(s3_url, local_path)
+            print(f"Successfully downloaded model from URL ({s3_url}) -> {local_path}")
+            return
+        except Exception as err:
+            print(f"Warning: Failed downloading model from HTTP URL ({s3_url}): {err}")
+
+# Check and download models from S3 if configured
+download_model_from_s3_if_needed(MODEL_PATH, "MODEL_S3_URL")
+download_model_from_s3_if_needed(VALIDATOR_MODEL_PATH, "VALIDATOR_MODEL_S3_URL")
 
 CLASS_LABELS = {
     0: "bacterial_leaf_blight",

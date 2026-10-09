@@ -31,7 +31,7 @@ services:
       - ML_SERVICE_URL=http://ml-service:8000
       - RICE_VALIDATOR_THRESHOLD=${RICE_VALIDATOR_THRESHOLD:-0.50}
       - MAX_IMAGE_SIZE_MB=${MAX_IMAGE_SIZE_MB:-10}
-      - BASE_URL=${BASE_URL:-http://localhost:8080}
+      - BASE_URL=${BASE_URL:-https://api.yourdomain.com}
       - JWT_SECRET=${JWT_SECRET:-super-secret-rice-leaf-key-2026}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
@@ -48,7 +48,13 @@ services:
     restart: always
     environment:
       - RICE_VALIDATOR_THRESHOLD=${RICE_VALIDATOR_THRESHOLD:-0.50}
-      - VALIDATOR_MODEL_PATH=models/rice_leaf_validator.keras
+      - VALIDATOR_MODEL_PATH=${VALIDATOR_MODEL_PATH:-models/rice_leaf_validator.keras}
+      - MODEL_PATH=${MODEL_PATH:-models/model1.keras}
+      - MODEL_S3_URL=${MODEL_S3_URL:-}
+      - VALIDATOR_MODEL_S3_URL=${VALIDATOR_MODEL_S3_URL:-}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
     ports:
       - "8000:8000"
     networks:

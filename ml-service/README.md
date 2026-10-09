@@ -63,9 +63,24 @@ PORT=8000
 MODEL_PATH=models/model1.keras
 VALIDATOR_MODEL_PATH=models/rice_leaf_validator.keras
 RICE_VALIDATOR_THRESHOLD=0.50
+
+# S3 Deployment Configuration (Optional)
+MODEL_S3_URL=https://your-s3-bucket.s3.amazonaws.com/models/model1.keras
+VALIDATOR_MODEL_S3_URL=https://your-s3-bucket.s3.amazonaws.com/models/rice_leaf_validator.keras
 ```
 
-### 3. Run FastAPI Service
+---
+
+## ☁️ AWS S3 Model Deployment
+
+If models are hosted in an S3 bucket instead of being committed directly:
+1. Provide public or signed HTTPS URLs using `MODEL_S3_URL` and `VALIDATOR_MODEL_S3_URL`.
+2. Or specify `s3://bucket-name/path/to/model.keras` and configure `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION`.
+3. On application startup or Docker build, the service automatically downloads missing models into `models/` directory.
+
+---
+
+## 🚀 Local Execution
 
 ```powershell
 # Activate Virtual Environment
