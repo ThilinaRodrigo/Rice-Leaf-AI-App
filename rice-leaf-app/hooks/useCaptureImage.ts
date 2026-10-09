@@ -16,21 +16,18 @@ export function useCapturePhoto(options?: UseCapturePhotoOptions) {
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.8,
         skipProcessing: true,
-        base64: true,
       });
 
-      const imageParam = photo?.base64
-        ? `data:image/jpeg;base64,${photo.base64}`
-        : photo?.uri;
+      const imageUri = photo?.uri;
 
-      if (imageParam && options?.navigateTo) {
+      if (imageUri && options?.navigateTo) {
         router.push({
           pathname: options.navigateTo as any,
-          params: { imageUri: imageParam },
+          params: { imageUri },
         });
       }
 
-      return imageParam;
+      return imageUri;
       
     } catch (error) {
       console.error("Failed to capture photo:", error);

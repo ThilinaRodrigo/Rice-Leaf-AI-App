@@ -21,7 +21,7 @@ app.add_middleware(
 
 MODEL_PATH = os.getenv("MODEL_PATH", "models/model1.keras")
 VALIDATOR_MODEL_PATH = os.getenv("VALIDATOR_MODEL_PATH", "models/rice_leaf_validator.keras")
-RICE_VALIDATOR_THRESHOLD = float(os.getenv("RICE_VALIDATOR_THRESHOLD", "0.50"))
+RICE_VALIDATOR_THRESHOLD = float(os.getenv("RICE_VALIDATOR_THRESHOLD", "0.78"))
 IMG_SIZE = 224
 
 CLASS_LABELS = {

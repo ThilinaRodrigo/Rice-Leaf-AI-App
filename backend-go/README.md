@@ -85,8 +85,8 @@ ML_SERVICE_URL=http://localhost:8000
 RICE_VALIDATOR_THRESHOLD=0.50
 MAX_IMAGE_SIZE_MB=10
 
-# Local Wi-Fi Development Network configuration (IP: 192.168.8.101)
-BASE_URL=http://192.168.8.101:8080
+# Local Wi-Fi Development Network configuration (IP: 192.168.8.100)
+BASE_URL=http://192.168.8.100:8080
 UPLOADS_DIR=./uploads
 
 # Optional AI Agronomist Integration

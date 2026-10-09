@@ -14,7 +14,7 @@ This is the cross-platform React Native mobile and web application for **Rice Le
 
 ---
 
-## 🛠️ Local Setup & Physical Device Testing (`192.168.8.101`)
+## 🛠️ Local Setup & Physical Device Testing (`192.168.8.100`)
 
 ### 1. Install Dependencies
 
@@ -24,12 +24,12 @@ npm install
 
 ### 2. Configure Local Network Endpoint (`.env`)
 
-For physical phone testing using Expo Go over your local Wi-Fi network (IPv4: `192.168.8.101`), update `.env`:
+For physical phone testing using Expo Go over your local Wi-Fi network (IPv4: `192.168.8.100`), update `.env`:
 
 ```env
 # Local Wi-Fi Development Network
-EXPO_PUBLIC_API_BASE_URL=http://192.168.8.101:8080/api/v1
-EXPO_PUBLIC_SERVER_BASE_URL=http://192.168.8.101:8080
+EXPO_PUBLIC_API_BASE_URL=http://192.168.8.100:8080/api/v1
+EXPO_PUBLIC_SERVER_BASE_URL=http://192.168.8.100:8080
 
 # Production Environment Example
 # EXPO_PUBLIC_API_BASE_URL=https://api.yourdomain.com/api/v1

@@ -10,11 +10,16 @@ export const predictImage = async (uri: string): Promise<any> => {
         label: data.scan.label,
         confidence: data.scan.confidence,
         disease: data.disease,
+        scan: data.scan,
       };
     }
     return data;
-  } catch (err) {
-    console.error("Go Backend diagnosis error:", err);
+  } catch (err: any) {
+    if (err?.isNotRiceLeaf || err?.error === "NOT_RICE_LEAF") {
+      console.log("Validation notice:", err.message);
+    } else {
+      console.error("Go Backend diagnosis error:", err);
+    }
     throw err;
   }
 };

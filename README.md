@@ -106,9 +106,9 @@ Rice-Leaf-AI-App/
 
 ---
 
-## 🛠️ Local Testing & Development Guide (IPv4: `192.168.8.101`)
+## 🛠️ Local Testing & Development Guide (IPv4: `192.168.8.100`)
 
-For testing on physical mobile devices (Android / iOS Expo Go) connected over the same local Wi-Fi network, configure your machine's IPv4 address (`192.168.8.101`).
+For testing on physical mobile devices (Android / iOS Expo Go) connected over the same local Wi-Fi network, configure your machine's IPv4 address (`192.168.8.100`).
 
 ### Step 1: Start Python ML Service
 
@@ -120,7 +120,7 @@ python -m venv .venv
 pip install -r requirements.txt
 uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
-*Service will start at `http://localhost:8000` (and `http://192.168.8.101:8000`).*
+*Service will start at `http://localhost:8000` (and `http://192.168.8.100:8000`).*
 
 ---
 
@@ -131,14 +131,14 @@ Open Terminal 2:
 cd backend-go
 
 # Verify .env configuration:
-# BASE_URL=http://192.168.8.101:8080
+# BASE_URL=http://192.168.8.100:8080
 # ML_SERVICE_URL=http://localhost:8000
 # RICE_VALIDATOR_THRESHOLD=0.50
 # MAX_IMAGE_SIZE_MB=10
 
 go run ./cmd/api
 ```
-*Go REST API will start at `http://0.0.0.0:8080` (accessible at `http://192.168.8.101:8080`).*
+*Go REST API will start at `http://0.0.0.0:8080` (accessible at `http://192.168.8.100:8080`).*
 
 ---
 
@@ -149,8 +149,8 @@ Open Terminal 3:
 cd rice-leaf-app
 
 # Update .env to use local Wi-Fi IP:
-# EXPO_PUBLIC_API_BASE_URL=http://192.168.8.101:8080/api/v1
-# EXPO_PUBLIC_SERVER_BASE_URL=http://192.168.8.101:8080
+# EXPO_PUBLIC_API_BASE_URL=http://192.168.8.100:8080/api/v1
+# EXPO_PUBLIC_SERVER_BASE_URL=http://192.168.8.100:8080
 
 npx expo start --clear
 ```
