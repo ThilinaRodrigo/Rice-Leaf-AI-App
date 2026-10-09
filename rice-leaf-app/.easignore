@@ -1,0 +1,10 @@
+# Ignore heavy local dependencies & build caches for faster EAS upload
+node_modules/
+.expo/
+dist/
+web-build/
+android/
+ios/
+.git/
+*.log
+*.tmp

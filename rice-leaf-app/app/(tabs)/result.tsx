@@ -249,7 +249,7 @@ const Result = () => {
                   </View>
                   <View>
                     <Text className="text-white font-bold text-sm">
-                      Ask Gemini AI Doctor
+                      Ask AI
                     </Text>
                     <Text className="text-emerald-200 text-xs font-medium">
                       Get custom treatments for {activeName}

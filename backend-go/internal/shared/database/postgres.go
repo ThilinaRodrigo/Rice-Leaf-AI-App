@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -14,12 +15,18 @@ func NewPostgresDB(databaseURL string) (*sql.DB, error) {
 		return nil, fmt.Errorf("error opening db connection: %w", err)
 	}
 
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("error pinging db: %w", err)
+	var pingErr error
+	for i := 1; i <= 10; i++ {
+		pingErr = db.Ping()
+		if pingErr == nil {
+			log.Println("Connected to PostgreSQL database successfully!")
+			return db, nil
+		}
+		log.Printf("Waiting for PostgreSQL to start (attempt %d/10): %v", i, pingErr)
+		time.Sleep(2 * time.Second)
 	}
 
-	log.Println("Connected to PostgreSQL database successfully!")
-	return db, nil
+	return nil, fmt.Errorf("error pinging db after retries: %w", pingErr)
 }
 
 func InitTablesAndSeeds(db *sql.DB) error {

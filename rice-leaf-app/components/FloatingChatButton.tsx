@@ -1,43 +1,112 @@
-import React from "react";
-import { TouchableOpacity, View, Text } from "react-native";
+import React, { useRef } from "react";
+import { Animated, PanResponder, View } from "react-native";
 import { Bot } from "lucide-react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const FloatingChatButton = () => {
   const insets = useSafeAreaInsets();
-  // Docked nicely right above the bottom tab bar
-  const bottomPosition = Math.max(insets.bottom, 12) + 72;
+  const bottomPosition = Math.max(insets.bottom, 12) + 80;
+
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const scale = useRef(new Animated.Value(1)).current;
+  const isDragging = useRef(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4;
+      },
+      onPanResponderGrant: () => {
+        isDragging.current = false;
+        pan.extractOffset();
+        Animated.spring(scale, {
+          toValue: 0.9,
+          useNativeDriver: true,
+        }).start();
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (Math.abs(gestureState.dx) > 6 || Math.abs(gestureState.dy) > 6) {
+          isDragging.current = true;
+        }
+        pan.setValue({ x: gestureState.dx, y: gestureState.dy });
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        pan.flattenOffset();
+        Animated.spring(scale, {
+          toValue: 1,
+          friction: 4,
+          useNativeDriver: true,
+        }).start();
+
+        const totalMove = Math.hypot(gestureState.dx, gestureState.dy);
+        if (!isDragging.current || totalMove < 6) {
+          router.push("/(tabs)/chat" as any);
+        }
+      },
+      onPanResponderTerminate: () => {
+        pan.flattenOffset();
+        Animated.spring(scale, {
+          toValue: 1,
+          useNativeDriver: true,
+        }).start();
+      },
+    })
+  ).current;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.88}
-      onPress={() => router.push("/(tabs)/chat" as any)}
-      style={{
-        position: "absolute",
-        bottom: bottomPosition,
-        right: 16,
-        zIndex: 99,
-        shadowColor: "#059669",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.35,
-        shadowRadius: 10,
-        elevation: 10,
-      }}
-      className="flex-row items-center bg-emerald-800 border-2 border-emerald-500/40 rounded-2xl px-3.5 py-2.5 space-x-2"
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={[
+        {
+          position: "absolute",
+          bottom: bottomPosition,
+          right: 16,
+          zIndex: 9999,
+          transform: [
+            { translateX: pan.x },
+            { translateY: pan.y },
+            { scale: scale },
+          ],
+        },
+      ]}
     >
-      <View className="w-8.5 h-8.5 rounded-xl bg-emerald-700/90 border border-emerald-400/30 items-center justify-center relative">
-        <Bot size={20} color="#A7F3D0" />
-        <View className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-emerald-900" />
+      <View
+        style={{
+          width: 58,
+          height: 58,
+          borderRadius: 29,
+          backgroundColor: "#065f46",
+          borderWidth: 2,
+          borderColor: "rgba(52, 211, 153, 0.6)",
+          alignItems: "center",
+          justifyContent: "center",
+          shadowColor: "#059669",
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.4,
+          shadowRadius: 10,
+          elevation: 10,
+        }}
+      >
+        <View style={{ position: "relative", alignItems: "center", justifyContent: "center" }}>
+          <Bot size={28} color="#A7F3D0" />
+          <View
+            style={{
+              position: "absolute",
+              top: -2,
+              right: -2,
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: "#34D399",
+              borderWidth: 1.5,
+              borderColor: "#065f46",
+            }}
+          />
+        </View>
       </View>
-      <View className="pr-1">
-        <Text className="text-white text-xs font-black tracking-wide">
-          AI Doctor
-        </Text>
-        <Text className="text-emerald-200 text-[9px] font-bold">
-          Gemini Pro
-        </Text>
-      </View>
-    </TouchableOpacity>
+    </Animated.View>
   );
 };
+

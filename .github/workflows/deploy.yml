@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feature/ec2-docker-deployment
   workflow_dispatch:
 
 env:
@@ -23,7 +24,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.24'
           cache-dependency-path: backend-go/go.sum
 
       - name: Validate Go Dependencies
@@ -175,34 +176,54 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Copy docker-compose.prod.yml to EC2 Host
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.prod.yml"
-          target: "~/app/"
-
-      - name: Execute Deployment Script via SSH
+      - name: Deploy and Restart Microservices via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            export PATH=$PATH:/usr/bin:/usr/local/bin:/usr/libexec/docker/cli-plugins
+
+            # Auto-install Docker & Docker Compose if missing on EC2
+            if ! command -v docker &> /dev/null; then
+              echo "Docker not found on EC2. Installing Docker & Docker Compose via apt..."
+              sudo apt-get update -y
+              sudo apt-get install -y docker.io docker-compose
+              sudo systemctl enable --now docker || true
+              sudo chmod 666 /var/run/docker.sock || true
+            fi
+
+            if command -v docker-compose &> /dev/null; then
+              COMPOSE_CMD="docker-compose"
+            else
+              COMPOSE_CMD="docker compose"
+            fi
+
+            mkdir -p ~/app
             cd ~/app
+
+            # Pre-deployment disk cleanup to prevent "no space left on device"
+            echo "Performing pre-deployment disk & Docker cleanup..."
+            docker system prune -af --volumes || true
+            sudo journalctl --vacuum-size=50M || true
+
+            echo "Fetching docker-compose.prod.yml for commit ${{ github.sha }}..."
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -sSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/docker-compose.prod.yml" -o docker-compose.prod.yml
+
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             export GITHUB_REPOSITORY_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
             export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
             export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
             export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
 
             echo "Pulling latest docker images from GHCR..."
-            docker compose -f docker-compose.prod.yml pull
+            $COMPOSE_CMD -f docker-compose.prod.yml pull
 
-            echo "Rolling deployment of microservices..."
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            echo "Force recreating containers with updated images..."
+            $COMPOSE_CMD -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
 
-            echo "Cleaning up dangling images..."
-            docker image prune -f
+            echo "Cleaning up unused images post-deployment..."
+            docker system prune -f || true

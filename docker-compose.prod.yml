@@ -9,32 +9,39 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-riceleafdb}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-riceleafdb}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
 
   backend-go:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/rice-leaf-backend:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-thilinarodrigo}/rice-leaf-backend:latest
     container_name: riceleaf_backend
     restart: always
     ports:
       - "8080:8080"
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER:-postgres}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DB_NAME=${POSTGRES_DB:-riceleafdb}
+      - GIN_MODE=release
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-riceleafdb}?sslmode=disable
       - ML_SERVICE_URL=http://ml-service:8000
+      - BASE_URL=${BASE_URL:-http://rice.ai.thilinarodrigo.me}
+      - JWT_SECRET=${JWT_SECRET:-super-secret-rice-leaf-key-2026}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
-      - postgres
-      - ml-service
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
     networks:
       - app-network
 
   ml-service:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/rice-leaf-ml-service:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-thilinarodrigo}/rice-leaf-ml-service:latest
     container_name: riceleaf_ml_service
     restart: always
     ports:
@@ -43,7 +50,7 @@ services:
       - app-network
 
   sysadmin-web:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/rice-leaf-admin-web:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-thilinarodrigo}/rice-leaf-admin-web:latest
     container_name: riceleaf_admin_web
     restart: always
     ports:

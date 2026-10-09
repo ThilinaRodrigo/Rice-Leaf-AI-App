@@ -1,0 +1,67 @@
+name: Build Mobile App APK (Android)
+
+on:
+  push:
+    branches:
+      - main
+      - feature/ec2-docker-deployment
+    paths:
+      - 'rice-leaf-app/**'
+      - '.github/workflows/android-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: 📱 Build Standalone Android APK
+    runs-on: ubuntu-latest
+    env:
+      # .env is gitignored, so these must be provided here to be baked into the JS bundle
+      EXPO_PUBLIC_API_BASE_URL: ${{ vars.EXPO_PUBLIC_API_BASE_URL || 'http://rice.ai.thilinarodrigo.me/api/v1' }}
+      EXPO_PUBLIC_SERVER_BASE_URL: ${{ vars.EXPO_PUBLIC_SERVER_BASE_URL || 'http://rice.ai.thilinarodrigo.me' }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: rice-leaf-app/package-lock.json
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Accept Android SDK Licenses
+        run: |
+          mkdir -p "$ANDROID_HOME/licenses"
+          echo -e "\n89330d2226042789ed15d5f50130f13a3f97214a\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a6371fac36379c728a5f89a1fdb85787b" > "$ANDROID_HOME/licenses/android-sdk-license"
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Install Mobile App Dependencies
+        run: |
+          cd rice-leaf-app
+          npm ci
+
+      - name: Generate Android Native Project Files
+        run: |
+          cd rice-leaf-app
+          npx expo prebuild --platform android --clean
+
+      - name: Build Android Release APK via Gradle
+        run: |
+          cd rice-leaf-app/android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Upload Completed APK as GitHub Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rice-Leaf-AI-App-Release
+          path: rice-leaf-app/android/app/build/outputs/apk/release/*.apk
+          retention-days: 30

@@ -30,10 +30,31 @@ CLASS_LABELS = {
     4: "narrow_brown_spot"
 }
 
-# Load model with custom_objects
+# Monkey-patch Keras Dense layer to ignore 'quantization_config' argument serialized in model
+try:
+    import keras
+    orig_dense_init = keras.layers.Dense.__init__
+    def patched_dense_init(self, *args, **kwargs):
+        kwargs.pop("quantization_config", None)
+        orig_dense_init(self, *args, **kwargs)
+    keras.layers.Dense.__init__ = patched_dense_init
+except Exception as patch_err:
+    print(f"Keras Dense patch notice: {patch_err}")
+
+try:
+    orig_tf_dense_init = tf.keras.layers.Dense.__init__
+    def patched_tf_dense_init(self, *args, **kwargs):
+        kwargs.pop("quantization_config", None)
+        orig_tf_dense_init(self, *args, **kwargs)
+    tf.keras.layers.Dense.__init__ = patched_tf_dense_init
+except Exception:
+    pass
+
+# Load model with custom_objects and safe_mode=False
 model = tf.keras.models.load_model(
     MODEL_PATH,
-    custom_objects={"preprocess_input": preprocess_input}
+    custom_objects={"preprocess_input": preprocess_input},
+    safe_mode=False
 )
 
 # Warm-up
