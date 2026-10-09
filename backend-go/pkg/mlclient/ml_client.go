@@ -19,7 +19,13 @@ type MLPrediction struct {
 	Confidence float64 `json:"confidence"`
 }
 
+type ValidationResult struct {
+	IsRiceLeaf          bool    `json:"is_rice_leaf"`
+	RiceLeafProbability float64 `json:"rice_leaf_probability"`
+}
+
 type MLClient interface {
+	ValidateImage(fileHeader *multipart.FileHeader) (*ValidationResult, error)
 	PredictImage(fileHeader *multipart.FileHeader) (*MLPrediction, error)
 }
 
@@ -37,10 +43,10 @@ func NewMLClient(baseURL string) MLClient {
 	}
 }
 
-func (c *mlClient) PredictImage(fileHeader *multipart.FileHeader) (*MLPrediction, error) {
+func (c *mlClient) postImage(endpoint string, fileHeader *multipart.FileHeader) ([]byte, error) {
 	file, err := fileHeader.Open()
 	if err != nil {
-		return nil, fmt.Errorf("unable to open file for ML prediction: %w", err)
+		return nil, fmt.Errorf("unable to open file: %w", err)
 	}
 	defer file.Close()
 
@@ -69,7 +75,7 @@ func (c *mlClient) PredictImage(fileHeader *multipart.FileHeader) (*MLPrediction
 		return nil, fmt.Errorf("unable to close multipart writer: %w", err)
 	}
 
-	reqURL := fmt.Sprintf("%s/predict", c.baseURL)
+	reqURL := fmt.Sprintf("%s%s", c.baseURL, endpoint)
 	req, err := http.NewRequest("POST", reqURL, body)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create HTTP request to ML service: %w", err)
@@ -90,6 +96,29 @@ func (c *mlClient) PredictImage(fileHeader *multipart.FileHeader) (*MLPrediction
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("ML service returned status %d: %s", resp.StatusCode, string(respBytes))
+	}
+
+	return respBytes, nil
+}
+
+func (c *mlClient) ValidateImage(fileHeader *multipart.FileHeader) (*ValidationResult, error) {
+	respBytes, err := c.postImage("/validate", fileHeader)
+	if err != nil {
+		return nil, fmt.Errorf("rice leaf validation error: %w", err)
+	}
+
+	var res ValidationResult
+	if err := json.Unmarshal(respBytes, &res); err != nil {
+		return nil, fmt.Errorf("failed unmarshaling validation result: %w", err)
+	}
+
+	return &res, nil
+}
+
+func (c *mlClient) PredictImage(fileHeader *multipart.FileHeader) (*MLPrediction, error) {
+	respBytes, err := c.postImage("/predict", fileHeader)
+	if err != nil {
+		return nil, fmt.Errorf("disease prediction error: %w", err)
 	}
 
 	var pred MLPrediction

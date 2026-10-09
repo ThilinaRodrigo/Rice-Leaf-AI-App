@@ -118,6 +118,7 @@ jobs:
           push: true
           build-args: |
             MODEL_S3_URL=${{ secrets.MODEL_S3_URL }}
+            VALIDATOR_MODEL_S3_URL=${{ secrets.VALIDATOR_MODEL_S3_URL }}
           tags: |
             ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-ml-service:latest
             ghcr.io/${{ env.OWNER_LOWER }}/rice-leaf-ml-service:${{ github.sha }}
@@ -218,6 +219,10 @@ jobs:
             export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
             export JWT_SECRET="${{ secrets.JWT_SECRET }}"
             export GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
+            export MODEL_S3_URL="${{ secrets.MODEL_S3_URL }}"
+            export VALIDATOR_MODEL_S3_URL="${{ secrets.VALIDATOR_MODEL_S3_URL }}"
+            export RICE_VALIDATOR_THRESHOLD="${{ vars.RICE_VALIDATOR_THRESHOLD }}"
+            export BASE_URL="${{ secrets.BASE_URL || vars.BASE_URL }}"
 
             echo "Pulling latest docker images from GHCR..."
             $COMPOSE_CMD -f docker-compose.prod.yml pull

@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { RefreshCw, Image as ImageIcon, X } from "lucide-react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useImagePicker } from "@/hooks/useImagePicker";
 import { useCapturePhoto } from "@/hooks/useCaptureImage";
@@ -19,6 +19,13 @@ export default function CameraScreen({ isTabScreen = false }: CameraScreenProps)
   const { pickImageFromGallery } = useImagePicker();
   const { cameraRef, capturePhoto } = useCapturePhoto({ navigateTo: "/result" });
 
+  // Reset processing state whenever the camera screen comes into focus (e.g. back navigation)
+  useFocusEffect(
+    useCallback(() => {
+      setIsProcessing(false);
+    }, [])
+  );
+
   const bottomOffset = isTabScreen
     ? Math.max(insets.bottom, 12) + 88
     : Math.max(insets.bottom, 20) + 20;
@@ -29,10 +36,10 @@ export default function CameraScreen({ isTabScreen = false }: CameraScreenProps)
       const uri = await pickImageFromGallery();
       if (uri) {
         router.push({ pathname: "/result", params: { imageUri: uri } });
-      } else {
-        setIsProcessing(false);
       }
     } catch (err) {
+      console.warn("Gallery pick error:", err);
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -40,11 +47,10 @@ export default function CameraScreen({ isTabScreen = false }: CameraScreenProps)
   const handleCapturePhoto = async () => {
     try {
       setIsProcessing(true);
-      const uri = await capturePhoto();
-      if (!uri) {
-        setIsProcessing(false);
-      }
+      await capturePhoto();
     } catch (err) {
+      console.warn("Capture photo error:", err);
+    } finally {
       setIsProcessing(false);
     }
   };

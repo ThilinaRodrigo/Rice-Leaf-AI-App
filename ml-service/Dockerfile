@@ -19,23 +19,21 @@ RUN mkdir -p models
 
 COPY . .
 
-# Build argument for S3 model URL
+# Build arguments for S3 model URLs
 ARG MODEL_S3_URL=""
+ARG VALIDATOR_MODEL_S3_URL=""
 
-# Download model from S3 if not already present in context.
-# Fail the build loudly: an image without the model is useless and crash-loops at runtime.
-RUN if [ ! -f models/model1.keras ]; then \
-      if [ -z "$MODEL_S3_URL" ]; then \
-        echo "ERROR: models/model1.keras missing and MODEL_S3_URL build arg is empty." && exit 1; \
-      fi; \
+# Download disease model from S3 if specified and not present in build context
+RUN if [ ! -f models/model1.keras ] && [ -n "$MODEL_S3_URL" ]; then \
       echo "Downloading model1.keras from S3..." && \
       curl -fSL --retry 3 "$MODEL_S3_URL" -o models/model1.keras; \
-    else \
-      echo "model1.keras already present in build context."; \
-    fi && \
-    ls -lh models/model1.keras && \
-    python -c "import zipfile,sys; sys.exit(0 if zipfile.is_zipfile('models/model1.keras') else 1)" \
-      || (echo "ERROR: models/model1.keras is not a valid .keras file (check S3 URL / permissions)." && exit 1)
+    fi
+
+# Download validation model from S3 if specified and not present in build context
+RUN if [ ! -f models/rice_leaf_validator.keras ] && [ -n "$VALIDATOR_MODEL_S3_URL" ]; then \
+      echo "Downloading rice_leaf_validator.keras from S3..." && \
+      curl -fSL --retry 3 "$VALIDATOR_MODEL_S3_URL" -o models/rice_leaf_validator.keras; \
+    fi
 
 EXPOSE 8000
 

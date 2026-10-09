@@ -63,7 +63,7 @@ func main() {
 	// 6. Initialize Handlers per Module
 	authHandler := auth.NewHandler(authService)
 	diseaseHandler := disease.NewHandler(diseaseService)
-	scanHandler := scan.NewHandler(scanService)
+	scanHandler := scan.NewHandler(scanService, cfg)
 	productHandler := shop.NewProductHandler(productService)
 	chatHandler := chat.NewHandler(chatService)
 	adminHandler := admin.NewHandler(adminService, authService, productRepo)

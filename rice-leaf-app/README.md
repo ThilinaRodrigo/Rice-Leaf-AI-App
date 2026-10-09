@@ -6,14 +6,15 @@ This is the cross-platform React Native mobile and web application for **Rice Le
 
 ## 🚀 Key Features
 
-- **📷 Disease Scanner**: Capture or pick rice-leaf images to analyze for 5 common rice diseases.
+- **📷 Smart Leaf Scanner & Validator**: Capture or select rice-leaf images with real-time model validation. Non-rice leaf photos are rejected automatically with clear user guidance (*"Please upload a clear image of a rice leaf."*).
 - **💬 AI Agronomist Chat**: Get instant advice, treatment recommendations, application schedules, and prevention guidance.
 - **🛒 Agri Marketplace**: Browse agricultural products including seeds, fertilizers, sprayers, and farming tools.
-- **📚 Remedies Knowledge Base**: Learn about diseases, contributing environmental factors, and curative actions.
+- **👥 Farmer Community Forum**: Share diagnostic photos, exchange field experiences, and vote on community solutions.
+- **📚 Multilingual Remedies Knowledge Base**: Learn about diseases in English & Sinhala with environmental risk factors and curative steps.
 
 ---
 
-## 🛠️ Getting Started
+## 🛠️ Local Setup & Physical Device Testing (`192.168.8.100`)
 
 ### 1. Install Dependencies
 
@@ -21,27 +22,29 @@ This is the cross-platform React Native mobile and web application for **Rice Le
 npm install
 ```
 
-### 2. Configure API Endpoint
+### 2. Configure Local Network Endpoint (`.env`)
 
-Edit `constant/api.ts` to point to your Go backend service:
+For physical phone testing using Expo Go over your local Wi-Fi network (IPv4: `192.168.8.100`), update `.env`:
 
-```ts
-// For web / local emulator:
-export const API_BASE_URL = "http://localhost:8080/api/v1";
+```env
+# Local Wi-Fi Development Network
+EXPO_PUBLIC_API_BASE_URL=http://192.168.8.100:8080/api/v1
+EXPO_PUBLIC_SERVER_BASE_URL=http://192.168.8.100:8080
 
-// For physical phone testing on same Wi-Fi:
-export const API_BASE_URL = "http://192.168.x.x:8080/api/v1";
+# Production Environment Example
+# EXPO_PUBLIC_API_BASE_URL=https://api.yourdomain.com/api/v1
+# EXPO_PUBLIC_SERVER_BASE_URL=https://api.yourdomain.com
 ```
 
-### 3. Run the Development Server
+### 3. Run Development Server
 
 ```bash
 npx expo start --clear
 ```
 
-- Press **`w`** for Web Browser
-- Press **`a`** for Android Emulator
-- Scan the **QR code** in Expo Go app (Android/iOS)
+- Press **`w`** for Web Browser testing.
+- Press **`a`** for Android Emulator.
+- Scan the **QR Code** using **Expo Go** on your physical Android/iOS device connected to `192.168.8.x`.
 
 ---
 
@@ -55,7 +58,7 @@ rice-leaf-app/
 ├── components/           # Reusable UI components (Action, Factor, HelpModal, etc.)
 ├── constant/             # App constants, API URLs, disease metadata
 ├── hooks/                # Custom hooks (camera picker, image picker)
-├── service/              # API Client (Backend communication & ML service calls)
+├── service/              # API Client (Backend communication & validation error handling)
 ├── tsconfig.json         # TypeScript configuration with @/* alias
 └── package.json          # Project dependencies
 ```
