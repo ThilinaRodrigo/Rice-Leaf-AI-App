@@ -40,6 +40,15 @@ func NewService(
 }
 
 func (s *service) AnalyzeImage(ctx context.Context, userID *uuid.UUID, fileHeader *multipart.FileHeader) (*ScanResultResponse, error) {
+	valRes, err := s.mlClient.ValidateImage(fileHeader)
+	if err != nil {
+		return nil, fmt.Errorf("failed calling ML validation: %w", err)
+	}
+
+	if valRes == nil || !valRes.IsRiceLeaf {
+		return nil, &ErrNotRiceLeaf{Validation: valRes}
+	}
+
 	_, publicURL, err := s.localStorage.SaveScanImage(fileHeader)
 	if err != nil {
 		return nil, fmt.Errorf("failed saving upload image: %w", err)

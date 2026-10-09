@@ -69,6 +69,11 @@ const Result = () => {
   const [result, setResult] = useState<ResultType | null>(null);
   const [disease, setDisease] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [validationError, setValidationError] = useState<{
+    isNotRiceLeaf: boolean;
+    message: string;
+    probability?: number;
+  } | null>(null);
   const [targetedAds, setTargetedAds] = useState<any[]>([]);
   const [suggestedPosts, setSuggestedPosts] = useState<any[]>([]);
 
@@ -79,9 +84,20 @@ const Result = () => {
     if (!imageSource) return;
 
     setIsLoading(true);
+    setValidationError(null);
 
     predictImage(imageSource)
       .then((res) => {
+        if (res && (res.error === "NOT_RICE_LEAF" || res.success === false)) {
+          setValidationError({
+            isNotRiceLeaf: true,
+            message: res.message || "Please upload a clear image of a rice leaf.",
+            probability: res.validation?.rice_leaf_probability,
+          });
+          setDisease(null);
+          return;
+        }
+
         setResult(res);
         let fetchedDisease = res.disease || DISEASE_DATA[res.class_id];
         if (!fetchedDisease) {
@@ -131,8 +147,17 @@ const Result = () => {
 
         setDisease(fetchedDisease);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error("Prediction error:", err);
+        if (err?.isNotRiceLeaf || err?.error === "NOT_RICE_LEAF") {
+          setValidationError({
+            isNotRiceLeaf: true,
+            message: err.message || "Please upload a clear image of a rice leaf.",
+            probability: err.validation?.rice_leaf_probability,
+          });
+        } else {
+          setValidationError(null);
+        }
         setDisease(null);
       })
       .finally(() => setIsLoading(false));
@@ -377,12 +402,74 @@ const Result = () => {
           </ScrollView>
         )}
 
-        {/* Error State */}
-        {!isLoading && !disease && (
-          <View className="items-center mt-10">
-            <Text className="text-red-500">
-              Unable to analyze the image.
-            </Text>
+        {/* Validation Rejection State */}
+        {!isLoading && validationError && (
+          <ScrollView showsVerticalScrollIndicator={false} className="px-4 mt-6">
+            <View className="bg-white p-6 rounded-3xl border border-amber-200 shadow-sm items-center">
+              <View className="w-16 h-16 rounded-full bg-amber-100 items-center justify-center mb-4">
+                <AlertTriangle size={32} color="#D97706" />
+              </View>
+
+              <Text className="text-xl font-bold text-gray-900 text-center mb-2">
+                {language === "si" ? "පත්‍රය හඳුනාගත නොහැක" : "Not a Rice Leaf"}
+              </Text>
+
+              <Text className="text-base text-amber-800 font-medium text-center mb-4 leading-relaxed">
+                {validationError.message || "Please upload a clear image of a rice leaf."}
+              </Text>
+
+              {validationError.probability !== undefined && (
+                <View className="bg-amber-50 px-4 py-2 rounded-full border border-amber-200 mb-6">
+                  <Text className="text-amber-900 text-xs font-semibold">
+                    {language === "si" ? "ගොයම් පත්‍ර විශ්වාසනීයත්වය" : "Rice Leaf Confidence"}: {Math.round(validationError.probability * 100)}%
+                  </Text>
+                </View>
+              )}
+
+              <View className="w-full bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-6">
+                <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  {language === "si" ? "නිවැරදි ඡායාරූපයක් සඳහා උපදෙස්" : "Tips for best results"}:
+                </Text>
+                <Text className="text-xs text-slate-600 leading-relaxed">
+                  • {language === "si" ? "ගොයම් පත්‍රය පමණක් ඡායාරූපගත කරන්න" : "Focus directly on a single rice leaf"}{"\n"}
+                  • {language === "si" ? "හොඳ ආලෝකයක් සහිත ස්ථානයක පින්තූරය ගන්න" : "Ensure bright, even lighting with clear focus"}{"\n"}
+                  • {language === "si" ? "පසුබිම බොඳ නොවීමට වගබලා ගන්න" : "Avoid blurry background objects or non-leaf photos"}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => router.push("/scan" as any)}
+                className="w-full bg-emerald-700 py-3.5 rounded-2xl flex-row items-center justify-center shadow-sm active:opacity-90"
+              >
+                <Sparkles size={18} color="#FFFFFF" />
+                <Text className="text-white font-bold text-base ml-2">
+                  {language === "si" ? "තවත් පින්තූරයක් ගන්න" : "Try Another Image"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        )}
+
+        {/* General Error State */}
+        {!isLoading && !disease && !validationError && (
+          <View className="items-center justify-center mt-12 px-6">
+            <View className="bg-red-50 p-6 rounded-3xl border border-red-200 items-center w-full">
+              <AlertTriangle size={32} color="#EF4444" className="mb-3" />
+              <Text className="text-red-700 font-bold text-base mb-1 text-center">
+                {language === "si" ? "විශ්ලේෂණය අසාර්ථක විය" : "Analysis Failed"}
+              </Text>
+              <Text className="text-gray-600 text-xs text-center mb-5">
+                {language === "si" ? "ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න" : "Unable to analyze the image. Please check network connection and try again."}
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push("/scan" as any)}
+                className="bg-emerald-700 px-6 py-3 rounded-xl"
+              >
+                <Text className="text-white font-bold text-sm">
+                  {language === "si" ? "නැවත උත්සාහ කරන්න" : "Try Again"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>

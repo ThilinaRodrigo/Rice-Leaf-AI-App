@@ -1,6 +1,6 @@
 # Rice Leaf AI 🌾🤖
 
-Rice Leaf AI is an end-to-end intelligent agricultural management, disease detection, and social marketplace ecosystem. The system features a **React Native (Expo) mobile client**, a **Vite + React System Admin Dashboard**, a high-performance **Go Modular Monolith REST API backend**, and a **Python (FastAPI + TensorFlow) AI machine learning inference service**.
+Rice Leaf AI is an end-to-end intelligent agricultural management, disease detection, and social marketplace ecosystem. The system features a **React Native (Expo) mobile client**, a **Vite + React System Admin Dashboard**, a high-performance **Go Modular Monolith REST API backend**, and a **Python (FastAPI + TensorFlow) AI machine learning inference service** with a **two-stage validation and disease classification pipeline**.
 
 ---
 
@@ -30,9 +30,22 @@ Rice Leaf AI is an end-to-end intelligent agricultural management, disease detec
                 Data Persistence   ▼                  ▼
                        ┌───────────────┐      ┌─────────────────────────┐
                        │  PostgreSQL   │      │   ML Service (FastAPI)  │
-                       │   Database    │      │ (TensorFlow Inference)  │
+                       │   Database    │      │  ├── 1. Validation Model│
+                       │               │      │  └── 2. Disease Model   │
                        └───────────────┘      └─────────────────────────┘
 ```
+
+---
+
+## 💡 Two-Stage Image Diagnosis Pipeline
+
+1. **Stage 1 — Rice Leaf Validation (`rice_leaf_validator.keras`)**:
+   - MobileNetV2 binary classification model.
+   - Verifies whether the uploaded image is genuinely a **rice leaf** (`1`) or **not a rice leaf** (`0`).
+   - If rejected (probability below configurable threshold, e.g., `0.50`), processing halts and returns **HTTP 422 Unprocessable Entity** with clear guidance (*"Please upload a clear image of a rice leaf."*).
+2. **Stage 2 — Disease Diagnosis (`model1.keras`)**:
+   - Executes only when validation succeeds.
+   - Classifies the rice leaf into 5 disease/health categories and returns treatment recommendations.
 
 ---
 
@@ -48,7 +61,11 @@ Rice-Leaf-AI-App/
 │   │   ├── modules/      # Domain-isolated modules (auth, community, shop, scan, disease, chat, admin)
 │   │   └── shared/       # Cross-cutting infrastructure (database, middleware, router)
 │   └── pkg/              # Standard utility packages (hasher, storage, token, mlclient)
-├── ml-service/           # FastAPI service with TensorFlow model for rice disease classification
+├── ml-service/           # FastAPI service with TensorFlow models (validator & disease classifier)
+│   ├── models/
+│   │   ├── model1.keras               # Rice disease classification model
+│   │   └── rice_leaf_validator.keras  # Binary rice leaf validation model
+│   └── app.py            # FastAPI inference server (/validate & /predict)
 └── README.md             # Ecosystem documentation
 ```
 
@@ -57,41 +74,26 @@ Rice-Leaf-AI-App/
 ## 🚀 Ecosystem Components Overview
 
 ### 1. 📱 Mobile Application (`rice-leaf-app`)
-- **Tech Stack**: Expo SDK 54, TypeScript, Expo Router (file-based navigation), NativeWind / React Native CSS.
+- **Tech Stack**: Expo SDK 54, TypeScript, Expo Router, NativeWind / React Native CSS.
 - **Key Features**:
-  - 📸 Camera & photo picker for instant rice leaf disease analysis.
+  - 📸 Camera & photo picker with automatic rice leaf validation feedback.
   - 💬 Interactive AI Agronomy Assistant chatbot for crop disease advice.
   - 🛒 Agricultural Marketplace (seeds, fertilizers, sprayers, tools, and verified shop ads).
   - 👥 Farmer Community Forum (ask questions, post field photos, vote, comment).
-  - 📖 Disease Knowledge Base with symptom guides and remedies (multilingual support).
+  - 📖 Multilingual Disease Knowledge Base with symptom guides and remedies.
 
 ### 2. ⚙️ Go Modular Monolith Backend (`backend-go`)
-- **Tech Stack**: Go 1.22+, Gin Web Framework, PostgreSQL (`lib/pq`), JWT Authentication, Bcrypt.
-- **Architecture**: **Modular Monolith** organized by domain boundaries:
-  - `auth`: User registration, login, profile, role management (`farmer`, `shop_owner`, `sys_admin`).
-  - `community`: Forum posts, image uploads, voting (likes/dislikes), comments.
-  - `shop`: Marketplace products catalog and shop owner advertisement approval flow.
-  - `scan`: Rice leaf disease image upload, ML service integration, diagnostic history.
-  - `disease`: Disease database with treatment actions, environmental factors, and translations.
-  - `chat`: AI chatbot history and contextual agronomy response builder.
-  - `admin`: System stats, moderation, user management, and shop ad approvals.
-
-### 3. 🖥️ System Admin Portal (`sysadmin-web`)
-- **Tech Stack**: Vite, React, TypeScript, TailwindCSS, Lucide Icons.
+- **Tech Stack**: Go 1.22+, Gin Web Framework, PostgreSQL (`lib/pq`), JWT Authentication.
 - **Key Features**:
-  - Real-time platform analytics (users breakdown, total scans, disease distribution).
-  - User management (view farmers/shop owners, create sys admins, ban users).
-  - Shop Advertisement approval workflow (approve/reject shop ads with reasons).
-  - Disease knowledge base editor and scan history auditor.
+  - Validates image file format & enforces maximum file size (`MAX_IMAGE_SIZE_MB`).
+  - Calls internal ML validation service before executing disease diagnosis or saving scans.
+  - Returns structured `HTTP 422` validation rejection responses for invalid photos.
 
-### 4. 🧠 ML Disease Classifier (`ml-service`)
-- **Tech Stack**: Python 3.10+, FastAPI, Uvicorn, TensorFlow 2.x Keras.
-- **Classifies rice leaves into 5 classes**:
-  - `0`: Bacterial Leaf Blight
-  - `1`: Brown Spot
-  - `2`: Healthy Leaf
-  - `3`: Leaf Scald
-  - `4`: Narrow Brown Spot
+### 3. 🧠 ML Inference Service (`ml-service`)
+- **Tech Stack**: Python 3.10+, FastAPI, Uvicorn, TensorFlow 2.x / Keras.
+- **Endpoints**:
+  - `/validate`: Binary classification score (`is_rice_leaf`, `rice_leaf_probability`).
+  - `/predict`: Multi-class disease classifier (`0: bacterial_leaf_blight`, `1: brown_spot`, `2: healthy`, `3: leaf_scald`, `4: narrow_brown_spot`).
 
 ---
 
@@ -104,80 +106,68 @@ Rice-Leaf-AI-App/
 
 ---
 
-## 🛠️ Installation & Setup Guide
+## 🛠️ Local Testing & Development Guide (IPv4: `192.168.8.101`)
 
-### Step 1: Initialize Database & Go Backend
+For testing on physical mobile devices (Android / iOS Expo Go) connected over the same local Wi-Fi network, configure your machine's IPv4 address (`192.168.8.101`).
 
-1. Navigate to `backend-go`:
-   ```bash
-   cd backend-go
-   ```
+### Step 1: Start Python ML Service
 
-2. Configure environment variables (copy `.env.example` to `.env`):
-   ```bash
-   cp .env.example .env
-   ```
-
-3. Build and run the Go Modular Monolith API server:
-   ```bash
-   go run ./cmd/api
-   ```
-   *The Go backend runs on `http://localhost:8080`.*
+Open Terminal 1:
+```powershell
+cd ml-service
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+```
+*Service will start at `http://localhost:8000` (and `http://192.168.8.101:8000`).*
 
 ---
 
-### Step 2: Start Python ML Inference Service
+### Step 2: Start Go Backend Service
 
-1. Open a new terminal and navigate to `ml-service`:
-   ```bash
-   cd ml-service
-   ```
+Open Terminal 2:
+```powershell
+cd backend-go
 
-2. Setup virtual environment & dependencies:
-   ```powershell
-   # Windows PowerShell
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   pip install -r requirements.txt
-   ```
+# Verify .env configuration:
+# BASE_URL=http://192.168.8.101:8080
+# ML_SERVICE_URL=http://localhost:8000
+# RICE_VALIDATOR_THRESHOLD=0.50
+# MAX_IMAGE_SIZE_MB=10
 
-3. Start FastAPI server:
-   ```bash
-   uvicorn app:app --host 0.0.0.0 --port 8001 --reload
-   ```
-   *Interactive API docs available at `http://localhost:8001/docs`.*
+go run ./cmd/api
+```
+*Go REST API will start at `http://0.0.0.0:8080` (accessible at `http://192.168.8.101:8080`).*
 
 ---
 
 ### Step 3: Start Mobile App (`rice-leaf-app`)
 
-1. Open a terminal and navigate to `rice-leaf-app`:
-   ```bash
-   cd rice-leaf-app
-   ```
+Open Terminal 3:
+```powershell
+cd rice-leaf-app
 
-2. Install dependencies & start Expo:
-   ```bash
-   npm install
-   npx expo start --clear
-   ```
-   *Press `w` for Web or scan the QR Code using Expo Go on your mobile phone.*
+# Update .env to use local Wi-Fi IP:
+# EXPO_PUBLIC_API_BASE_URL=http://192.168.8.101:8080/api/v1
+# EXPO_PUBLIC_SERVER_BASE_URL=http://192.168.8.101:8080
+
+npx expo start --clear
+```
+- Press **`w`** for Web Browser testing.
+- Scan the **QR Code** using **Expo Go** on your physical phone (connected to `192.168.8.x` Wi-Fi).
 
 ---
 
 ### Step 4: Start Sys Admin Web Portal (`sysadmin-web`)
 
-1. Open a terminal and navigate to `sysadmin-web`:
-   ```bash
-   cd sysadmin-web
-   ```
-
-2. Install dependencies & start Vite dev server:
-   ```bash
-   npm install
-   npm run dev
-   ```
-   *Access dashboard at `http://localhost:5173`.*
+Open Terminal 4:
+```powershell
+cd sysadmin-web
+npm install
+npm run dev
+```
+*Access dashboard at `http://localhost:5173`.*
 
 ---
 
@@ -188,18 +178,15 @@ Rice-Leaf-AI-App/
 | **Auth** | `POST` | `/api/v1/auth/register` | Public | Register new user (`farmer` / `shop_owner`) |
 | **Auth** | `POST` | `/api/v1/auth/login` | Public | User authentication & JWT issuance |
 | **Auth** | `GET` | `/api/v1/auth/me` | Bearer Token | Get current user profile |
-| **Scan** | `POST` | `/api/v1/scans/analyze` | Optional Token | Analyze leaf image & store result |
+| **Scan** | `POST` | `/api/v1/scans/analyze` | Optional Token | Validate & analyze leaf image |
 | **Scan** | `GET` | `/api/v1/scans/history` | Bearer Token | User scan diagnostic history |
 | **Community** | `GET` | `/api/v1/posts` | Public | Browse community posts & questions |
 | **Community** | `POST` | `/api/v1/posts` | Bearer Token | Create new community post |
-| **Community** | `POST` | `/api/v1/posts/:id/vote` | Bearer Token | Like / Dislike post |
 | **Shop** | `GET` | `/api/v1/products` | Public | Browse marketplace products |
 | **Shop** | `GET` | `/api/v1/marketplace/ads` | Public | View approved shop advertisements |
-| **Shop** | `POST` | `/api/v1/shop/ads` | Shop Owner | Post shop advertisement |
 | **Chat** | `POST` | `/api/v1/chat/message` | Optional Token | Send message to AI Agronomist |
 | **Disease** | `GET` | `/api/v1/diseases` | Public | List disease database & remedies |
 | **Admin** | `GET` | `/api/v1/admin/stats` | Sys Admin | Platform telemetry & statistics |
-| **Admin** | `PUT` | `/api/v1/admin/ads/:id/status`| Sys Admin | Approve/Reject shop owner ad |
 
 ---
 

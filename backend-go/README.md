@@ -16,11 +16,11 @@ backend-go/
 │   └── api/
 │       └── main.go                         # Thin entry point & dependency wiring
 ├── config/
-│   └── config.go                       # Environment configuration loader
+│   └── config.go                           # Environment configuration loader
 ├── uploads/                                # Static uploaded images (scans, ads, posts)
 ├── pkg/                                    # Universal utility packages
 │   ├── hasher/                             # Password hashing (Bcrypt)
-│   ├── mlclient/                           # FastAPI Python ML client
+│   ├── mlclient/                           # FastAPI Python ML client (Validate & Predict)
 │   ├── storage/                            # Disk storage & URL generator
 │   └── token/                              # JWT generation & validation
 └── internal/
@@ -34,24 +34,33 @@ backend-go/
         ├── chat/                           # AI Agronomist chatbot history & advice engine
         ├── community/                      # Farmer community forum, posts, votes & comments
         ├── disease/                        # Disease database, symptoms, actions & translations
-        ├── scan/                           # Rice leaf AI scans, diagnosis & user history
+        ├── scan/                           # Rice leaf validation, AI scans & user history
         └── shop/                           # Marketplace products & shop owner ads
 ```
 
 ---
 
-## 📦 Module Structure Standard
+## 📦 Scan Module Validation & Analysis Flow
 
-Inside each domain module under `internal/modules/<module_name>/`, files follow a uniform 5-part layout:
-
-```text
-internal/modules/<module_name>/
-├── model.go        # Domain entity structs & enum constants
-├── dto.go          # Data Transfer Objects (Request/Response JSON structs)
-├── repository.go   # Data access layer (PostgreSQL SQL queries & fallbacks)
-├── service.go      # Core domain business logic
-└── handler.go      # HTTP router handlers & JSON bindings
-```
+1. **File Validation**:
+   - Enforces maximum file size limit (`MAX_IMAGE_SIZE_MB`, default `10` MB).
+   - Validates supported image formats (`.jpg`, `.jpeg`, `.png`, `.webp`, `.bmp`, `.heic`).
+2. **Rice Leaf Model Validation (`mlclient.ValidateImage`)**:
+   - Sends image to internal Python ML service (`/validate`).
+   - If `is_rice_leaf` is `false`, halts processing and returns **HTTP 422 Unprocessable Entity**:
+     ```json
+     {
+       "success": false,
+       "error": "NOT_RICE_LEAF",
+       "message": "Please upload a clear image of a rice leaf.",
+       "validation": {
+         "is_rice_leaf": false,
+         "rice_leaf_probability": 0.12
+       }
+     }
+     ```
+3. **Disease Classification (`mlclient.PredictImage`)**:
+   - Executed only if validation passes. Saves scan record and returns full diagnosis.
 
 ---
 
@@ -61,25 +70,38 @@ internal/modules/<module_name>/
 - Go 1.22+
 - PostgreSQL database
 
-### 2. Environment Setup
-Copy `.env.example` to `.env` and fill in your configuration:
+### 2. Environment Setup (`.env`)
+
+Copy `.env.example` to `.env`:
+
 ```env
 PORT=8080
 GIN_MODE=debug
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/riceleaf?sslmode=disable
-JWT_SECRET=your-super-secret-jwt-key
-ML_SERVICE_URL=http://localhost:8001
-BASE_URL=http://localhost:8080
+DATABASE_URL=postgres://postgres:root@localhost:5432/riceleafdb?sslmode=disable
+JWT_SECRET=super-secret-rice-leaf-key-2026
+
+# Internal ML Inference Service
+ML_SERVICE_URL=http://localhost:8000
+RICE_VALIDATOR_THRESHOLD=0.50
+MAX_IMAGE_SIZE_MB=10
+
+# Local Wi-Fi Development Network configuration (IP: 192.168.8.101)
+BASE_URL=http://192.168.8.101:8080
 UPLOADS_DIR=./uploads
+
+# Optional AI Agronomist Integration
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-1.5-flash
 ```
 
-### 3. Build & Run
-Run locally:
+### 3. Build & Run locally
+
+Run with Go CLI:
 ```bash
 go run ./cmd/api
 ```
 
-Build binary:
+Compile binary:
 ```bash
 go build -o api.exe ./cmd/api
 ./api.exe

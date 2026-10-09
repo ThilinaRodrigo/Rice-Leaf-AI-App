@@ -64,6 +64,25 @@ async function getReadableNativeFileUri(rawUri: string): Promise<{ uri: string; 
   return { uri: cleanUri, isTemp: false };
 }
 
+function parseUploadError(status: number, responseText: string): Error {
+  try {
+    const parsed = JSON.parse(responseText);
+    if (parsed && (parsed.error === "NOT_RICE_LEAF" || parsed.success === false)) {
+      const err = new Error(parsed.message || "Please upload a clear image of a rice leaf.") as any;
+      err.status = status;
+      err.isNotRiceLeaf = true;
+      err.error = parsed.error;
+      err.validation = parsed.validation;
+      return err;
+    }
+  } catch (e) {
+    // Non-JSON response
+  }
+  const genericErr = new Error(`Analysis failed (${status}): ${responseText}`) as any;
+  genericErr.status = status;
+  return genericErr;
+}
+
 // 1. Scan / Analyze Leaf Image
 export const analyzeLeafImage = async (imageUri: string, userToken?: string): Promise<any> => {
   const targetUrl = `${API_BASE_URL}/scans/analyze`;
@@ -97,7 +116,7 @@ export const analyzeLeafImage = async (imageUri: string, userToken?: string): Pr
     console.log("=== DEBUG: Web Upload response =", responseText);
 
     if (!res.ok) {
-      throw new Error(`Analysis failed (${res.status}): ${responseText}`);
+      throw parseUploadError(res.status, responseText);
     }
 
     return JSON.parse(responseText);
@@ -121,8 +140,12 @@ export const analyzeLeafImage = async (imageUri: string, userToken?: string): Pr
       if (uploadResult.status >= 200 && uploadResult.status < 300) {
         return JSON.parse(uploadResult.body);
       }
-      throw new Error(`Analysis failed (${uploadResult.status}): ${uploadResult.body}`);
+      throw parseUploadError(uploadResult.status, uploadResult.body);
     } catch (uploadErr) {
+      if ((uploadErr as any)?.isNotRiceLeaf) {
+        throw uploadErr;
+      }
+
       console.warn("FileSystem.uploadAsync failed, attempting XMLHttpRequest fallback:", uploadErr);
 
       // Fallback: XMLHttpRequest with FormData
@@ -144,7 +167,7 @@ export const analyzeLeafImage = async (imageUri: string, userToken?: string): Pr
               resolve(xhr.responseText);
             }
           } else {
-            reject(new Error(`Analysis failed (${xhr.status}): ${xhr.responseText}`));
+            reject(parseUploadError(xhr.status, xhr.responseText));
           }
         };
 
