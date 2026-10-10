@@ -80,6 +80,7 @@ const Result = () => {
   const [targetedAds, setTargetedAds] = useState<any[]>([]);
   const [suggestedPosts, setSuggestedPosts] = useState<any[]>([]);
   const [imageLoadErrorCount, setImageLoadErrorCount] = useState(0);
+  const [errorDetail, setErrorDetail] = useState("");
   const [previewDataUri, setPreviewDataUri] = useState<string>("");
 
   const imageSource =
@@ -92,6 +93,7 @@ const Result = () => {
     setResult(null);
     setDisease(null);
     setValidationError(null);
+    setErrorDetail("");
     setImageLoadErrorCount(0);
     setPreviewDataUri("");
     setTargetedAds([]);
@@ -168,6 +170,7 @@ const Result = () => {
           });
         } else {
           console.error("Prediction error:", err);
+          setErrorDetail(String(err?.message || err));
           setValidationError(null);
         }
         setDisease(null);
@@ -564,6 +567,9 @@ const Result = () => {
               <Text className="text-gray-600 text-xs text-center mb-5">
                 {language === "si" ? "ජාල සම්බන්ධතාවය පරීක්ෂා කර නැවත උත්සාහ කරන්න" : "Unable to analyze the image. Please check network connection and try again."}
               </Text>
+              {errorDetail ? (
+                <Text className="text-gray-400 text-xs text-center mb-4">{errorDetail}</Text>
+              ) : null}
               <TouchableOpacity
                 onPress={() => router.push("/scan" as any)}
                 className="bg-emerald-700 px-6 py-3 rounded-xl"

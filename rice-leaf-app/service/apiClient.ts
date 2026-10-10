@@ -24,10 +24,12 @@ async function getReadableNativeFileUri(rawUri: string): Promise<{ uri: string; 
     }
   }
 
-  // 2. Preserve raw URI scheme without decoding %40 to @ (decoding breaks Android scoped path resolution)
+  // 2. Normalize file URI scheme slashes for Android scoped path resolution
   let targetUri = rawUri;
-  if (!targetUri.startsWith("file://") && !targetUri.startsWith("content://")) {
-    targetUri = `file://${targetUri}`;
+  if (targetUri.startsWith("file:/") && !targetUri.startsWith("file:///")) {
+    targetUri = targetUri.replace(/^file:\/*/, "file:///");
+  } else if (!targetUri.startsWith("file://") && !targetUri.startsWith("content://")) {
+    targetUri = `file:///${targetUri.replace(/^\/+/, "")}`;
   }
 
   // 3. Try copyAsync to root cache directory
