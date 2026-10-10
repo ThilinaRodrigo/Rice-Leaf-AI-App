@@ -13,8 +13,10 @@ export function useCapturePhoto(options?: UseCapturePhotoOptions) {
     if (!cameraRef.current) return;
 
     try {
+      // Full-resolution camera frames can exceed the backend's upload limit
+      // (MAX_IMAGE_SIZE_MB), unlike gallery picks, so compress harder here.
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: 0.4,
       });
 
       const imageUri = photo?.uri;
