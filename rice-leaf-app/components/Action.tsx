@@ -9,15 +9,15 @@ interface ActionProps {
 
 const Action = ({ title, subtitle }: ActionProps) => {
   return (
-  <View className="flex-row items-start mb-4">
-    <CheckCircle2 size={22} color="#16A34A" />
-    <View className="ml-3">
-      <Text className="text-base font-semibold text-gray-900">
-        {title}
-      </Text>
-      <Text className="text-sm text-gray-500">{subtitle}</Text>
+    <View className="flex-row items-start mb-4">
+      <CheckCircle2 size={22} color="#16A34A" style={{ marginTop: 2 }} />
+      <View className="ml-3 flex-1">
+        <Text className="text-base font-semibold text-gray-900">
+          {title}
+        </Text>
+        <Text className="text-sm text-gray-500 leading-relaxed mt-0.5">{subtitle}</Text>
+      </View>
     </View>
-  </View>
   )
 }
 
