@@ -15,7 +15,6 @@ export function useCapturePhoto(options?: UseCapturePhotoOptions) {
     try {
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.8,
-        skipProcessing: true,
       });
 
       const imageUri = photo?.uri;

@@ -76,21 +76,30 @@ export const analyzeLeafImage = async (imageUri: string, userToken?: string): Pr
     headers["Authorization"] = `Bearer ${userToken}`;
   }
 
+  // Ensure native file URIs (e.g. camera capture cache on Android) are copy-resolved to accessible root cache
+  let uploadUri = imageUri;
+  let isTempFile = false;
+  if (Platform.OS !== "web" && !imageUri.startsWith("data:image/")) {
+    const resolved = await getReadableNativeFileUri(imageUri);
+    uploadUri = resolved.uri;
+    isTempFile = resolved.isTemp;
+  }
+
   // Strategy 1: React Native Standard FormData (Native ContentResolver / Web Blob)
   try {
     const formData = new FormData();
 
-    if (Platform.OS === "web" || imageUri.startsWith("data:image/")) {
-      const imageResponse = await fetch(imageUri);
+    if (Platform.OS === "web" || uploadUri.startsWith("data:image/")) {
+      const imageResponse = await fetch(uploadUri);
       if (!imageResponse.ok) {
         throw new Error("Unable to read selected image file");
       }
       const blob = await imageResponse.blob();
       formData.append("file", blob, "rice_leaf.jpg");
     } else {
-      // Native (Android / iOS): React Native native networking engine handles scoped URIs cleanly
+      // Native (Android / iOS): React Native native networking engine handles URIs cleanly
       formData.append("file", {
-        uri: imageUri,
+        uri: uploadUri,
         name: "rice_leaf.jpg",
         type: "image/jpeg",
       } as any);
@@ -120,7 +129,7 @@ export const analyzeLeafImage = async (imageUri: string, userToken?: string): Pr
 
     // Strategy 2: Fallback to reading file via fetch Blob
     try {
-      const imageResponse = await fetch(imageUri);
+      const imageResponse = await fetch(uploadUri);
       const blob = await imageResponse.blob();
 
       const formData = new FormData();
