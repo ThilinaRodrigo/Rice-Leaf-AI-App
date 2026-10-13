@@ -1,5 +1,5 @@
 # Multi-stage build for Go Backend Service
-FROM public.ecr.aws/docker/library/golang:1.24-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/server ./cmd/api/main.go
 
 # Minimal production runtime image
-FROM public.ecr.aws/docker/library/alpine:3.19
+FROM alpine:3.19
 
 WORKDIR /app
 
