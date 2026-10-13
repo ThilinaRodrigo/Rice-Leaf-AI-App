@@ -172,14 +172,37 @@ func InitTablesAndSeeds(db *sql.DB) error {
 	(3, 'leaf_scald', 'Leaf Scald', 'Fungal (Microdochium oryzae)', 'Commonly occurs late in the season on mature leaves. It creates a scalded appearance starting from the leaf tips.', '[{"label": "Stage", "value": "Late Growth", "color": "#A855F7", "icon": "Calendar"}, {"label": "Rainfall", "value": "Heavy", "color": "#3B82F6", "icon": "Droplet"}, {"label": "Spacing", "value": "High Density", "color": "#64748B", "icon": "Zap"}]'::jsonb, '[{"title": "Apply Mancozeb", "subtitle": "Foliar spray to reduce severity"}, {"title": "Split Nitrogen Dosage", "subtitle": "Do not apply all Urea at once"}, {"title": "Remove Rice Stubbles", "subtitle": "Plow under after harvest to kill fungi"}]'::jsonb),
 	(4, 'narrow_brown_spot', 'Narrow Brown Spot', 'Fungal (Cercospora janseana)', 'Symptoms are short, linear brown lesions. In Sri Lanka, this is often seen as rice plants approach maturity.', '[{"label": "Season", "value": "Approaching Maturity", "color": "#A855F7", "icon": "Calendar"}, {"label": "Humidity", "value": "High", "color": "#3B82F6", "icon": "Droplet"}, {"label": "Temp", "value": "Warm", "color": "#F97316", "icon": "Thermometer"}]'::jsonb, '[{"title": "Apply Propiconazole", "subtitle": "Apply between booting and heading stages"}, {"title": "Check Variety Resistance", "subtitle": "Consult local Agrarian Service Center"}, {"title": "Burnt Paddy Husk", "subtitle": "Apply to soil for next season"}]'::jsonb)
 	ON CONFLICT (class_id) DO NOTHING;
-
-	INSERT INTO products (name, category, price_cents, price_unit, image_url, stock, description) VALUES
-	('High-Quality Rice Seeds', 'Seeds', 45000, 'Rs.450 / kg', 'https://images.unsplash.com/photo-1607703700242-7a37b2fbb5bc?auto=format&fit=crop&w=500&q=60', 100, 'Certified high yield Bg 352 and At 362 rice seeds for Yala and Maha seasons.'),
-	('Organic Fertilizer', 'Fertilizers', 12000, 'Rs.120 / kg', 'https://images.unsplash.com/photo-1587316745629-1a81c7b54e9b?auto=format&fit=crop&w=500&q=60', 250, '100% natural compost and bio-fertilizer rich in nitrogen and organic carbon.'),
-	('Sprayer Tool', 'Sprayers', 220000, 'Rs.2,200', 'https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60', 50, '16L knapsack manual pressure sprayer ideal for pesticide and foliar application.'),
-	('Watering Can', 'Tools', 75000, 'Rs.750', 'https://images.unsplash.com/photo-1606312611231-1d6e0f51e3f1?auto=format&fit=crop&w=500&q=60', 75, 'Heavy-duty 10L ergonomic garden watering can for paddy nursery care.')
-	ON CONFLICT DO NOTHING;
 	`
 	_, _ = db.Exec(seeds)
+
+	// Clean up duplicate products with same name if previous runs duplicated them
+	_, _ = db.Exec(`
+		DELETE FROM products a USING products b
+		WHERE a.ctid > b.ctid AND a.name = b.name;
+	`)
+
+	// Create system_metadata table to track system seeds
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS system_metadata (
+			key VARCHAR(100) PRIMARY KEY,
+			value TEXT NOT NULL
+		);
+	`)
+
+	// Only seed products if not already marked seeded
+	var seeded string
+	err = db.QueryRow("SELECT value FROM system_metadata WHERE key = 'products_seeded'").Scan(&seeded)
+	if err != nil || seeded != "true" {
+		productSeeds := `
+		INSERT INTO products (id, name, category, price_cents, price_unit, image_url, stock, description) VALUES
+		('11111111-1111-1111-1111-111111111111', 'High-Quality Rice Seeds', 'Seeds', 45000, 'Rs.450 / kg', 'https://images.unsplash.com/photo-1607703700242-7a37b2fbb5bc?auto=format&fit=crop&w=500&q=60', 100, 'Certified high yield Bg 352 and At 362 rice seeds for Yala and Maha seasons.'),
+		('22222222-2222-2222-2222-222222222222', 'Organic Fertilizer', 'Fertilizers', 12000, 'Rs.120 / kg', 'https://images.unsplash.com/photo-1587316745629-1a81c7b54e9b?auto=format&fit=crop&w=500&q=60', 250, '100% natural compost and bio-fertilizer rich in nitrogen and organic carbon.'),
+		('33333333-3333-3333-3333-333333333333', 'Sprayer Tool', 'Sprayers', 220000, 'Rs.2,200', 'https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60', 50, '16L knapsack manual pressure sprayer ideal for pesticide and foliar application.'),
+		('44444444-4444-4444-4444-444444444444', 'Watering Can', 'Tools', 75000, 'Rs.750', 'https://images.unsplash.com/photo-1606312611231-1d6e0f51e3f1?auto=format&fit=crop&w=500&q=60', 75, 'Heavy-duty 10L ergonomic garden watering can for paddy nursery care.')
+		ON CONFLICT (id) DO NOTHING;
+		`
+		_, _ = db.Exec(productSeeds)
+		_, _ = db.Exec(`INSERT INTO system_metadata (key, value) VALUES ('products_seeded', 'true') ON CONFLICT (key) DO UPDATE SET value = 'true';`)
+	}
 	return nil
 }

@@ -44,14 +44,14 @@ export const Login: React.FC = () => {
           <div className="w-16 h-16 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto mb-4 shadow-xl shadow-emerald-950/50">
             <Leaf className="w-9 h-9" />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">System Admin Portal</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">System Admin Portal</h1>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Sri Lanka Rice Leaf AI & Agrochemical Network
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="glass-panel p-8 rounded-3xl border border-slate-800 shadow-2xl">
+        <div className="glass-panel p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-800 shadow-2xl">
           <div className="flex items-center gap-2 mb-6 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold">
             <ShieldAlert className="w-4 h-4 text-purple-400 shrink-0" />
             <span>Restricted Access: System Administrator Authentication Only</span>

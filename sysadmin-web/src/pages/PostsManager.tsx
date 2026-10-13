@@ -91,7 +91,7 @@ export const PostsManager: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 overflow-y-auto">
       {/* Toast Notification */}
       {toast && (
         <div
@@ -105,7 +105,7 @@ export const PostsManager: React.FC = () => {
       )}
 
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl">
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2">
             <MessageSquare className="w-7 h-7 text-emerald-500" />

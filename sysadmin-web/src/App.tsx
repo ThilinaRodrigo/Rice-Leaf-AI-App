@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext';
+import { NavigationProvider } from './context/NavigationContext';
 import { Sidebar } from './components/Sidebar';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -16,7 +17,7 @@ const ProtectedLayout: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white p-4">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-slate-400 font-semibold">Authenticating Admin Session...</p>
@@ -30,12 +31,14 @@ const ProtectedLayout: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden p-6 overflow-y-auto">
-        <Outlet />
-      </main>
-    </div>
+    <NavigationProvider>
+      <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden relative">
+        <Sidebar />
+        <main className="flex-1 flex flex-col min-w-0 overflow-hidden overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
+    </NavigationProvider>
   );
 };
 

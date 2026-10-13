@@ -3,7 +3,7 @@ import { fetchAdminAds, updateAdStatus } from '../api/adminApi';
 import type { ShopAd } from '../types/admin';
 import { Header } from '../components/Header';
 import { showConfirmDialog, showSuccessToast, showErrorAlert, customSwal } from '../utils/swal';
-import { Search, CheckCircle, XCircle, Store, Phone, Tag, Clock, AlertTriangle } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Store, Phone, Tag, Clock, AlertTriangle, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 
 export const AdsManager: React.FC = () => {
   const [ads, setAds] = useState<ShopAd[]>([]);
@@ -11,14 +11,17 @@ export const AdsManager: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadAds = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await fetchAdminAds(statusFilter);
       setAds(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching admin ads:', err);
+      setError(err?.response?.data?.error || err?.message || 'Failed to load shop advertisements from server');
       setAds([]);
     } finally {
       setLoading(false);
@@ -119,7 +122,7 @@ export const AdsManager: React.FC = () => {
         onRefresh={loadAds}
       />
 
-      <div className="p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
         {/* Controls & Filter Tabs */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
@@ -203,23 +206,45 @@ export const AdsManager: React.FC = () => {
           </div>
         </div>
 
+        {/* Error Banner */}
+        {error && (
+          <div className="glass-panel p-4 rounded-2xl border border-red-500/30 bg-red-500/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+              <p className="text-xs text-red-300 font-semibold">{error}</p>
+            </div>
+            <button
+              onClick={loadAds}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
         {/* Ads Cards Grid */}
         {loading ? (
-          <div className="p-12 text-center text-slate-500">Loading shop advertisements...</div>
-        ) : filteredAds.length === 0 ? (
+          <div className="p-16 text-center text-slate-400 space-y-3">
+            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto" />
+            <p className="text-sm font-semibold">Loading shop advertisements from server...</p>
+          </div>
+        ) : filteredAds.length === 0 && !error ? (
           <div className="glass-panel p-12 rounded-3xl border border-slate-800 text-center space-y-3">
             <Clock className="w-12 h-12 text-slate-600 mx-auto" />
-            <h4 className="text-white font-bold text-base">No advertisements found</h4>
+            <h4 className="text-white font-bold text-base">No Advertisements Found</h4>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              There are currently no shop advertisements matching your filter settings.
+              There are currently no shop advertisements matching your filter settings in the database.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAds.map((ad) => {
               const tags = parseTags(ad.disease_tags);
+              const apiEnv = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+              const serverDomain = apiEnv.replace(/\/api\/v1\/?$/, '');
               const fullImageUrl = ad.image_url?.startsWith('/uploads')
-                ? `http://localhost:8080${ad.image_url}`
+                ? `${serverDomain}${ad.image_url}`
                 : ad.image_url;
 
               return (

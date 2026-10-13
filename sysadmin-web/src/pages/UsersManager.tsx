@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { fetchAdminUsers, deleteUser, createSysAdminUser } from '../api/adminApi';
 import type { User, UserRole } from '../types/admin';
 import { Header } from '../components/Header';
-import { Search, Trash2, UserPlus, ShieldAlert, Store, User as UserIcon, X } from 'lucide-react';
+import { Search, Trash2, UserPlus, ShieldAlert, Store, User as UserIcon, X, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { showConfirmDialog, showSuccessToast, showErrorAlert } from '../utils/swal';
 
 export const UsersManager: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('All');
 
@@ -19,11 +21,21 @@ export const UsersManager: React.FC = () => {
   const [modalSubmitting, setModalSubmitting] = useState(false);
 
   const loadUsers = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const data = await fetchAdminUsers();
-      setUsers(data);
-    } catch (err) {
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('Error fetching users:', err);
+      setError(
+        err.response?.data?.error ||
+          err.message ||
+          'Unable to connect to backend server. Could not load users.'
+      );
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -135,10 +147,10 @@ export const UsersManager: React.FC = () => {
         onRefresh={loadUsers}
       />
 
-      <div className="p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
         {/* Actions & Filters Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-800">
+          <div className="flex flex-col xs:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
             {/* Search Input */}
             <div className="relative flex-1 sm:w-72">
               <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
@@ -146,7 +158,7 @@ export const UsersManager: React.FC = () => {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name, email, NIC, district..."
+                placeholder="Search name, email, NIC..."
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -155,7 +167,7 @@ export const UsersManager: React.FC = () => {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-300 focus:outline-none focus:border-emerald-500"
+              className="bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-sm text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
             >
               <option value="All">All Roles</option>
               <option value="farmer">Farmers</option>
@@ -166,17 +178,34 @@ export const UsersManager: React.FC = () => {
 
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-purple-600/25 transition-all duration-200"
+            className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-purple-600/25 transition-all duration-200 cursor-pointer shrink-0"
           >
             <UserPlus className="w-4 h-4" />
             <span>Create SysAdmin</span>
           </button>
         </div>
 
+        {/* Error Banner */}
+        {error && (
+          <div className="glass-panel p-4 rounded-2xl border border-red-500/30 bg-red-500/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+              <p className="text-xs text-red-300 font-semibold">{error}</p>
+            </div>
+            <button
+              onClick={loadUsers}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
         {/* Users Data Table */}
-        <div className="glass-panel rounded-2xl border border-slate-800 shadow-xl p-6">
+        <div className="glass-panel rounded-2xl border border-slate-800 shadow-xl p-3 sm:p-6">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
+            <table className="w-full text-left text-sm text-slate-300 min-w-[580px]">
               <thead className="bg-slate-800/60 text-xs uppercase text-slate-400 font-bold">
                 <tr>
                   <th className="p-3.5 rounded-l-xl">User Info</th>
@@ -188,7 +217,14 @@ export const UsersManager: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
-                {filteredUsers.length > 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="p-12 text-center text-slate-400">
+                      <Loader2 className="w-6 h-6 text-purple-500 animate-spin mx-auto mb-2" />
+                      <span className="text-xs font-semibold">Loading users from database...</span>
+                    </td>
+                  </tr>
+                ) : filteredUsers.length > 0 ? (
                   filteredUsers.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
                       <td className="p-3.5">

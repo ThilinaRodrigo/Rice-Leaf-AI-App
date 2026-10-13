@@ -192,4 +192,6 @@ export const si: Record<TranslationKeys, string> = {
   saveChanges: "තොරතුරු සුරකින්න",
   profileUpdatedSuccess: "ගිණුම් තොරතුරු සාර්ථකව යාවත්කාලීන විය!",
   updateProfileError: "තොරතුරු යාවත්කාලීන කිරීම අසාර්ථක විය",
+  priceUnit: "මිල",
+  close: "වසන්න",
 };

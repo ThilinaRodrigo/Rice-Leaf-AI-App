@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { useLanguage } from "@/context/LanguageContext";
 import { fetchPaginatedMarketplaceAds } from "@/service/apiClient";
 import { API_BASE_URL } from "@/constant/api";
+import { MarketItemModal } from "@/components/MarketItemModal";
 
 const diseaseFilters = [
   { label: "All Diseases", value: "All" },
@@ -41,6 +42,7 @@ const DiseaseRemediesMarketScreen = () => {
   const [search, setSearch] = useState<string>("");
   
   const [ads, setAds] = useState<any[]>([]);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(6);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -257,8 +259,10 @@ const DiseaseRemediesMarketScreen = () => {
             {ads.map((ad) => {
               const tags = parseTags(ad.disease_tags);
               return (
-                <View
+                <TouchableOpacity
                   key={ad.id}
+                  activeOpacity={0.92}
+                  onPress={() => setSelectedItem(ad)}
                   className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden mb-4"
                 >
                   <View className="flex-row">
@@ -338,7 +342,7 @@ const DiseaseRemediesMarketScreen = () => {
                       </View>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -408,6 +412,11 @@ const DiseaseRemediesMarketScreen = () => {
           </View>
         )}
       </ScrollView>
+      <MarketItemModal
+        visible={!!selectedItem}
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
     </View>
   );
 };

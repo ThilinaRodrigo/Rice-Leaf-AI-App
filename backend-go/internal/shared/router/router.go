@@ -131,6 +131,7 @@ func SetupRouter(rc RouterConfig) *gin.Engine {
 				adminGroup.POST("/users/admin", rc.AdminHandler.CreateSysAdmin)
 				adminGroup.DELETE("/users/:id", rc.AdminHandler.DeleteUser)
 				adminGroup.GET("/scans", rc.AdminHandler.GetAllScans)
+				adminGroup.POST("/products/upload", rc.AdminHandler.UploadProductImage)
 				adminGroup.POST("/products", rc.AdminHandler.CreateProduct)
 				adminGroup.PUT("/products/:id", rc.AdminHandler.UpdateProduct)
 				adminGroup.DELETE("/products/:id", rc.AdminHandler.DeleteProduct)

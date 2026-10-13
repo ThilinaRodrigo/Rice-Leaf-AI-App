@@ -189,6 +189,8 @@ export const en = {
   saveChanges: "Save Changes",
   profileUpdatedSuccess: "Profile updated successfully!",
   updateProfileError: "Failed to update profile",
+  priceUnit: "Price",
+  close: "Close",
 };
 
 export type TranslationKeys = keyof typeof en;

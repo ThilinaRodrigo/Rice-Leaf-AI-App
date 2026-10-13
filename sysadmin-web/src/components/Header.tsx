@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ShieldCheck, RefreshCw, KeyRound, X, Lock, Eye, EyeOff } from 'lucide-react';
+import { ShieldCheck, RefreshCw, KeyRound, X, Lock, Eye, EyeOff, Menu } from 'lucide-react';
 import { useAdminAuth } from '../context/AdminAuthContext';
+import { useMobileNav } from '../context/NavigationContext';
 import { changePassword } from '../api/adminApi';
 
 interface HeaderProps {
@@ -11,6 +12,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ title, subtitle, onRefresh }) => {
   const { user } = useAdminAuth();
+  const { toggleMobile } = useMobileNav();
 
   const [showModal, setShowModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -60,17 +62,36 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onRefresh }) =>
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-8 py-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">{title}</h2>
-          {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+      <header className="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 sm:px-8 py-3.5 sm:py-4 flex items-center justify-between gap-3">
+        {/* Left: Mobile hamburger + Page Title */}
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={toggleMobile}
+            className="p-2 rounded-xl border border-slate-800 bg-slate-800/60 text-slate-300 hover:text-white hover:bg-slate-800 lg:hidden shrink-0 transition-colors cursor-pointer"
+            title="Open navigation menu"
+            aria-label="Open Navigation Menu"
+          >
+            <Menu className="w-5 h-5 text-emerald-400" />
+          </button>
+
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight truncate">
+              {title}
+            </h2>
+            {subtitle && (
+              <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate hidden xs:block">
+                {subtitle}
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {onRefresh && (
             <button
               onClick={onRefresh}
-              className="p-2.5 rounded-xl border border-slate-800 bg-slate-800/50 text-slate-300 hover:text-white hover:bg-slate-800 transition-all duration-200"
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-800 bg-slate-800/50 text-slate-300 hover:text-white hover:bg-slate-800 transition-all duration-200 cursor-pointer"
               title="Refresh Data"
             >
               <RefreshCw className="w-4 h-4" />
@@ -79,22 +100,22 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onRefresh }) =>
 
           <button
             onClick={() => setShowModal(true)}
-            className="p-2.5 rounded-xl border border-slate-800 bg-slate-800/50 text-slate-300 hover:text-white hover:bg-slate-800 transition-all duration-200 flex items-center gap-1.5 text-xs font-semibold"
+            className="p-2 sm:px-3 sm:py-2.5 rounded-xl border border-slate-800 bg-slate-800/50 text-slate-300 hover:text-white hover:bg-slate-800 transition-all duration-200 flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
             title="Change Password"
           >
             <KeyRound className="w-4 h-4 text-emerald-400" />
-            <span className="hidden sm:inline">Change Password</span>
+            <span className="hidden md:inline">Change Password</span>
           </button>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold">
-            <ShieldCheck className="w-4 h-4 text-purple-400" />
-            <span>SysAdmin Active</span>
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+            <span className="hidden md:inline">SysAdmin Active</span>
           </div>
 
-          <div className="h-8 w-px bg-slate-800 mx-1" />
+          <div className="h-6 w-px bg-slate-800 hidden sm:block mx-0.5" />
 
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center font-bold text-emerald-400 text-sm">
+          <div className="flex items-center">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center font-bold text-emerald-400 text-xs sm:text-sm shrink-0">
               {user?.full_name?.charAt(0) || 'A'}
             </div>
           </div>

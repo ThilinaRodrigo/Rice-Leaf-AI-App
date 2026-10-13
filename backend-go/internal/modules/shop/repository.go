@@ -391,52 +391,118 @@ func (r *adRepository) DeleteAd(ctx context.Context, id string, shopOwnerID stri
 }
 
 type productRepository struct {
-	db *sql.DB
+	db          *sql.DB
+	memProducts []Product
+	mu          sync.RWMutex
 }
 
 func NewProductRepository(db *sql.DB) ProductRepository {
-	return &productRepository{db: db}
+	repo := &productRepository{
+		db:          db,
+		memProducts: getInitialProducts(),
+	}
+
+	if db != nil {
+		rows, err := db.Query("SELECT id, name, category, price_cents, price_unit, image_url, stock, COALESCE(description, ''), is_active, created_at FROM products ORDER BY created_at DESC")
+		if err == nil {
+			defer rows.Close()
+			var dbProducts []Product
+			for rows.Next() {
+				var p Product
+				if err := rows.Scan(&p.ID, &p.Name, &p.Category, &p.PriceCents, &p.PriceUnit, &p.ImageURL, &p.Stock, &p.Description, &p.IsActive, &p.CreatedAt); err == nil {
+					dbProducts = append(dbProducts, p)
+				}
+			}
+			if len(dbProducts) > 0 {
+				repo.memProducts = dbProducts
+			}
+		}
+	}
+
+	return repo
 }
 
 func (r *productRepository) CreateProduct(ctx context.Context, p *Product) error {
-	if r.db == nil {
+	if p.ID == uuid.Nil {
 		p.ID = uuid.New()
-		return nil
 	}
-	query := `
-		INSERT INTO products (name, category, price_cents, price_unit, image_url, stock, description, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, created_at
-	`
-	return r.db.QueryRowContext(ctx, query, p.Name, p.Category, p.PriceCents, p.PriceUnit, p.ImageURL, p.Stock, p.Description, p.IsActive).
-		Scan(&p.ID, &p.CreatedAt)
+	if p.CreatedAt.IsZero() {
+		p.CreatedAt = time.Now()
+	}
+
+	if r.db != nil {
+		query := `
+			INSERT INTO products (id, name, category, price_cents, price_unit, image_url, stock, description, is_active, created_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			RETURNING id, created_at
+		`
+		err := r.db.QueryRowContext(ctx, query, p.ID, p.Name, p.Category, p.PriceCents, p.PriceUnit, p.ImageURL, p.Stock, p.Description, p.IsActive, p.CreatedAt).
+			Scan(&p.ID, &p.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("failed creating product: %w", err)
+		}
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.memProducts = append([]Product{*p}, r.memProducts...)
+	return nil
 }
 
 func (r *productRepository) UpdateProduct(ctx context.Context, p *Product) error {
-	if r.db == nil {
-		return nil
+	if r.db != nil {
+		query := `
+			UPDATE products
+			SET name = $1, category = $2, price_cents = $3, price_unit = $4, image_url = $5, stock = $6, description = $7, is_active = $8
+			WHERE id = $9
+		`
+		_, err := r.db.ExecContext(ctx, query, p.Name, p.Category, p.PriceCents, p.PriceUnit, p.ImageURL, p.Stock, p.Description, p.IsActive, p.ID)
+		if err != nil {
+			return fmt.Errorf("failed updating product: %w", err)
+		}
 	}
-	query := `
-		UPDATE products
-		SET name = $1, category = $2, price_cents = $3, price_unit = $4, image_url = $5, stock = $6, description = $7, is_active = $8
-		WHERE id = $9
-	`
-	_, err := r.db.ExecContext(ctx, query, p.Name, p.Category, p.PriceCents, p.PriceUnit, p.ImageURL, p.Stock, p.Description, p.IsActive, p.ID)
-	return err
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, existing := range r.memProducts {
+		if existing.ID == p.ID {
+			r.memProducts[i].Name = p.Name
+			r.memProducts[i].Category = p.Category
+			r.memProducts[i].PriceCents = p.PriceCents
+			r.memProducts[i].PriceUnit = p.PriceUnit
+			r.memProducts[i].ImageURL = p.ImageURL
+			r.memProducts[i].Stock = p.Stock
+			r.memProducts[i].Description = p.Description
+			r.memProducts[i].IsActive = p.IsActive
+			return nil
+		}
+	}
+	return nil
 }
 
 func (r *productRepository) DeleteProduct(ctx context.Context, id uuid.UUID) error {
-	if r.db == nil {
-		return nil
+	if r.db != nil {
+		_, err := r.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1", id)
+		if err != nil {
+			return fmt.Errorf("failed deleting product from database: %w", err)
+		}
 	}
-	_, err := r.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1", id)
-	return err
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var updated []Product
+	for _, p := range r.memProducts {
+		if p.ID == id {
+			continue
+		}
+		updated = append(updated, p)
+	}
+	r.memProducts = updated
+	return nil
 }
 
 func (r *productRepository) GetProducts(ctx context.Context, category, search string) ([]Product, error) {
-	if r.db == nil {
-		return getFallbackProducts(category, search), nil
-	}
+	if r.db != nil {
 
 	query := `
 		SELECT id, name, category, price_cents, price_unit, image_url, stock, COALESCE(description, ''), is_active, created_at
@@ -461,44 +527,60 @@ func (r *productRepository) GetProducts(ctx context.Context, category, search st
 	query += " ORDER BY created_at DESC"
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("error querying products: %w", err)
-	}
-	defer rows.Close()
-
-	var products []Product
-	for rows.Next() {
-		var p Product
-		if err := rows.Scan(&p.ID, &p.Name, &p.Category, &p.PriceCents, &p.PriceUnit, &p.ImageURL, &p.Stock, &p.Description, &p.IsActive, &p.CreatedAt); err != nil {
-			return nil, err
+	if err == nil {
+		defer rows.Close()
+		var products []Product
+		for rows.Next() {
+			var p Product
+			if err := rows.Scan(&p.ID, &p.Name, &p.Category, &p.PriceCents, &p.PriceUnit, &p.ImageURL, &p.Stock, &p.Description, &p.IsActive, &p.CreatedAt); err == nil {
+				products = append(products, p)
+			}
 		}
-		products = append(products, p)
+		return products, nil
+	}
 	}
 
-	return products, nil
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var filtered []Product
+	for _, p := range r.memProducts {
+		if !p.IsActive {
+			continue
+		}
+		if category != "" && category != "All" && p.Category != category {
+			continue
+		}
+		if search != "" && !strings.Contains(strings.ToLower(p.Name), strings.ToLower(search)) {
+			continue
+		}
+		filtered = append(filtered, p)
+	}
+	return filtered, nil
 }
 
 func (r *productRepository) GetByID(ctx context.Context, id uuid.UUID) (*Product, error) {
-	if r.db == nil {
-		products := getFallbackProducts("", "")
-		if len(products) > 0 {
-			return &products[0], nil
+	if r.db != nil {
+		query := `
+			SELECT id, name, category, price_cents, price_unit, image_url, stock, COALESCE(description, ''), is_active, created_at
+			FROM products
+			WHERE id = $1
+		`
+		p := &Product{}
+		err := r.db.QueryRowContext(ctx, query, id).
+			Scan(&p.ID, &p.Name, &p.Category, &p.PriceCents, &p.PriceUnit, &p.ImageURL, &p.Stock, &p.Description, &p.IsActive, &p.CreatedAt)
+		if err == nil {
+			return p, nil
 		}
-		return nil, fmt.Errorf("product not found")
 	}
 
-	query := `
-		SELECT id, name, category, price_cents, price_unit, image_url, stock, COALESCE(description, ''), is_active, created_at
-		FROM products
-		WHERE id = $1
-	`
-	p := &Product{}
-	err := r.db.QueryRowContext(ctx, query, id).
-		Scan(&p.ID, &p.Name, &p.Category, &p.PriceCents, &p.PriceUnit, &p.ImageURL, &p.Stock, &p.Description, &p.IsActive, &p.CreatedAt)
-	if err != nil {
-		return nil, err
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, p := range r.memProducts {
+		if p.ID == id {
+			return &p, nil
+		}
 	}
-	return p, nil
+	return nil, fmt.Errorf("product not found")
 }
 
 func getFallbackAds() []Ad {
@@ -537,8 +619,9 @@ func getFallbackAds() []Ad {
 	}
 }
 
-func getFallbackProducts(category, search string) []Product {
-	all := []Product{
+func getInitialProducts() []Product {
+	now := time.Now()
+	return []Product{
 		{
 			ID:          uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 			Name:        "High-Quality Rice Seeds",
@@ -549,6 +632,7 @@ func getFallbackProducts(category, search string) []Product {
 			Stock:       100,
 			Description: "Certified high yield Bg 352 and At 362 rice seeds for Yala and Maha seasons.",
 			IsActive:    true,
+			CreatedAt:   now.Add(-48 * time.Hour),
 		},
 		{
 			ID:          uuid.MustParse("22222222-2222-2222-2222-222222222222"),
@@ -560,12 +644,43 @@ func getFallbackProducts(category, search string) []Product {
 			Stock:       250,
 			Description: "100% natural compost and bio-fertilizer rich in nitrogen and organic carbon.",
 			IsActive:    true,
+			CreatedAt:   now.Add(-36 * time.Hour),
+		},
+		{
+			ID:          uuid.MustParse("33333333-3333-3333-3333-333333333333"),
+			Name:        "Sprayer Tool",
+			Category:    "Sprayers",
+			PriceCents:  220000,
+			PriceUnit:   "Rs.2,200",
+			ImageURL:    "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60",
+			Stock:       50,
+			Description: "16L knapsack manual pressure sprayer ideal for pesticide and foliar application.",
+			IsActive:    true,
+			CreatedAt:   now.Add(-24 * time.Hour),
+		},
+		{
+			ID:          uuid.MustParse("44444444-4444-4444-4444-444444444444"),
+			Name:        "Watering Can",
+			Category:    "Tools",
+			PriceCents:  75000,
+			PriceUnit:   "Rs.750",
+			ImageURL:    "https://images.unsplash.com/photo-1606312611231-1d6e0f51e3f1?auto=format&fit=crop&w=500&q=60",
+			Stock:       75,
+			Description: "Heavy-duty 10L ergonomic garden watering can for paddy nursery care.",
+			IsActive:    true,
+			CreatedAt:   now.Add(-12 * time.Hour),
 		},
 	}
+}
 
+func getFallbackProducts(category, search string) []Product {
+	all := getInitialProducts()
 	var filtered []Product
 	for _, p := range all {
 		if category != "" && category != "All" && p.Category != category {
+			continue
+		}
+		if search != "" && !strings.Contains(strings.ToLower(p.Name), strings.ToLower(search)) {
 			continue
 		}
 		filtered = append(filtered, p)
