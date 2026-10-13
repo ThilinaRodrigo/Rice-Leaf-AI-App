@@ -15,6 +15,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { fetchMarketProducts, fetchApprovedMarketplaceAds } from "@/service/apiClient";
 import { API_BASE_URL } from "@/constant/api";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
+import { MarketItemModal } from "@/components/MarketItemModal";
 
 const categories = [
   { key: "diseaseTagAll" as const, value: "All" },
@@ -32,6 +33,7 @@ const Market = () => {
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
   const [productError, setProductError] = useState<string | null>(null);
   const [shopAds, setShopAds] = useState<any[]>([]);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
   // Pagination state (6 products per page)
   const [page, setPage] = useState<number>(1);
@@ -235,59 +237,67 @@ const Market = () => {
                 return (
                   <View
                     key={ad.id}
-                    className="bg-white rounded-2xl shadow-sm border border-gray-200/80 mr-3.5 w-72 overflow-hidden"
+                    className="bg-white rounded-2xl shadow-sm border border-gray-200/80 mr-3.5 w-72 overflow-hidden flex-col justify-between"
                   >
-                    <Image
-                      source={{ uri: getImageUrl(ad.image_url) }}
-                      className="w-full h-36"
-                      resizeMode="cover"
-                    />
-                    <View className="p-4 space-y-2">
-                      <View className="flex-row items-center justify-between">
-                        <View className="flex-row items-center space-x-1.5">
-                          <Store size={14} color="#059669" />
-                          <Text className="text-xs font-bold text-emerald-800">
-                            {ad.shop_name}
-                          </Text>
+                    <TouchableOpacity
+                      activeOpacity={0.88}
+                      onPress={() => setSelectedItem(ad)}
+                      className="flex-1"
+                    >
+                      <Image
+                        source={{ uri: getImageUrl(ad.image_url) }}
+                        className="w-full h-36"
+                        resizeMode="cover"
+                      />
+                      <View className="p-4 pb-2 space-y-2">
+                        <View className="flex-row items-center justify-between">
+                          <View className="flex-row items-center space-x-1.5">
+                            <Store size={14} color="#059669" />
+                            <Text className="text-xs font-bold text-emerald-800">
+                              {ad.shop_name}
+                            </Text>
+                          </View>
+                          {ad.price_unit ? (
+                            <Text className="text-xs font-black text-gray-900">
+                              {ad.price_unit}
+                            </Text>
+                          ) : null}
                         </View>
-                        {ad.price_unit ? (
-                          <Text className="text-xs font-black text-gray-900">
-                            {ad.price_unit}
-                          </Text>
-                        ) : null}
+
+                        <Text
+                          className="text-sm font-bold text-gray-900"
+                          numberOfLines={1}
+                        >
+                          {ad.title}
+                        </Text>
+                        <Text
+                          className="text-xs text-gray-500 leading-relaxed"
+                          numberOfLines={2}
+                        >
+                          {ad.description}
+                        </Text>
+
+                        {tags.length > 0 && (
+                          <View className="flex-row flex-wrap gap-1 pt-1">
+                            {tags.slice(0, 2).map((tg, idx) => (
+                              <View
+                                key={idx}
+                                className="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg"
+                              >
+                                <Text className="text-[10px] text-emerald-800 font-bold">
+                                  {tg.replace(/_/g, " ")}
+                                </Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
                       </View>
+                    </TouchableOpacity>
 
-                      <Text
-                        className="text-sm font-bold text-gray-900"
-                        numberOfLines={1}
-                      >
-                        {ad.title}
-                      </Text>
-                      <Text
-                        className="text-xs text-gray-500 leading-relaxed"
-                        numberOfLines={2}
-                      >
-                        {ad.description}
-                      </Text>
-
-                      {tags.length > 0 && (
-                        <View className="flex-row flex-wrap gap-1 pt-1">
-                          {tags.slice(0, 2).map((tg, idx) => (
-                            <View
-                              key={idx}
-                              className="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg"
-                            >
-                              <Text className="text-[10px] text-emerald-800 font-bold">
-                                {tg.replace(/_/g, " ")}
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
-                      )}
-
+                    <View className="px-4 pb-4 pt-1">
                       <TouchableOpacity
                         onPress={() => handleCallShop(ad.contact_phone)}
-                        className="bg-emerald-800 py-2.5 rounded-xl flex-row items-center justify-center space-x-1.5 mt-2 active:opacity-90 shadow-sm"
+                        className="bg-emerald-800 py-2.5 rounded-xl flex-row items-center justify-center space-x-1.5 active:opacity-90 shadow-sm"
                       >
                         <Phone size={14} color="#FFFFFF" />
                         <Text className="text-white text-xs font-bold ml-1.5">
@@ -350,32 +360,47 @@ const Market = () => {
                 return (
                   <View
                     key={item.id}
-                    className="bg-white rounded-2xl border border-gray-200/80 shadow-sm mb-4 w-[48%] overflow-hidden"
+                    className="bg-white rounded-2xl border border-gray-200/80 shadow-sm mb-4 w-[48%] overflow-hidden flex-col justify-between"
                   >
-                    <Image
-                      source={{ uri: getImageUrl(item.image || item.image_url) }}
-                      className="w-full h-36"
-                      resizeMode="cover"
-                    />
+                    <TouchableOpacity
+                      activeOpacity={0.88}
+                      onPress={() => setSelectedItem(item)}
+                      className="flex-1"
+                    >
+                      <Image
+                        source={{ uri: getImageUrl(item.image || item.image_url) }}
+                        className="w-full h-36"
+                        resizeMode="cover"
+                      />
 
-                    <View className="p-3.5">
-                      {/* Category badge */}
-                      <View className="bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg mb-2 self-start">
-                        <Text className="text-[10px] font-bold text-emerald-800">
-                          {displayCategory}
+                      <View className="p-3.5 pb-2">
+                        {/* Category badge */}
+                        <View className="bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg mb-2 self-start">
+                          <Text className="text-[10px] font-bold text-emerald-800">
+                            {displayCategory}
+                          </Text>
+                        </View>
+
+                        <Text
+                          className="text-sm font-bold text-gray-900 mb-1"
+                          numberOfLines={1}
+                        >
+                          {displayTitle}
+                        </Text>
+                        <Text className="text-xs font-black text-emerald-800">
+                          {item.price || item.price_unit}
                         </Text>
                       </View>
+                    </TouchableOpacity>
 
-                      <Text
-                        className="text-sm font-bold text-gray-900 mb-1"
-                        numberOfLines={1}
+                    <View className="px-3.5 pb-3.5 pt-1">
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          // Reserved for future checkout/cart functionality
+                        }}
+                        className="bg-emerald-800 py-2.5 rounded-xl items-center active:opacity-90 shadow-sm"
                       >
-                        {displayTitle}
-                      </Text>
-                      <Text className="text-xs font-black text-emerald-800 mb-3">
-                        {item.price || item.price_unit}
-                      </Text>
-                      <TouchableOpacity className="bg-emerald-800 py-2.5 rounded-xl items-center active:opacity-90 shadow-sm">
                         <Text className="text-white text-xs font-bold">
                           {t("buyNow")}
                         </Text>
@@ -441,6 +466,11 @@ const Market = () => {
           )}
         </View>
       </ScrollView>
+      <MarketItemModal
+        visible={!!selectedItem}
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
       <FloatingChatButton />
     </View>
   );
