@@ -3,7 +3,7 @@ import { fetchAdminStats, fetchAdminScans } from '../api/adminApi';
 import type { AdminStats, AdminScan } from '../types/admin';
 import { StatCard } from '../components/StatCard';
 import { Header } from '../components/Header';
-import { Users, Store, ScanLine, ShoppingBag, Activity, AlertCircle, RefreshCw } from 'lucide-react';
+import { Users, Store, ScanLine, ShoppingBag, Activity, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -69,21 +69,28 @@ export const Dashboard: React.FC = () => {
       />
 
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
-        {error && (
-          <div className="glass-panel p-4 rounded-2xl border border-red-500/30 bg-red-500/5 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
-              <p className="text-xs text-red-300 font-semibold">{error}</p>
-            </div>
-            <button
-              onClick={loadDashboardData}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Retry</span>
-            </button>
+        {loading ? (
+          <div className="p-16 text-center text-slate-400 space-y-3">
+            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto" />
+            <p className="text-sm font-semibold">Loading real-time agri-network analytics...</p>
           </div>
-        )}
+        ) : (
+          <>
+            {error && (
+              <div className="glass-panel p-4 rounded-2xl border border-red-500/30 bg-red-500/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+                  <p className="text-xs text-red-300 font-semibold">{error}</p>
+                </div>
+                <button
+                  onClick={loadDashboardData}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Retry</span>
+                </button>
+              </div>
+            )}
 
         {/* KPI Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -230,6 +237,8 @@ export const Dashboard: React.FC = () => {
             </table>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
