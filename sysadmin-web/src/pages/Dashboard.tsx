@@ -3,7 +3,7 @@ import { fetchAdminStats, fetchAdminScans } from '../api/adminApi';
 import type { AdminStats, AdminScan } from '../types/admin';
 import { StatCard } from '../components/StatCard';
 import { Header } from '../components/Header';
-import { Users, Store, ScanLine, ShoppingBag, Activity } from 'lucide-react';
+import { Users, Store, ScanLine, ShoppingBag, Activity, AlertCircle, RefreshCw } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -19,17 +19,28 @@ import {
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [recentScans, setRecentScans] = useState<AdminScan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadDashboardData = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const [statsData, scansData] = await Promise.all([
         fetchAdminStats(),
         fetchAdminScans(),
       ]);
       setStats(statsData);
-      setRecentScans(scansData.slice(0, 5));
-    } catch (err) {
+      setRecentScans(Array.isArray(scansData) ? scansData.slice(0, 5) : []);
+    } catch (err: any) {
       console.error('Error loading admin dashboard data:', err);
+      setError(
+        err.response?.data?.error ||
+          err.message ||
+          'Unable to connect to backend server. Could not load dashboard analytics.'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,18 +48,15 @@ export const Dashboard: React.FC = () => {
     loadDashboardData();
   }, []);
 
-  const chartData = stats?.disease_breakdown
-    ? Object.entries(stats.disease_breakdown).map(([key, count]) => ({
-        name: key,
-        scans: count,
-      }))
-    : [
-        { name: 'BLB', scans: 45 },
-        { name: 'Brown Spot', scans: 32 },
-        { name: 'Healthy', scans: 88 },
-        { name: 'Leaf Scald', scans: 19 },
-        { name: 'Narrow Brown', scans: 12 },
-      ];
+  const chartData =
+    stats?.disease_breakdown && Object.keys(stats.disease_breakdown).length > 0
+      ? Object.entries(stats.disease_breakdown).map(([key, count]) => ({
+          name: key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (l) => l.toUpperCase()),
+          scans: count,
+        }))
+      : [];
 
   const PIE_COLORS = ['#ef4444', '#f97316', '#22c55e', '#a855f7', '#3b82f6'];
 
@@ -60,9 +68,25 @@ export const Dashboard: React.FC = () => {
         onRefresh={loadDashboardData}
       />
 
-      <div className="p-8 space-y-8">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+        {error && (
+          <div className="glass-panel p-4 rounded-2xl border border-red-500/30 bg-red-500/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+              <p className="text-xs text-red-300 font-semibold">{error}</p>
+            </div>
+            <button
+              onClick={loadDashboardData}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
         {/* KPI Stat Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <StatCard
             title="Registered Farmers"
             value={stats?.total_farmers ?? 0}
@@ -108,17 +132,24 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} />
-                  <YAxis stroke="#64748b" fontSize={12} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '12px' }}
-                    labelStyle={{ color: '#fff', fontWeight: 'bold' }}
-                  />
-                  <Bar dataKey="scans" fill="#10b981" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} />
+                    <YAxis stroke="#64748b" fontSize={12} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '12px' }}
+                      labelStyle={{ color: '#fff', fontWeight: 'bold' }}
+                    />
+                    <Bar dataKey="scans" fill="#10b981" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs">
+                  <ScanLine className="w-8 h-8 text-slate-600 mb-2" />
+                  <span>No disease diagnostic scan history recorded yet.</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -128,26 +159,33 @@ export const Dashboard: React.FC = () => {
             <p className="text-xs text-slate-400 mb-4">Proportion of diagnosed diseases</p>
 
             <div className="h-60 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="scans"
-                  >
-                    {chartData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '12px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="scans"
+                    >
+                      {chartData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '12px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs">
+                  <Activity className="w-8 h-8 text-slate-600 mb-2" />
+                  <span>No outbreak distribution data available yet.</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

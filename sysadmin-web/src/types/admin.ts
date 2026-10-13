@@ -43,7 +43,9 @@ export interface Product {
   category: string;
   price_cents: number;
   price_unit: string;
+  price?: string;
   image_url: string;
+  image?: string;
   stock: number;
   description?: string;
   is_active: boolean;

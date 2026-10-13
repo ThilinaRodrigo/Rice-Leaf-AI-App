@@ -66,7 +66,7 @@ func main() {
 	scanHandler := scan.NewHandler(scanService, cfg)
 	productHandler := shop.NewProductHandler(productService)
 	chatHandler := chat.NewHandler(chatService)
-	adminHandler := admin.NewHandler(adminService, authService, productRepo)
+	adminHandler := admin.NewHandler(adminService, authService, productRepo, cfg)
 	adHandler := shop.NewAdHandler(adService, cfg)
 	postHandler := community.NewHandler(postService, cfg)
 

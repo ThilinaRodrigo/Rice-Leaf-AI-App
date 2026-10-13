@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   Linking,
+  ActivityIndicator,
 } from "react-native";
-import { ArrowLeft, Search, X, Store, Phone, ShieldCheck, ChevronLeft, ChevronRight, Sparkles } from "lucide-react-native";
+import { ArrowLeft, Search, X, Store, Phone, ShieldCheck, ChevronLeft, ChevronRight, Sparkles, AlertCircle, RefreshCw } from "lucide-react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useLanguage } from "@/context/LanguageContext";
 import { fetchMarketProducts, fetchApprovedMarketplaceAds } from "@/service/apiClient";
@@ -23,92 +24,43 @@ const categories = [
   { key: "catSprayers" as const, value: "Sprayers" },
 ];
 
-const allProducts = [
-  {
-    id: 1,
-    name: "High-Quality Rice Seeds",
-    sinhalaName: "උසස් තත්ත්වයේ වී බීජ",
-    price: "Rs.450 / kg",
-    category: "Seeds",
-    categoryKey: "catSeeds" as const,
-    image:
-      "https://images.unsplash.com/photo-1607703700242-7a37b2fbb5bc?auto=format&fit=crop&w=500&q=60",
-  },
-  {
-    id: 2,
-    name: "Organic Fertilizer",
-    sinhalaName: "කාබනික පොහොර",
-    price: "Rs.120 / kg",
-    category: "Fertilizers",
-    categoryKey: "catFertilizers" as const,
-    image:
-      "https://images.unsplash.com/photo-1587316745629-1a81c7b54e9b?auto=format&fit=crop&w=500&q=60",
-  },
-  {
-    id: 3,
-    name: "Sprayer Tool",
-    sinhalaName: "ස්ප්‍රේ යන්ත්‍රය",
-    price: "Rs.2,200",
-    category: "Sprayers",
-    categoryKey: "catSprayers" as const,
-    image:
-      "https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60",
-  },
-  {
-    id: 4,
-    name: "Watering Can",
-    sinhalaName: "වතුර මල (Watering Can)",
-    price: "Rs.750",
-    category: "Tools",
-    categoryKey: "catTools" as const,
-    image:
-      "https://images.unsplash.com/photo-1606312611231-1d6e0f51e3f1?auto=format&fit=crop&w=500&q=60",
-  },
-];
-
 const Market = () => {
   const { language, t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [search, setSearch] = useState("");
-  const [products, setProducts] = useState<any[]>(allProducts);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
+  const [productError, setProductError] = useState<string | null>(null);
   const [shopAds, setShopAds] = useState<any[]>([]);
 
   // Pagination state (6 products per page)
   const [page, setPage] = useState<number>(1);
   const pageSize = 6;
 
-  useEffect(() => {
+  const loadProducts = () => {
     setPage(1);
+    setLoadingProducts(true);
+    setProductError(null);
     fetchMarketProducts(selectedCategory, search)
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setProducts(data);
         } else {
-          setProducts(
-            allProducts.filter((p) => {
-              const matchesCat =
-                selectedCategory === "All" || p.category === selectedCategory;
-              const matchesSrch =
-                p.name.toLowerCase().includes(search.toLowerCase()) ||
-                p.sinhalaName.toLowerCase().includes(search.toLowerCase());
-              return matchesCat && matchesSrch;
-            })
-          );
+          setProducts([]);
         }
       })
       .catch((err) => {
-        console.log("Using fallback product data:", err);
-        setProducts(
-          allProducts.filter((p) => {
-            const matchesCat =
-              selectedCategory === "All" || p.category === selectedCategory;
-            const matchesSrch =
-              p.name.toLowerCase().includes(search.toLowerCase()) ||
-              p.sinhalaName.toLowerCase().includes(search.toLowerCase());
-            return matchesCat && matchesSrch;
-          })
-        );
+        console.error("Error fetching market products from backend:", err);
+        setProductError("Unable to load marketplace products. Please check server connection.");
+        setProducts([]);
+      })
+      .finally(() => {
+        setLoadingProducts(false);
       });
+  };
+
+  useEffect(() => {
+    loadProducts();
   }, [selectedCategory, search]);
 
   useFocusEffect(
@@ -364,7 +316,28 @@ const Market = () => {
           </View>
 
           <View className="flex-row flex-wrap justify-between">
-            {paginatedProducts.length > 0 ? (
+            {loadingProducts ? (
+              <View className="w-full items-center py-12 bg-white rounded-2xl border border-gray-200/80">
+                <ActivityIndicator size="large" color="#059669" />
+                <Text className="text-gray-500 font-bold text-xs mt-3">
+                  Loading products from marketplace...
+                </Text>
+              </View>
+            ) : productError ? (
+              <View className="w-full items-center py-8 px-4 bg-white rounded-2xl border border-red-200">
+                <AlertCircle size={32} color="#EF4444" />
+                <Text className="text-gray-800 font-bold text-sm text-center mt-2 mb-1">
+                  {productError}
+                </Text>
+                <TouchableOpacity
+                  onPress={loadProducts}
+                  className="flex-row items-center bg-emerald-800 px-4 py-2 rounded-xl mt-3 active:opacity-90"
+                >
+                  <RefreshCw size={14} color="#FFFFFF" />
+                  <Text className="text-white text-xs font-bold ml-1.5">Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : paginatedProducts.length > 0 ? (
               paginatedProducts.map((item) => {
                 const displayTitle =
                   language === "si" && item.sinhalaName
@@ -380,7 +353,7 @@ const Market = () => {
                     className="bg-white rounded-2xl border border-gray-200/80 shadow-sm mb-4 w-[48%] overflow-hidden"
                   >
                     <Image
-                      source={{ uri: item.image }}
+                      source={{ uri: getImageUrl(item.image || item.image_url) }}
                       className="w-full h-36"
                       resizeMode="cover"
                     />
@@ -400,7 +373,7 @@ const Market = () => {
                         {displayTitle}
                       </Text>
                       <Text className="text-xs font-black text-emerald-800 mb-3">
-                        {item.price}
+                        {item.price || item.price_unit}
                       </Text>
                       <TouchableOpacity className="bg-emerald-800 py-2.5 rounded-xl items-center active:opacity-90 shadow-sm">
                         <Text className="text-white text-xs font-bold">

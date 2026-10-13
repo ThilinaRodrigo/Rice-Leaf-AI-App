@@ -18,70 +18,8 @@ import {
   List,
   ShieldAlert,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
-
-const FALLBACK_SCANS: AdminScan[] = [
-  {
-    id: 'a1111111-1111-1111-1111-111111111111',
-    user_name: 'Sunil Perera (Polonnaruwa)',
-    user_role: 'farmer',
-    image_url: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=500&q=60',
-    class_id: 0,
-    label: 'Bacterial Leaf Blight',
-    confidence: 0.965,
-    created_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-  },
-  {
-    id: 'a2222222-2222-2222-2222-222222222222',
-    user_name: 'Kamal Silva (Kurunegala)',
-    user_role: 'farmer',
-    image_url: 'https://images.unsplash.com/photo-1607703700242-7a37b2fbb5bc?auto=format&fit=crop&w=500&q=60',
-    class_id: 1,
-    label: 'Brown Spot',
-    confidence: 0.912,
-    created_at: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
-  },
-  {
-    id: 'a3333333-3333-3333-3333-333333333333',
-    user_name: 'Nimal Jayasinghe (Ampara)',
-    user_role: 'farmer',
-    image_url: 'https://images.unsplash.com/photo-1587316745629-1a81c7b54e9b?auto=format&fit=crop&w=500&q=60',
-    class_id: 2,
-    label: 'Healthy Leaf',
-    confidence: 0.991,
-    created_at: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
-  },
-  {
-    id: 'a4444444-4444-4444-4444-444444444444',
-    user_name: 'Guest Farmer (Anuradhapura)',
-    user_role: 'guest',
-    image_url: 'https://images.unsplash.com/photo-1594381256940-7bcf6eb0f6b0?auto=format&fit=crop&w=500&q=60',
-    class_id: 3,
-    label: 'Leaf Scald',
-    confidence: 0.884,
-    created_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-  },
-  {
-    id: 'a5555555-5555-5555-5555-555555555555',
-    user_name: 'Bandara Rathnayake (Badulla)',
-    user_role: 'farmer',
-    image_url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=500&q=60',
-    class_id: 4,
-    label: 'Narrow Brown Spot',
-    confidence: 0.941,
-    created_at: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
-  },
-  {
-    id: 'a6666666-6666-6666-6666-666666666666',
-    user_name: 'Ruwan Samarasinghe (Hambantota)',
-    user_role: 'farmer',
-    image_url: 'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&w=500&q=60',
-    class_id: 0,
-    label: 'Bacterial Leaf Blight',
-    confidence: 0.742,
-    created_at: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
-  },
-];
 
 export const ScansManager: React.FC = () => {
   const [scans, setScans] = useState<AdminScan[]>([]);
@@ -91,19 +29,22 @@ export const ScansManager: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedScan, setSelectedScan] = useState<AdminScan | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadScans = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await fetchAdminScans();
-      if (Array.isArray(data) && data.length > 0) {
-        setScans(data);
-      } else {
-        setScans(FALLBACK_SCANS);
-      }
-    } catch (err) {
+      setScans(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('Error fetching admin scans:', err);
-      setScans(FALLBACK_SCANS);
+      setError(
+        err.response?.data?.error ||
+          err.message ||
+          'Unable to connect to backend server. Could not load scans.'
+      );
+      setScans([]);
     } finally {
       setLoading(false);
     }
@@ -113,7 +54,7 @@ export const ScansManager: React.FC = () => {
     loadScans();
   }, []);
 
-  const safeScans = Array.isArray(scans) && scans.length > 0 ? scans : FALLBACK_SCANS;
+  const safeScans = Array.isArray(scans) ? scans : [];
 
   const filteredScans = safeScans.filter((s) => {
     if (!s) return false;
@@ -213,7 +154,7 @@ export const ScansManager: React.FC = () => {
         onRefresh={loadScans}
       />
 
-      <div className="p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
         {/* KPI Analytics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center gap-4">
@@ -366,6 +307,19 @@ export const ScansManager: React.FC = () => {
             <Activity className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
             <p className="text-sm font-semibold">Loading diagnostic scans audit log...</p>
           </div>
+        ) : error ? (
+          <div className="glass-panel p-12 rounded-3xl border border-red-500/30 bg-red-500/5 text-center space-y-4">
+            <ShieldAlert className="w-12 h-12 text-red-400 mx-auto" />
+            <h4 className="text-white font-bold text-base">Failed to Load Diagnostic Scans</h4>
+            <p className="text-xs text-red-300 max-w-sm mx-auto">{error}</p>
+            <button
+              onClick={loadScans}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry Loading Scans</span>
+            </button>
+          </div>
         ) : filteredScans.length === 0 ? (
           <div className="glass-panel p-12 rounded-3xl border border-slate-800 text-center space-y-3">
             <ScanLine className="w-12 h-12 text-slate-600 mx-auto" />
@@ -467,7 +421,7 @@ export const ScansManager: React.FC = () => {
           /* Table View */
           <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-300">
+              <table className="w-full text-left text-sm text-slate-300 min-w-[650px]">
                 <thead className="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 font-bold border-b border-slate-800">
                   <tr>
                     <th className="px-5 py-4">Leaf Image</th>

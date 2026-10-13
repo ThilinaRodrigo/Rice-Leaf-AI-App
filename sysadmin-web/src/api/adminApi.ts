@@ -86,6 +86,23 @@ export const updateProduct = async (id: string, product: Partial<Product>): Prom
   return res.data;
 };
 
+export const uploadProductImage = async (
+  file: File
+): Promise<{ image_url: string; full_url?: string; filename?: string }> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const res = await apiClient.post<{ image_url: string; full_url?: string; filename?: string }>(
+    '/admin/products/upload',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return res.data;
+};
+
 export const deleteProduct = async (id: string): Promise<void> => {
   await apiClient.delete(`/admin/products/${id}`);
 };
