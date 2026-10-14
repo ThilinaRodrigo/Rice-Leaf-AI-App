@@ -288,24 +288,31 @@ export default function Community() {
         scrollEventThrottle={16}
       >
         {/* Category Filter Pills */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 -mx-5 px-5">
-          {DISEASE_TAGS.map((tag) => {
-            const isSelected = selectedTag === tag.value;
-            return (
-              <TouchableOpacity
-                key={tag.value}
-                onPress={() => setSelectedTag(tag.value)}
-                className={`mr-2.5 px-4 py-2.5 rounded-2xl border flex-row items-center shadow-sm active:opacity-80 ${
-                  isSelected ? "bg-emerald-800 border-emerald-800" : "bg-white border-gray-200/80"
-                }`}
-              >
-                <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-gray-700"}`}>
-                  {t(tag.labelKey)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        <View className="mb-4">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ alignItems: "center" }}
+            className="-mx-5 px-5"
+          >
+            {DISEASE_TAGS.map((tag) => {
+              const isSelected = selectedTag === tag.value;
+              return (
+                <TouchableOpacity
+                  key={tag.value}
+                  onPress={() => setSelectedTag(tag.value)}
+                  className={`mr-2.5 px-4 py-2.5 rounded-2xl border flex-row items-center shadow-sm active:opacity-80 ${
+                    isSelected ? "bg-emerald-800 border-emerald-800" : "bg-white border-gray-200/80"
+                  }`}
+                >
+                  <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-gray-700"}`}>
+                    {t(tag.labelKey)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         {/* Create Post Prompt Banner */}
         <TouchableOpacity

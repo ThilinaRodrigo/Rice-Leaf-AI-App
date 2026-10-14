@@ -131,7 +131,8 @@ const Market = () => {
       </View>
 
       <ScrollView
-        className="flex-1 px-5 mt-5 space-y-6 mb-32"
+        className="flex-1 px-5 mt-5 space-y-6"
+        contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Search Bar */}
@@ -184,34 +185,37 @@ const Market = () => {
         </TouchableOpacity>
 
         {/* Category Filter Pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mb-5 -mx-5 px-5"
-        >
-          {categories.map((catItem) => {
-            const isSelected = selectedCategory === catItem.value;
-            return (
-              <TouchableOpacity
-                key={catItem.value}
-                onPress={() => setSelectedCategory(catItem.value)}
-                className={`mr-2.5 px-4 py-2.5 rounded-2xl border flex-row items-center shadow-sm active:opacity-80 ${
-                  isSelected
-                    ? "bg-emerald-800 border-emerald-800"
-                    : "bg-white border-gray-200/80"
-                }`}
-              >
-                <Text
-                  className={`text-xs font-bold ${
-                    isSelected ? "text-white" : "text-gray-700"
+        <View className="mb-5">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ alignItems: "center" }}
+            className="-mx-5 px-5"
+          >
+            {categories.map((catItem) => {
+              const isSelected = selectedCategory === catItem.value;
+              return (
+                <TouchableOpacity
+                  key={catItem.value}
+                  onPress={() => setSelectedCategory(catItem.value)}
+                  className={`mr-2.5 px-4 py-2.5 rounded-2xl border flex-row items-center shadow-sm active:opacity-80 ${
+                    isSelected
+                      ? "bg-emerald-800 border-emerald-800"
+                      : "bg-white border-gray-200/80"
                   }`}
                 >
-                  {t(catItem.key)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                  <Text
+                    className={`text-xs font-bold ${
+                      isSelected ? "text-white" : "text-gray-700"
+                    }`}
+                  >
+                    {t(catItem.key)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         {/* Featured Verified Shop Owner Ads Carousel */}
         {shopAds.length > 0 && (
@@ -242,7 +246,6 @@ const Market = () => {
                     <TouchableOpacity
                       activeOpacity={0.88}
                       onPress={() => setSelectedItem(ad)}
-                      className="flex-1"
                     >
                       <Image
                         source={{ uri: getImageUrl(ad.image_url) }}
