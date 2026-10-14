@@ -4,6 +4,7 @@ import type { ShopAd } from '../types/admin';
 import { Header } from '../components/Header';
 import { showConfirmDialog, showSuccessToast, showErrorAlert, customSwal } from '../utils/swal';
 import { Search, CheckCircle, XCircle, Store, Phone, Tag, Clock, AlertTriangle, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { getFullMediaUrl } from '../utils/media';
 
 export const AdsManager: React.FC = () => {
   const [ads, setAds] = useState<ShopAd[]>([]);
@@ -241,11 +242,7 @@ export const AdsManager: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAds.map((ad) => {
               const tags = parseTags(ad.disease_tags);
-              const apiEnv = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-              const serverDomain = apiEnv.replace(/\/api\/v1\/?$/, '');
-              const fullImageUrl = ad.image_url?.startsWith('/uploads')
-                ? `${serverDomain}${ad.image_url}`
-                : ad.image_url;
+              const fullImageUrl = getFullMediaUrl(ad.image_url);
 
               return (
                 <div

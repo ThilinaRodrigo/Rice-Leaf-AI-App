@@ -201,12 +201,12 @@ jobs:
               COMPOSE_CMD="docker compose"
             fi
 
-            mkdir -p ~/app
+            mkdir -p ~/app/uploads
             cd ~/app
 
             # Pre-deployment disk cleanup to prevent "no space left on device"
             echo "Performing pre-deployment disk & Docker cleanup..."
-            docker system prune -af --volumes || true
+            docker system prune -af || true
             sudo journalctl --vacuum-size=50M || true
 
             echo "Fetching docker-compose.prod.yml for commit ${{ github.sha }}..."
