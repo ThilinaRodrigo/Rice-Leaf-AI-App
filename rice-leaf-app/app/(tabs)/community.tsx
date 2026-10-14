@@ -288,32 +288,47 @@ export default function Community() {
         scrollEventThrottle={16}
       >
         {/* Category Filter Pills */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 -mx-5 px-5">
-          {DISEASE_TAGS.map((tag) => {
-            const isSelected = selectedTag === tag.value;
-            return (
-              <TouchableOpacity
-                key={tag.value}
-                onPress={() => setSelectedTag(tag.value)}
-                className={`mr-2.5 px-4 py-2.5 rounded-2xl border flex-row items-center shadow-sm active:opacity-80 ${
-                  isSelected ? "bg-emerald-800 border-emerald-800" : "bg-white border-gray-200/80"
-                }`}
-              >
-                <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-gray-700"}`}>
-                  {t(tag.labelKey)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        <View className="mb-4">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ alignItems: "center" }}
+            className="-mx-5 px-5"
+          >
+            {DISEASE_TAGS.map((tag) => {
+              const isSelected = selectedTag === tag.value;
+              return (
+                <TouchableOpacity
+                  key={tag.value}
+                  onPress={() => setSelectedTag(tag.value)}
+                  className={`mr-2.5 px-4 py-2.5 rounded-2xl border flex-row items-center shadow-sm active:opacity-80 ${
+                    isSelected ? "bg-emerald-800 border-emerald-800" : "bg-white border-gray-200/80"
+                  }`}
+                >
+                  <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-gray-700"}`}>
+                    {t(tag.labelKey)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         {/* Create Post Prompt Banner */}
         <TouchableOpacity
           onPress={() => router.push("/create-post" as any)}
           className="bg-white border border-emerald-200 rounded-2xl p-4 flex-row items-center space-x-3 shadow-sm active:opacity-80 mb-4"
         >
-          <View className="w-10 h-10 rounded-xl bg-emerald-50 items-center justify-center">
-            <Plus size={20} color="#059669" />
+          <View className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 items-center justify-center overflow-hidden">
+            {user?.avatar_url ? (
+              <Image
+                source={{ uri: getFullImageUrl(user.avatar_url)! }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+            ) : (
+              <Plus size={20} color="#059669" />
+            )}
           </View>
           <View className="flex-1">
             <Text className="text-gray-900 font-bold text-sm">{t("haveDiseaseSolution")}</Text>
@@ -333,7 +348,9 @@ export default function Community() {
               const isOwner = user && user.id === post.user_id;
               const isAdmin = user && user.role === "sys_admin";
               const imageUrl = getFullImageUrl(post.image_url);
-              const authorAvatarUrl = getFullImageUrl(post.author_avatar_url || post.avatar_url);
+              const authorAvatarUrl = getFullImageUrl(
+                post.author_avatar || post.author_avatar_url || post.avatar_url || (isOwner ? user?.avatar_url : undefined)
+              );
 
               return (
                 <View
@@ -522,17 +539,29 @@ export default function Community() {
                 comments.map((c) => {
                   const isCommentOwner = user && user.id === c.user_id;
                   const isAdmin = user && user.role === "sys_admin";
+                  const commentAvatarUrl = getFullImageUrl(
+                    c.author_avatar || c.author_avatar_url || c.avatar_url || (isCommentOwner ? user?.avatar_url : undefined)
+                  );
                   return (
                     <View key={c.id} className="bg-slate-50 border border-gray-200/60 rounded-xl p-3 mb-2.5">
-                      <View className="flex-row items-center justify-between mb-1">
-                        <Text className="text-xs font-bold text-gray-900">{c.author_name}</Text>
+                      <View className="flex-row items-center justify-between mb-1.5">
+                        <View className="flex-row items-center space-x-2 flex-1">
+                          <View className="w-6 h-6 rounded-full bg-emerald-100 border border-emerald-300 items-center justify-center overflow-hidden">
+                            {commentAvatarUrl ? (
+                              <Image source={{ uri: commentAvatarUrl }} className="w-full h-full" resizeMode="cover" />
+                            ) : (
+                              <UserIcon size={12} color="#059669" />
+                            )}
+                          </View>
+                          <Text className="text-xs font-bold text-gray-900">{c.author_name}</Text>
+                        </View>
                         {(isCommentOwner || isAdmin) && (
                           <TouchableOpacity onPress={() => handleDeleteComment(c.id)}>
                             <Trash2 size={14} color="#EF4444" />
                           </TouchableOpacity>
                         )}
                       </View>
-                      <Text className="text-xs text-gray-700 leading-relaxed">{c.comment}</Text>
+                      <Text className="text-xs text-gray-700 leading-relaxed ml-8">{c.comment}</Text>
                     </View>
                   );
                 })
