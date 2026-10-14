@@ -62,6 +62,7 @@ export const si: Record<TranslationKeys, string> = {
 
   // Create Community Post
   createPostHeader: "ප්‍රජා සටහනක් එක් කරන්න",
+  postingAs: "පළ කරන්නේ",
   postTitle: "සටහනේ මාතෘකාව",
   postTitlePlaceholder: "උදා: කොළ පාළු රෝගයට සාර්ථක ප්‍රතිකාරයක්",
   diseaseCategory: "රෝග වර්ගයේ ටැගය",

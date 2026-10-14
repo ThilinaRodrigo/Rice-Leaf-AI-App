@@ -60,6 +60,7 @@ export const en = {
 
   // Create Community Post
   createPostHeader: "Create Community Post",
+  postingAs: "Posting as",
   postTitle: "Post Title",
   postTitlePlaceholder: "e.g., Effective remedy for Bacterial Leaf Blight",
   diseaseCategory: "Disease Category Tag",

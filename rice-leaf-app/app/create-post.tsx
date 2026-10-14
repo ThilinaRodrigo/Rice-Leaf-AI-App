@@ -13,12 +13,13 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Camera, Image as ImageIcon, X, PlusCircle } from "lucide-react-native";
+import { ArrowLeft, Camera, Image as ImageIcon, X, PlusCircle, User as UserIcon } from "lucide-react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { uploadPostImage, createCommunityPost } from "@/service/apiClient";
+import { API_BASE_URL } from "@/constant/api";
 
 const DISEASE_OPTIONS = [
   { labelKey: "diseaseTagBlight" as const, value: "bacterial_leaf_blight" },
@@ -32,6 +33,12 @@ const DISEASE_OPTIONS = [
 export default function CreatePost() {
   const { user, token } = useAuth();
   const { t } = useLanguage();
+
+  const userAvatarUrl = user?.avatar_url
+    ? user.avatar_url.startsWith("/uploads")
+      ? `${API_BASE_URL.replace("/api/v1", "")}${user.avatar_url}`
+      : user.avatar_url
+    : null;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -151,6 +158,34 @@ export default function CreatePost() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
+          {/* ── Author Profile Card ── */}
+          <View style={styles.authorCard}>
+            <View style={styles.authorAvatarWrapper}>
+              {userAvatarUrl ? (
+                <Image source={{ uri: userAvatarUrl }} style={styles.authorAvatar} resizeMode="cover" />
+              ) : (
+                <UserIcon size={20} color="#059669" />
+              )}
+            </View>
+            <View style={styles.authorInfo}>
+              <View style={styles.authorNameRow}>
+                <Text style={styles.authorName}>{user?.full_name || "Community Member"}</Text>
+                <View style={styles.roleTag}>
+                  <Text style={styles.roleTagText}>
+                    {user?.role === "shop_owner"
+                      ? t("roleShopOwner")
+                      : user?.role === "sys_admin"
+                      ? t("sysAdminRole")
+                      : t("roleFarmer")}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.authorSubtext}>
+                {t("postingAs")} • {user?.phone || user?.email || "Farmer Community"}
+              </Text>
+            </View>
+          </View>
+
           {/* ── Post Title ── */}
           <Text style={styles.fieldLabel}>{t("postTitle")} *</Text>
           <TextInput
@@ -453,5 +488,69 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "900",
     fontSize: 14,
+  },
+  // Author Card
+  authorCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  authorAvatarWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#D1FAE5",
+    borderWidth: 1.5,
+    borderColor: "#6EE7B7",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  authorAvatar: {
+    width: "100%",
+    height: "100%",
+  },
+  authorInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  authorNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  authorName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginRight: 6,
+  },
+  roleTag: {
+    backgroundColor: "#ECFDF5",
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+  },
+  roleTagText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#047857",
+    textTransform: "uppercase",
+  },
+  authorSubtext: {
+    fontSize: 11,
+    color: "#64748B",
   },
 });
