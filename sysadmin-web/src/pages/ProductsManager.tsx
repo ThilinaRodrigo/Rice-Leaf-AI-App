@@ -23,6 +23,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { showConfirmDialog, showSuccessToast, showErrorAlert } from '../utils/swal';
+import { getFullMediaUrl } from '../utils/media';
 
 export const ProductsManager: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -52,15 +53,7 @@ export const ProductsManager: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getFullImageUrl = (url?: string) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads')) {
-      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-      const serverDomain = apiBase.replace(/\/api\/v1\/?$/, '');
-      return `${serverDomain}${url}`;
-    }
-    return url;
-  };
+  const getFullImageUrl = (url?: string) => getFullMediaUrl(url);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -138,11 +131,7 @@ export const ProductsManager: React.FC = () => {
     try {
       const res = await uploadProductImage(file);
       setImageUrl(res.image_url);
-      if (res.full_url) {
-        setImagePreview(res.full_url);
-      } else {
-        setImagePreview(getFullImageUrl(res.image_url));
-      }
+      setImagePreview(getFullImageUrl(res.image_url));
       showSuccessToast('Image stored locally on server successfully!');
     } catch (err: any) {
       console.error('Upload failed:', err);

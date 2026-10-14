@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { fetchAdminPosts, deleteAdminPost } from '../api/adminApi';
 import type { CommunityPost } from '../types/admin';
+import { getFullMediaUrl } from '../utils/media';
 
 const DISEASE_OPTIONS = [
   { label: 'All Diseases', value: 'All' },
@@ -73,13 +74,7 @@ export const PostsManager: React.FC = () => {
   };
 
   const getImageUrl = (url?: string) => {
-    if (!url) return null;
-    if (url.startsWith('/uploads')) {
-      const apiEnv = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-      const host = apiEnv.replace('/api/v1', '');
-      return `${host}${url}`;
-    }
-    return url;
+    return getFullMediaUrl(url) || null;
   };
 
   const filteredPosts = posts.filter((p) => {

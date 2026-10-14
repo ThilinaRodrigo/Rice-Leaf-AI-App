@@ -24,6 +24,9 @@ WORKDIR /app
 # Install CA certificates for external HTTPS requests
 RUN apk --no-cache add ca-certificates tzdata
 
+# Create uploads directory structure
+RUN mkdir -p /app/uploads/products /app/uploads/ads /app/uploads/scans /app/uploads/avatars
+
 COPY --from=builder /app/server .
 COPY --from=builder /app/config ./config
 

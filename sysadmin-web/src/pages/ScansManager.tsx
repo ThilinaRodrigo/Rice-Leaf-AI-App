@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchAdminScans } from '../api/adminApi';
 import type { AdminScan } from '../types/admin';
 import { Header } from '../components/Header';
+import { getFullMediaUrl } from '../utils/media';
 import {
   Search,
   Eye,
@@ -113,14 +114,7 @@ export const ScansManager: React.FC = () => {
   const getImageUrl = (url: string) => {
     if (!url)
       return 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&w=500&q=60';
-    const uploadIndex = url.indexOf('/uploads');
-    if (uploadIndex !== -1) {
-      const relPath = url.substring(uploadIndex);
-      const apiEnv = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-      const host = apiEnv.replace('/api/v1', '');
-      return `${host}${relPath}`;
-    }
-    return url;
+    return getFullMediaUrl(url);
   };
 
   const exportCSV = () => {

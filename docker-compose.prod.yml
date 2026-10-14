@@ -31,9 +31,11 @@ services:
       - ML_SERVICE_URL=http://ml-service:8000
       - RICE_VALIDATOR_THRESHOLD=${RICE_VALIDATOR_THRESHOLD:-0.50}
       - MAX_IMAGE_SIZE_MB=${MAX_IMAGE_SIZE_MB:-10}
-      - BASE_URL=${BASE_URL:-https://api.yourdomain.com}
+      - BASE_URL=${BASE_URL}
       - JWT_SECRET=${JWT_SECRET:-super-secret-rice-leaf-key-2026}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
