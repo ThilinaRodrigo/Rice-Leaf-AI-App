@@ -87,6 +87,9 @@ export const si: Record<TranslationKeys, string> = {
   allProducts: "සියලුම නිෂ්පාදන",
   buyNow: "මිලදී ගන්න",
   noProductsFound: "නිෂ්පාදන කිසිවක් හමු නොවීය",
+  viewAllVerifiedAds: "සියලුම තහවුරු කළ දැන්වීම්",
+  goToVerifiedAds: "තහවුරු කළ දැන්වීම් වෙත යන්න",
+  viewAllVerifiedAdsDesc: "කෘෂිකර්ම දෙපාර්තමේන්තුව අනුමත කළ සියලුම ඖෂධ සහ දැන්වීම් බලන්න",
 
   // Dedicated Medicines & Remedies Page Keys
   medForDiseasesTitle: "ගොයම් රෝග සඳහා ඖෂධ සහ ප්‍රතිකාර",

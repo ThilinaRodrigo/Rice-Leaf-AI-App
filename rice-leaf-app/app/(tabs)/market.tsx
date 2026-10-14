@@ -224,11 +224,19 @@ const Market = () => {
               <Text className="text-gray-900 font-black text-base">
                 {t("verifiedShopOffers")}
               </Text>
-              <View className="bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                <Text className="text-emerald-800 text-[10px] font-bold">
-                  {t("adminVerified")}
-                </Text>
-              </View>
+              <TouchableOpacity
+                onPress={() => router.push("/disease-remedies-market")}
+                activeOpacity={0.7}
+                className="flex-row items-center"
+              >
+                <View className="bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex-row items-center">
+                  <ShieldCheck size={11} color="#065F46" />
+                  <Text className="text-emerald-800 text-[10px] font-bold ml-1 mr-1">
+                    {t("viewAll")}
+                  </Text>
+                  <ChevronRight size={12} color="#065F46" />
+                </View>
+              </TouchableOpacity>
             </View>
 
             <ScrollView
@@ -236,7 +244,7 @@ const Market = () => {
               showsHorizontalScrollIndicator={false}
               className="-mx-5 px-5"
             >
-              {shopAds.map((ad) => {
+              {shopAds.slice(0, 3).map((ad) => {
                 const tags = parseTags(ad.disease_tags);
                 return (
                   <View
@@ -311,7 +319,54 @@ const Market = () => {
                   </View>
                 );
               })}
+
+              {/* End of 3 posts card to navigate to Verified Ads screen */}
+              <TouchableOpacity
+                activeOpacity={0.88}
+                onPress={() => router.push("/disease-remedies-market")}
+                className="bg-emerald-50/70 border-2 border-dashed border-emerald-300 rounded-2xl mr-5 w-64 p-5 items-center justify-center flex-col shadow-sm"
+              >
+                <View className="w-14 h-14 rounded-2xl bg-emerald-600/10 border border-emerald-500/20 items-center justify-center mb-3">
+                  <ShieldCheck size={28} color="#059669" />
+                </View>
+                <Text className="text-sm font-black text-emerald-950 text-center mb-1">
+                  {t("viewAllVerifiedAds")}
+                </Text>
+                <Text className="text-[11px] text-emerald-700/80 text-center mb-4 leading-relaxed px-1">
+                  {t("viewAllVerifiedAdsDesc")}
+                </Text>
+                <View className="bg-emerald-800 px-4 py-2.5 rounded-xl flex-row items-center shadow-sm">
+                  <Text className="text-white text-xs font-bold mr-1">
+                    {t("goToVerifiedAds")}
+                  </Text>
+                  <ChevronRight size={14} color="#FFFFFF" />
+                </View>
+              </TouchableOpacity>
             </ScrollView>
+
+            {/* Action button below carousel */}
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={() => router.push("/disease-remedies-market")}
+              className="mt-3 bg-emerald-50 border border-emerald-200/90 rounded-2xl py-3 px-4 flex-row items-center justify-between shadow-sm active:bg-emerald-100/70"
+            >
+              <View className="flex-row items-center space-x-2">
+                <View className="w-8 h-8 rounded-xl bg-emerald-100 items-center justify-center">
+                  <ShieldCheck size={16} color="#059669" />
+                </View>
+                <View className="ml-2.5">
+                  <Text className="text-xs font-black text-emerald-900">
+                    {t("viewAllVerifiedAds")}
+                  </Text>
+                  <Text className="text-[10px] text-emerald-700 font-medium">
+                    {t("exploreRemediesBtn")}
+                  </Text>
+                </View>
+              </View>
+              <View className="w-7 h-7 rounded-full bg-emerald-800 items-center justify-center">
+                <ChevronRight size={14} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
           </View>
         )}
 

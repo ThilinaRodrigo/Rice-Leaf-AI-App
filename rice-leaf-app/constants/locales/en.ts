@@ -85,6 +85,9 @@ export const en = {
   allProducts: "All Products",
   buyNow: "Buy Now",
   noProductsFound: "No products found",
+  viewAllVerifiedAds: "View All Verified Ads",
+  goToVerifiedAds: "Go to Verified Ads",
+  viewAllVerifiedAdsDesc: "Browse all DOA-approved remedies & verified shop offers",
 
   // Dedicated Medicines & Remedies Page Keys
   medForDiseasesTitle: "Medicines & Remedies for Diseases",
